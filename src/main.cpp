@@ -26,6 +26,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 {
 	vulkanApp = new VulkanApp();
 	vulkanApp->CreateWin32Window(hInstance, WndProc);
+	vulkanApp->InitSwapchain();
 	vulkanApp->Prepare();
 
 	//vulkanApp->initSwapchain();

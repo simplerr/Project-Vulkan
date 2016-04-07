@@ -40,17 +40,19 @@ private:
 	VkInstance			instance		= VK_NULL_HANDLE;
 	VkPhysicalDevice	physicalDevice	= VK_NULL_HANDLE;
 	VkDevice			device			= VK_NULL_HANDLE;
+	VkQueue				queue			= VK_NULL_HANDLE;
 
 	// Command buffer
 	VkCommandPool		commandPool;
 	VkCommandBuffer		commandBuffer;
 
+	// Command buffer used for setup
+	VkCommandBuffer		setupCmdBuffer	= VK_NULL_HANDLE;
+
 	// Swap chain magic by Sascha Willems (https://github.com/SaschaWillems/Vulkan)
 	VulkanSwapChain		swapChain;
 
-	// Command buffer used for setup
-	VkCommandBuffer		setupCmdBuffer = VK_NULL_HANDLE;
-
+	
 #if defined(_WIN32)
 	HWND				window;
 	HINSTANCE			windowInstance;

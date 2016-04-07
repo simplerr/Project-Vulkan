@@ -10,6 +10,11 @@
 #include "VulkanBase.h"
 #include "VulkanDebug.h"
 
+/*
+	-	Right now this code assumes that queueFamilyIndex is = 0 in all places,
+		no looping is done to find a queue that have the proper support
+*/
+
 VulkanBase::VulkanBase()
 {
 	VulkanDebug::SetupDebugLayers();
@@ -22,16 +27,18 @@ VulkanBase::VulkanBase()
 	// Create VkDevice
 	VulkanDebug::ErrorCheck( CreateDevice() );
 
-	// Setup function pointers for the swapchain
-	//swapChain.connect(instance, physicalDevice, device);
+	// Get the graphics queue
+	vkGetDeviceQueue(device, 0, 0, &queue);	// Note that queueFamilyIndex is hard coded to 0
 
-	// Init the surface
-	//initSwapchain();
+	// Setup function pointers for the swap chain
+	swapChain.connect(instance, physicalDevice, device);
+
+	// Synchronization code missing here, VkSemaphore etc.
 }
 
 VulkanBase::~VulkanBase()
 {
-	//swapChain.cleanup();
+	swapChain.cleanup();
 
 	vkDestroyCommandPool(device, commandPool, nullptr);
 
@@ -112,7 +119,7 @@ VkResult VulkanBase::CreateDevice()
 	queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO; 
 	queueInfo.pNext = nullptr;
 	queueInfo.flags = 0;
-	queueInfo.queueFamilyIndex = 0; // 0 seems to allways be the first valid queue (see above)
+	queueInfo.queueFamilyIndex = 0; // 0 seems to always be the first valid queue (see above)
 	queueInfo.pQueuePriorities = queuePriorities.data();
 	queueInfo.queueCount = 1;
 
@@ -134,26 +141,12 @@ VkResult VulkanBase::CreateDevice()
 	return result;
 }
 
-void VulkanBase::Prepare()
-{
-	CreateCommandPool();
-	CreateSetupCommandBuffer();
-	// Swapchain
-
-	// Do a lot of setup stuff
-	// ...
-
-	// Call vkEndCommandBuffer() on the setupCommandBuffer and then submit it to the VkQueue
-
-	
-}
-
 void VulkanBase::CreateCommandPool()
 {
 	VkCommandPoolCreateInfo createInfo = {};
-	createInfo.sType			= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	createInfo.queueFamilyIndex = 0;									// NOTE: TODO: Need to store this as a member (Use Swapchain)!!!!!
-	createInfo.flags			= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	VkResult r = vkCreateCommandPool(device, &createInfo, nullptr, &commandPool);
 	assert(!r);
 }
@@ -161,12 +154,12 @@ void VulkanBase::CreateCommandPool()
 void VulkanBase::CreateSetupCommandBuffer()
 {
 	VkCommandBufferAllocateInfo allocateInfo = {};
-	allocateInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocateInfo.commandPool		= commandPool;
+	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocateInfo.commandPool = commandPool;
 	allocateInfo.commandBufferCount = 1;
-	allocateInfo.level				= VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	
-	VkResult r = vkAllocateCommandBuffers(device, &allocateInfo, &commandBuffer);
+	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	VkResult r = vkAllocateCommandBuffers(device, &allocateInfo, &setupCmdBuffer);
 	assert(!r);
 
 	VkCommandBufferBeginInfo beginInfo = {};
@@ -174,21 +167,57 @@ void VulkanBase::CreateSetupCommandBuffer()
 	//beginInfo.flags = Default is OK, change this if multiple command buffers (primary & secondary)
 
 	// Begin recording commands to the command buffer
-	r = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	r = vkBeginCommandBuffer(setupCmdBuffer, &beginInfo);
 	assert(!r);
+}
+
+void VulkanBase::SetupSwapchain()
+{
+	swapChain.create(setupCmdBuffer, &windowWidth, &windowHeight);
+}
+
+void VulkanBase::Prepare()
+{
+	CreateCommandPool();
+	CreateSetupCommandBuffer();
+	SetupSwapchain();
+
+	// Create command buffers for drawing
+	// Render pass
+	// Depth stencil
+	// etc...
+
+
+	// Do a lot of setup stuff
+	// ...
+
+	// Call vkEndCommandBuffer() on the setupCommandBuffer and then submit it to the VkQueue
+
+	// This code will move to FlushSetupCommandBuffer()
+	VkResult err = vkEndCommandBuffer(setupCmdBuffer);
+	assert(!err);
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.pCommandBuffers = &setupCmdBuffer;
+	submitInfo.commandBufferCount = 1;
+
+	err = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+	assert(!err);
+
+ 	err = vkQueueWaitIdle(queue);
+ 	assert(!err);
+
+	vkFreeCommandBuffers(device, commandPool, 1, &setupCmdBuffer);
+	setupCmdBuffer = VK_NULL_HANDLE;
 }
 
 void VulkanBase::InitSwapchain()
 {
 	// Platform dependent code to initialize the window surface
 #if defined(_WIN32)
-	//swapChain.initSurface(windowInstance, window);
+	swapChain.initSurface(windowInstance, window);
 #endif
-}
-
-void VulkanBase::SetupSwapchain()
-{
-	//swapChain.create(setupCmdBuffer, &windowWidth, &windowHeight);
 }
 
 void VulkanBase::RenderLoop()
