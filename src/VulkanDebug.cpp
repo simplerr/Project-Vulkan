@@ -38,12 +38,12 @@ namespace VulkanDebug
 	}
 	void InitDebug(VkInstance instance)
 	{
-		CreateDebugReportCallback = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
-		DestroyDebugReportCallback = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
-		dbgBreakCallback = (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(instance, "vkDebugReportMessageEXT");
+		CreateDebugReportCallback =		(PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
+		DestroyDebugReportCallback =	(PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
+		dbgBreakCallback =				(PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(instance, "vkDebugReportMessageEXT");
 
 		if (CreateDebugReportCallback == nullptr || DestroyDebugReportCallback == nullptr || dbgBreakCallback == nullptr) {
-			//exitOnError("Error fetching debug function pointers");
+			VulkanDebug::ConsolePrint("Error fetching debug function pointers");
 		}
 
 		ErrorCheck( CreateDebugReportCallback(instance, &debugCallbackCreateInfo, nullptr, &msgCallback) );
@@ -55,7 +55,7 @@ namespace VulkanDebug
 		msgCallback = nullptr;
 	}
 
-	// Sets up a console window (Win32 only)
+	// Sets up a console window (Win32)
 	void SetupConsole(std::string title)
 	{
 		AllocConsole();
@@ -63,7 +63,7 @@ namespace VulkanDebug
 		freopen("CON", "w", stdout);
 		SetConsoleTitle(TEXT(title.c_str()));
 
-		std::cout << "Debug console:\n";
+		VulkanDebug::ConsolePrint("Debug console:");
 	}
 
 	// This is the callback that receives all debug messages from the different validation layers 
@@ -99,8 +99,9 @@ namespace VulkanDebug
 		stream << "@[" << pLayerPrefix << "]: ";
 		stream << pMessage << std::endl;
 
-		std::cout << stream.str();
+		VulkanDebug::ConsolePrint(stream.str());
 
+		// Critical errors will be printed in a message box (Win32)
 		#ifdef _WIN32
 		if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
 			MessageBox(nullptr, stream.str().c_str(), "Vulkan Error!", 0);
@@ -172,5 +173,9 @@ namespace VulkanDebug
 
 			assert(0 && "ErrorCheck() catched an error!");
 		}
+	}
+	void ConsolePrint(std::string text)
+	{
+		std::cout << text << std::endl;
 	}
 }

@@ -18,6 +18,8 @@ namespace VulkanDebug
 	void SetupConsole(std::string title);
 	void ErrorCheck(VkResult result);
 
+	void ConsolePrint(std::string text);
+
 	VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 		VkDebugReportFlagsEXT       flags,
 		VkDebugReportObjectTypeEXT  objectType,

@@ -9,6 +9,8 @@
 #include <vulkan\vulkan.h>
 
 
+// Validation layer guide: http://gpuopen.com/using-the-vulkan-validation-layers/
+
 /*
 	This is the base class that contains common code for creating a Vulkan application
 */
@@ -20,7 +22,11 @@ public:
 
 	VkResult CreateInstance(const char* appName);
 	VkResult CreateDevice();
-	HWND CreateWin32Window(HINSTANCE hInstance, WNDPROC wndProc);
+
+	void Prepare();
+
+	void CreateCommandPool();
+	void CreateSetupCommandBuffer();
 
 	void InitSwapchain();
 	void SetupSwapchain();
@@ -28,11 +34,16 @@ public:
 	void RenderLoop();
 	void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	void exitOnError(const char* msg);
-//private:
-	VkInstance			instance;
-	VkPhysicalDevice	physicalDevice;
-	VkDevice			device;
+	HWND CreateWin32Window(HINSTANCE hInstance, WNDPROC wndProc);
+
+private:
+	VkInstance			instance		= VK_NULL_HANDLE;
+	VkPhysicalDevice	physicalDevice	= VK_NULL_HANDLE;
+	VkDevice			device			= VK_NULL_HANDLE;
+
+	// Command buffer
+	VkCommandPool		commandPool;
+	VkCommandBuffer		commandBuffer;
 
 	// Swap chain magic by Sascha Willems (https://github.com/SaschaWillems/Vulkan)
 	VulkanSwapChain		swapChain;

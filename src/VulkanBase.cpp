@@ -17,28 +17,10 @@ VulkanBase::VulkanBase()
 	// Create VkInstance
 	VulkanDebug::ErrorCheck( CreateInstance("Vulkan App") );
 
-	// TODO: write own debug output functions
-	/*if (res == VK_ERROR_INCOMPATIBLE_DRIVER) {
-		exitOnError(
-			"Cannot find a compatible Vulkan installable client "
-			"driver (ICD). Please make sure your driver supports "
-			"Vulkan before continuing. The call to vkCreateInstance failed.");
-	}
-	else if (res != VK_SUCCESS) {
-		exitOnError(
-			"The call to vkCreateInstance failed. Please make sure "
-			"you have a Vulkan installable client driver (ICD) before "
-			"continuing.");
-	}*/
-
 	VulkanDebug::InitDebug(instance);
 
 	// Create VkDevice
 	VulkanDebug::ErrorCheck( CreateDevice() );
-
-	/*if (res != VK_SUCCESS) {
-		exitOnError("Error creating the device");
-	}*/
 
 	// Setup function pointers for the swapchain
 	//swapChain.connect(instance, physicalDevice, device);
@@ -50,16 +32,14 @@ VulkanBase::VulkanBase()
 VulkanBase::~VulkanBase()
 {
 	//swapChain.cleanup();
+
+	vkDestroyCommandPool(device, commandPool, nullptr);
+
 	vkDestroyDevice(device, nullptr);
 
 	VulkanDebug::CleanupDebugging(instance);
 
 	vkDestroyInstance(instance, nullptr);
-}
-
-void VulkanBase::exitOnError(const char* msg) {
-	fputs(msg, stderr);
-	exit(EXIT_FAILURE);
 }
 
 VkResult VulkanBase::CreateInstance(const char* appName)
@@ -107,10 +87,10 @@ VkResult VulkanBase::CreateDevice()
 	VkResult result = vkEnumeratePhysicalDevices(instance, &gpuCount, NULL);
 
 	if (result != VK_SUCCESS)
-		exitOnError("vkEnumeratePhysicalDevices failed");
+		VulkanDebug::ConsolePrint("vkEnumeratePhysicalDevices failed");
 
 	if (gpuCount < 1)
-		exitOnError("vkEnumeratePhysicalDevices didn't find any valid devices for Vulkan");
+		VulkanDebug::ConsolePrint("vkEnumeratePhysicalDevices didn't find any valid devices for Vulkan");
 
 	// Enumerate devices
 	std::vector<VkPhysicalDevice> physicalDevices(gpuCount);
@@ -129,7 +109,7 @@ VkResult VulkanBase::CreateDevice()
 
 	std::array<float, 1> queuePriorities = { 1.0f };
 	VkDeviceQueueCreateInfo queueInfo = {};
-	queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO; // must
+	queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO; 
 	queueInfo.pNext = nullptr;
 	queueInfo.flags = 0;
 	queueInfo.queueFamilyIndex = 0; // 0 seems to allways be the first valid queue (see above)
@@ -152,6 +132,84 @@ VkResult VulkanBase::CreateDevice()
 	result = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
 
 	return result;
+}
+
+void VulkanBase::Prepare()
+{
+	CreateCommandPool();
+	CreateSetupCommandBuffer();
+	// Swapchain
+
+	// Do a lot of setup stuff
+	// ...
+
+	// Call vkEndCommandBuffer() on the setupCommandBuffer and then submit it to the VkQueue
+
+	
+}
+
+void VulkanBase::CreateCommandPool()
+{
+	VkCommandPoolCreateInfo createInfo = {};
+	createInfo.sType			= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	createInfo.queueFamilyIndex = 0;									// NOTE: TODO: Need to store this as a member (Use Swapchain)!!!!!
+	createInfo.flags			= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	VkResult r = vkCreateCommandPool(device, &createInfo, nullptr, &commandPool);
+	assert(!r);
+}
+
+void VulkanBase::CreateSetupCommandBuffer()
+{
+	VkCommandBufferAllocateInfo allocateInfo = {};
+	allocateInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocateInfo.commandPool		= commandPool;
+	allocateInfo.commandBufferCount = 1;
+	allocateInfo.level				= VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	
+	VkResult r = vkAllocateCommandBuffers(device, &allocateInfo, &commandBuffer);
+	assert(!r);
+
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	//beginInfo.flags = Default is OK, change this if multiple command buffers (primary & secondary)
+
+	// Begin recording commands to the command buffer
+	r = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	assert(!r);
+}
+
+void VulkanBase::InitSwapchain()
+{
+	// Platform dependent code to initialize the window surface
+#if defined(_WIN32)
+	//swapChain.initSurface(windowInstance, window);
+#endif
+}
+
+void VulkanBase::SetupSwapchain()
+{
+	//swapChain.create(setupCmdBuffer, &windowWidth, &windowHeight);
+}
+
+void VulkanBase::RenderLoop()
+{
+	MSG message;
+
+	while (GetMessage(&message, nullptr, 0, 0)) {
+		TranslateMessage(&message);
+		DispatchMessage(&message);
+	}
+}
+
+void VulkanBase::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+	case WM_CLOSE:
+		DestroyWindow(window);
+		PostQuitMessage(0);
+		break;
+	}
 }
 
 // Creates a window that Vulkan can use for rendering
@@ -207,38 +265,4 @@ HWND VulkanBase::CreateWin32Window(HINSTANCE hInstance, WNDPROC WndProc)
 	SetFocus(window);
 
 	return window;
-}
-
-void VulkanBase::InitSwapchain()
-{
-	// Platform dependent code to initialize the window surface
-#if defined(_WIN32)
-	//swapChain.initSurface(windowInstance, window);
-#endif
-}
-
-void VulkanBase::SetupSwapchain()
-{
-	//swapChain.create(setupCmdBuffer, &windowWidth, &windowHeight);
-}
-
-void VulkanBase::RenderLoop()
-{
-	MSG message;
-
-	while (GetMessage(&message, nullptr, 0, 0)) {
-		TranslateMessage(&message);
-		DispatchMessage(&message);
-	}
-}
-
-void VulkanBase::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	switch (msg)
-	{
-	case WM_CLOSE:
-		DestroyWindow(window);
-		PostQuitMessage(0);
-		break;
-	}
 }

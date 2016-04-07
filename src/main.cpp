@@ -26,6 +26,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 {
 	vulkanApp = new VulkanApp();
 	vulkanApp->CreateWin32Window(hInstance, WndProc);
+	vulkanApp->Prepare();
 
 	//vulkanApp->initSwapchain();
 	//vulkanApp->setupSwapchain(); // The command buffers needs to be created before the swapchain
