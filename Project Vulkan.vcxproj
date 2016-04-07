@@ -156,6 +156,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\VulkanApp.cpp" />
     <ClCompile Include="src\VulkanBase.cpp" />
+    <ClCompile Include="src\VulkanDebug.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base\vulkandebug.h" />
@@ -163,6 +164,7 @@
     <ClInclude Include="base\vulkantools.h" />
     <ClInclude Include="src\VulkanApp.h" />
     <ClInclude Include="src\VulkanBase.h" />
+    <ClInclude Include="src\VulkanDebug.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

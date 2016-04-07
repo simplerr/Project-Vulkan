@@ -8,11 +8,11 @@
 #include <sstream>
 
 #include "VulkanBase.h"
+#include "VulkanDebug.h"
 
 VulkanBase::VulkanBase()
 {
-	setupConsole("Debug console");
-	setupDebugLayers();
+	VulkanDebug::SetupDebugLayers();
 
 	VkResult res;
 
@@ -32,7 +32,7 @@ VulkanBase::VulkanBase()
 			"continuing.");
 	}
 
-	initDebug();
+	VulkanDebug::InitDebug(instance);
 
 	res = createDevice();
 
@@ -51,19 +51,10 @@ VulkanBase::~VulkanBase()
 {
 	//swapChain.cleanup();
 	vkDestroyDevice(device, nullptr);
+
+	VulkanDebug::CleanupDebugging(instance);
+
 	vkDestroyInstance(instance, nullptr);
-	cleanupDebug();
-}
-
-// Win32 : Sets up a console window and redirects standard output to it
-void VulkanBase::setupConsole(std::string title)
-{
-	AllocConsole();
-	AttachConsole(GetCurrentProcessId());
-	freopen("CON", "w", stdout);
-	SetConsoleTitle(TEXT(title.c_str()));
-
-	std::cout << "Debug console:\n";
 }
 
 void VulkanBase::exitOnError(const char* msg) {
@@ -71,101 +62,14 @@ void VulkanBase::exitOnError(const char* msg) {
 	exit(EXIT_FAILURE);
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL 
-VulkanDebugCallback(
-	VkDebugReportFlagsEXT       flags,
-	VkDebugReportObjectTypeEXT  objectType,
-	uint64_t                    object,
-	size_t                      location,
-	int32_t                     messageCode,
-	const char*                 pLayerPrefix,
-	const char*                 pMessage,
-	void*                       pUserData)
-{
-	std::ostringstream stream;
-
-	stream << "VKDEBUG: ";
-	if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) {
-		stream << "INFO: ";
-	}
-	if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) {
-		stream << "WARNING: ";
-	}
-	if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) {
-		stream << "PERFORMANCE: ";
-	}
-	if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
-		stream << "ERROR: ";
-	}
-	if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) {
-		stream << "DEBUG: ";
-	}
-
-	stream << "@[" << pLayerPrefix << "]: ";
-	stream << pMessage << std::endl;
-
-	std::cout << stream.str();
-
-#ifdef _WIN32
-	if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
-		MessageBox(nullptr, stream.str().c_str(), "Vulkan Error!", 0);
-	}
-#endif
-
-	return VK_FALSE;
-}
-
-// Debug extension callbacks
-PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallback = nullptr;
-PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallback = nullptr;
-PFN_vkDebugReportMessageEXT dbgBreakCallback = nullptr;
-
-void VulkanBase::initDebug()
-{
-	CreateDebugReportCallback = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
-	DestroyDebugReportCallback = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
-	dbgBreakCallback = (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(instance, "vkDebugReportMessageEXT");
-
-	if (CreateDebugReportCallback == nullptr || DestroyDebugReportCallback == nullptr || dbgBreakCallback == nullptr) {
-		exitOnError("Error fetching debug function pointers");
-	}
-
-	CreateDebugReportCallback(instance, &debugCallbackCreateInfo, nullptr, &msgCallback);
-}
-
-void VulkanBase::setupDebugLayers()
-{
-	// TODO: Add #ifdef _DEBUG
-	/* Setup callback creation information */
-	debugCallbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-	debugCallbackCreateInfo.pNext = nullptr;
-	debugCallbackCreateInfo.flags =
-		//VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
-		//VK_DEBUG_REPORT_DEBUG_BIT_EXT |
-		VK_DEBUG_REPORT_ERROR_BIT_EXT |
-		VK_DEBUG_REPORT_WARNING_BIT_EXT |
-		VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-		
-	debugCallbackCreateInfo.pfnCallback = &VulkanDebugCallback;
-	debugCallbackCreateInfo.pUserData = nullptr;
-
-	validation_layers.push_back("VK_LAYER_LUNARG_standard_validation");
-}
-
-void VulkanBase::cleanupDebug()
-{
-	DestroyDebugReportCallback(instance, msgCallback, nullptr);
-	msgCallback = nullptr;
-}
-
 VkResult VulkanBase::createInstance(const char* appName)
 {
 	VkApplicationInfo appInfo = {};
-	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;	// must be VK_STRUCTURE_TYPE_APPLICATION_INFO
-	appInfo.pNext = nullptr;	// must be NULL
+	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;			// Must be VK_STRUCTURE_TYPE_APPLICATION_INFO
+	appInfo.pNext = nullptr;									// Must be NULL
 	appInfo.pApplicationName = appName;
 	appInfo.pEngineName = appName;
-	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 2);	// all drivers support this, but use VK_API_VERSION in the future
+	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 2);				// All drivers support this, but use VK_API_VERSION in the future
 
 	std::vector<const char*> enabledExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
 
@@ -182,15 +86,14 @@ VkResult VulkanBase::createInstance(const char* appName)
 	enabledExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 
 	VkInstanceCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO; // must be VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO
-	createInfo.pNext = &debugCallbackCreateInfo; // enables debugging when creating the instance
-	createInfo.flags = 0; // must be 0
+	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;	// Must be VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO
+	createInfo.pNext = &VulkanDebug::debugCallbackCreateInfo;	// Enables debugging when creating the instance
+	createInfo.flags = 0;										// Must be 0
 	createInfo.pApplicationInfo = &appInfo;
-	createInfo.enabledExtensionCount = enabledExtensions.size();
+	createInfo.enabledExtensionCount = enabledExtensions.size();			// Extensions
 	createInfo.ppEnabledExtensionNames = enabledExtensions.data();
-
-	createInfo.enabledLayerCount = validation_layers.size();	// debug layers
-	createInfo.ppEnabledLayerNames = validation_layers.data();
+	createInfo.enabledLayerCount = VulkanDebug::validation_layers.size();	// Debug validation layers
+	createInfo.ppEnabledLayerNames = VulkanDebug::validation_layers.data();
 
 	VkResult res = vkCreateInstance(&createInfo, NULL, &instance);
 
@@ -241,13 +144,11 @@ VkResult VulkanBase::createDevice()
 	deviceInfo.queueCreateInfoCount = 1;
 	deviceInfo.pQueueCreateInfos = &queueInfo;
 	deviceInfo.pEnabledFeatures = nullptr;
-	deviceInfo.enabledExtensionCount = enabledExtensions.size();	// extensions
+	deviceInfo.enabledExtensionCount = enabledExtensions.size();			// Extensions
 	deviceInfo.ppEnabledExtensionNames = enabledExtensions.data();
-	deviceInfo.enabledLayerCount = validation_layers.size();	// debug layers
-	deviceInfo.ppEnabledLayerNames = validation_layers.data();
+	deviceInfo.enabledLayerCount = VulkanDebug::validation_layers.size();	// Debug validation layers
+	deviceInfo.ppEnabledLayerNames = VulkanDebug::validation_layers.data();
 	
-
-
 	result = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
 
 	return result;

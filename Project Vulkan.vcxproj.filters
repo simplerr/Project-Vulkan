@@ -36,6 +36,9 @@
     <ClCompile Include="base\vulkantools.cpp">
       <Filter>Source Files\base</Filter>
     </ClCompile>
+    <ClCompile Include="src\VulkanDebug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VulkanApp.h">
@@ -52,6 +55,9 @@
     </ClInclude>
     <ClInclude Include="base\vulkantools.h">
       <Filter>Header Files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="src\VulkanDebug.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
