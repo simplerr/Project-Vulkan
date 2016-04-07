@@ -17,7 +17,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	// Call default window procedure
 	if (vulkanApp != nullptr)
-		vulkanApp->handleMessages(hwnd, msg, wParam, lParam);
+		vulkanApp->HandleMessages(hwnd, msg, wParam, lParam);
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
@@ -25,7 +25,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow)
 {
 	vulkanApp = new VulkanApp();
-	vulkanApp->createWindow(hInstance, WndProc);
+	vulkanApp->CreateWin32Window(hInstance, WndProc);
 	//vulkanApp->initSwapchain();
 	//vulkanApp->setupSwapchain(); // The command buffers needs to be created before the swapchain
 	//vulkanApp->renderLoop();

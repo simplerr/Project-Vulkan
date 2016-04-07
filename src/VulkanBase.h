@@ -18,15 +18,15 @@ public:
 	VulkanBase();
 	~VulkanBase();
 
-	VkResult createInstance(const char* appName);
-	VkResult createDevice();
-	HWND createWindow(HINSTANCE hInstance, WNDPROC wndProc);
+	VkResult CreateInstance(const char* appName);
+	VkResult CreateDevice();
+	HWND CreateWin32Window(HINSTANCE hInstance, WNDPROC wndProc);
 
-	void initSwapchain();
-	void setupSwapchain();
+	void InitSwapchain();
+	void SetupSwapchain();
 
-	void renderLoop();
-	void handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	void RenderLoop();
+	void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void exitOnError(const char* msg);
 private:

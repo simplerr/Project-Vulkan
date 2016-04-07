@@ -16,7 +16,7 @@ VulkanBase::VulkanBase()
 
 	VkResult res;
 
-	res = createInstance("Vulkan App");
+	res = CreateInstance("Vulkan App");
 
 	// TODO: write own debug output functions
 	if (res == VK_ERROR_INCOMPATIBLE_DRIVER) {
@@ -34,7 +34,7 @@ VulkanBase::VulkanBase()
 
 	VulkanDebug::InitDebug(instance);
 
-	res = createDevice();
+	VulkanDebug::ErrorCheck( CreateDevice() );
 
 	if (res != VK_SUCCESS) {
 		exitOnError("Error creating the device");
@@ -62,7 +62,7 @@ void VulkanBase::exitOnError(const char* msg) {
 	exit(EXIT_FAILURE);
 }
 
-VkResult VulkanBase::createInstance(const char* appName)
+VkResult VulkanBase::CreateInstance(const char* appName)
 {
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;			// Must be VK_STRUCTURE_TYPE_APPLICATION_INFO
@@ -100,7 +100,7 @@ VkResult VulkanBase::createInstance(const char* appName)
 	return res;
 }
 
-VkResult VulkanBase::createDevice()
+VkResult VulkanBase::CreateDevice()
 {
 	// Query for the number of GPUs
 	uint32_t gpuCount = 0;
@@ -155,7 +155,7 @@ VkResult VulkanBase::createDevice()
 }
 
 // Creates a window that Vulkan can use for rendering
-HWND VulkanBase::createWindow(HINSTANCE hInstance, WNDPROC WndProc)
+HWND VulkanBase::CreateWin32Window(HINSTANCE hInstance, WNDPROC WndProc)
 {
 	windowInstance = hInstance;
 
@@ -209,7 +209,7 @@ HWND VulkanBase::createWindow(HINSTANCE hInstance, WNDPROC WndProc)
 	return window;
 }
 
-void VulkanBase::initSwapchain()
+void VulkanBase::InitSwapchain()
 {
 	// Platform dependent code to initialize the window surface
 #if defined(_WIN32)
@@ -217,12 +217,12 @@ void VulkanBase::initSwapchain()
 #endif
 }
 
-void VulkanBase::setupSwapchain()
+void VulkanBase::SetupSwapchain()
 {
 	//swapChain.create(setupCmdBuffer, &windowWidth, &windowHeight);
 }
 
-void VulkanBase::renderLoop()
+void VulkanBase::RenderLoop()
 {
 	MSG message;
 
@@ -232,7 +232,7 @@ void VulkanBase::renderLoop()
 	}
 }
 
-void VulkanBase::handleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+void VulkanBase::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
