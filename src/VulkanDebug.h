@@ -3,6 +3,8 @@
 #include  <vector>
 #include <vulkan\vulkan.h>
 
+#define ENUM_TO_STR(x) #x
+
 namespace VulkanDebug
 {
 	// This sets up the debug create info (so that the creation of VkInstance can use it

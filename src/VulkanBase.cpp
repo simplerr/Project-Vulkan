@@ -14,12 +14,11 @@ VulkanBase::VulkanBase()
 {
 	VulkanDebug::SetupDebugLayers();
 
-	VkResult res;
-
-	res = CreateInstance("Vulkan App");
+	// Create VkInstance
+	VulkanDebug::ErrorCheck( CreateInstance("Vulkan App") );
 
 	// TODO: write own debug output functions
-	if (res == VK_ERROR_INCOMPATIBLE_DRIVER) {
+	/*if (res == VK_ERROR_INCOMPATIBLE_DRIVER) {
 		exitOnError(
 			"Cannot find a compatible Vulkan installable client "
 			"driver (ICD). Please make sure your driver supports "
@@ -30,15 +29,16 @@ VulkanBase::VulkanBase()
 			"The call to vkCreateInstance failed. Please make sure "
 			"you have a Vulkan installable client driver (ICD) before "
 			"continuing.");
-	}
+	}*/
 
 	VulkanDebug::InitDebug(instance);
 
+	// Create VkDevice
 	VulkanDebug::ErrorCheck( CreateDevice() );
 
-	if (res != VK_SUCCESS) {
+	/*if (res != VK_SUCCESS) {
 		exitOnError("Error creating the device");
-	}
+	}*/
 
 	// Setup function pointers for the swapchain
 	//swapChain.connect(instance, physicalDevice, device);

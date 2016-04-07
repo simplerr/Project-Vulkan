@@ -29,7 +29,7 @@ public:
 	void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void exitOnError(const char* msg);
-private:
+//private:
 	VkInstance			instance;
 	VkPhysicalDevice	physicalDevice;
 	VkDevice			device;
@@ -47,8 +47,5 @@ private:
 
 	uint32_t			windowWidth = 1024;
 	uint32_t			windowHeight = 768;
-
-	//VkDebugReportCallbackEXT msgCallback = nullptr;
-	//VkDebugReportCallbackCreateInfoEXT debugCallbackCreateInfo = {};
 };
 
