@@ -10,18 +10,29 @@ VulkanApp::VulkanApp() : VulkanBase()
 
 VulkanApp::~VulkanApp()
 {
+	// Cleanup vertex buffer
+	vkDestroyBuffer(device, vertices.buffer, nullptr);
+	vkFreeMemory(device, vertices.memory, nullptr);
 
+	// Cleanup index buffer
+	vkDestroyBuffer(device, indices.buffer, nullptr);
+	vkFreeMemory(device, indices.memory, nullptr);
+
+	// Cleanup uniform buffer
+	vkDestroyBuffer(device, uniformBuffer.buffer, nullptr);
+	vkFreeMemory(device, uniformBuffer.memory, nullptr);
 }
 
 void VulkanApp::Prepare()
 {
 	VulkanBase::Prepare();
 
+	PrepareVertices();
+	PrepareUniformBuffers();
+
 	// Pipeline
 	// Uniform buffers
-	// Vertex buffers 
 	// Descriptor sets
-
 
 }
 
@@ -137,4 +148,55 @@ void VulkanApp::PrepareVertices()
 	vertices.inputState.pVertexBindingDescriptions		= vertices.bindingDescriptions.data();
 	vertices.inputState.vertexAttributeDescriptionCount = vertices.attributeDescriptions.size();
 	vertices.inputState.pVertexAttributeDescriptions	= vertices.attributeDescriptions.data();
+}
+
+void VulkanApp::PrepareUniformBuffers()
+{
+	// Create the uniform buffer
+	// It's the same process as creating any buffer, except that the VkBufferCreateInfo.usage bit is different (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+	VkBufferCreateInfo createInfo = {};
+	VkMemoryAllocateInfo allocInfo = {};
+	VkMemoryRequirements memoryRequirments = {};
+
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = 0;
+	allocInfo.memoryTypeIndex = 0;
+
+	createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	createInfo.size = sizeof(uniformData);						// 3x glm::mat4
+	createInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+
+	VulkanDebug::ErrorCheck(vkCreateBuffer(device, &createInfo, nullptr, &uniformBuffer.buffer));
+	vkGetBufferMemoryRequirements(device, uniformBuffer.buffer, &memoryRequirments);
+	allocInfo.allocationSize = memoryRequirments.size;
+	GetMemoryType(memoryRequirments.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocInfo.memoryTypeIndex);
+	VulkanDebug::ErrorCheck(vkAllocateMemory(device, &allocInfo, nullptr, &uniformBuffer.memory));
+	VulkanDebug::ErrorCheck(vkBindBufferMemory(device, uniformBuffer.buffer, uniformBuffer.memory, 0));
+	
+	// uniformBuffer.buffer will not be used by itself, it's the VkWriteDescriptorSet.pBufferInfo that points to our uniformBuffer.descriptor
+	// so here we need to point uniformBuffer.descriptor.buffer to uniformBuffer.buffer
+	uniformBuffer.descriptor.buffer = uniformBuffer.buffer;
+	uniformBuffer.descriptor.offset = 0;
+	uniformBuffer.descriptor.range = sizeof(uniformData);		// 3x glm::mat4
+
+	UpdateUniformBuffers();
+}
+
+// Call this every time any uniform buffer should be updated (view changes etc.)
+void VulkanApp::UpdateUniformBuffers()
+{
+	uniformData.projectionMatrix = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
+
+	float zoom = 0;
+	uniformData.viewMatrix = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, zoom));
+
+	uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
+
+	// Map uniform buffer and update it
+	uint8_t *data;
+	VkResult err = vkMapMemory(device, uniformBuffer.memory, 0, sizeof(uniformData), 0, (void **)&data);
+	assert(!err);
+	memcpy(data, &uniformData, sizeof(uniformData));
+	vkUnmapMemory(device, uniformBuffer.memory);
+	assert(!err);
 }
