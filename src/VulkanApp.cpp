@@ -9,3 +9,9 @@ VulkanApp::~VulkanApp()
 {
 
 }
+
+void VulkanApp::Prepare()
+{
+	VulkanBase::Prepare();
+
+}

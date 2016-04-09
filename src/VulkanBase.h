@@ -30,11 +30,11 @@ public:
 	VkResult CreateInstance(const char* appName);
 	VkResult CreateDevice();
 
-	void Prepare();
+	virtual void Prepare();
 
 	void CreateCommandPool();
 	void CreateSetupCommandBuffer();
-	void CreateCommandBuffer();
+	void CreateCommandBuffers();
 
 	void SetupDepthStencil();
 	void SetupRenderPass();
@@ -44,6 +44,8 @@ public:
 	void InitSwapchain();
 	void SetupSwapchain();
 
+	void ExecuteSetupCommandBuffer();
+
 	VkBool32 GetMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex);
 
 	void RenderLoop();
@@ -52,17 +54,17 @@ public:
 	HWND CreateWin32Window(HINSTANCE hInstance, WNDPROC wndProc);
 
 private:
-	VkInstance			instance		= VK_NULL_HANDLE;
-	VkPhysicalDevice	physicalDevice	= VK_NULL_HANDLE;
-	VkDevice			device			= VK_NULL_HANDLE;
-	VkQueue				queue			= VK_NULL_HANDLE;
+	VkInstance			instance			= VK_NULL_HANDLE;
+	VkPhysicalDevice	physicalDevice		= VK_NULL_HANDLE;
+	VkDevice			device				= VK_NULL_HANDLE;
+	VkQueue				queue				= VK_NULL_HANDLE;
 
 	// Command buffer
 	VkCommandPool		commandPool;
-	VkCommandBuffer		commandBuffer	= VK_NULL_HANDLE;
+	VkCommandBuffer		drawCommandBuffer	= VK_NULL_HANDLE;
 
 	// Command buffer used for setup
-	VkCommandBuffer		setupCmdBuffer	= VK_NULL_HANDLE;
+	VkCommandBuffer		setupCmdBuffer		= VK_NULL_HANDLE;
 
 	// Swap chain magic by Sascha Willems (https://github.com/SaschaWillems/Vulkan)
 	VulkanSwapChain		swapChain;
@@ -74,10 +76,10 @@ private:
 	std::vector<VkFramebuffer>frameBuffers;
 
 	// Hardcoded for now, should be selected during init with proper tests
-	VkFormat			depthFormat		= VK_FORMAT_D32_SFLOAT_S8_UINT;
+	VkFormat			depthFormat			= VK_FORMAT_D32_SFLOAT_S8_UINT;
 
 	// Color buffer format
-	VkFormat colorformat = VK_FORMAT_B8G8R8A8_UNORM;
+	VkFormat			colorformat			= VK_FORMAT_B8G8R8A8_UNORM;
 
 	// Stores all available memory (type) properties for the physical device
 	VkPhysicalDeviceMemoryProperties deviceMemoryProperties;

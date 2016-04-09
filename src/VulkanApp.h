@@ -7,4 +7,6 @@ class VulkanApp : public VulkanBase
 public:
 	VulkanApp();
 	~VulkanApp();
+
+	void Prepare();
 };

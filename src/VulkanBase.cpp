@@ -64,6 +64,25 @@ VulkanBase::~VulkanBase()
 	vkDestroyInstance(instance, nullptr);
 }
 
+void VulkanBase::Prepare()
+{
+	CreateCommandPool();			// Create a command pool to allocate command buffers from
+	CreateSetupCommandBuffer();		// Create the setup command buffer used for queuing initialization command, also starts recording to the setup command buffer with vkBeginCommandBuffer
+	SetupSwapchain();				// Setup the swap chain with the helper class
+	CreateCommandBuffers();			// Create the command buffer(s) used for drawing
+	SetupDepthStencil();			// Setup the depth stencil buffer
+	SetupRenderPass();				// Setup the render pass
+	SetupFrameBuffer();				// Setup the frame buffer, it uses the depth stencil buffer, render pass and swap chain
+	ExecuteSetupCommandBuffer();	// Submit all commands so far to the queue, end and free the setup command buffer
+	CreateSetupCommandBuffer();		// The derived class will also record initialization commands to the setup command buffer
+
+	// The derived class initializes:
+	// Pipeline
+	// Uniform buffers
+	// Vertex buffers 
+	// Descriptor sets
+}
+
 VkResult VulkanBase::CreateInstance(const char* appName)
 {
 	VkApplicationInfo appInfo = {};
@@ -181,12 +200,12 @@ void VulkanBase::CreateSetupCommandBuffer()
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	//beginInfo.flags = Default is OK, change this if multiple command buffers (primary & secondary)
 
-	// Begin recording commands to the command buffer
+	// Begin recording commands to the setup command buffer
 	r = vkBeginCommandBuffer(setupCmdBuffer, &beginInfo);
 	assert(!r);
 }
 
-void VulkanBase::CreateCommandBuffer()
+void VulkanBase::CreateCommandBuffers()
 {
 	VkCommandBufferAllocateInfo allocateInfo = {};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -194,15 +213,7 @@ void VulkanBase::CreateCommandBuffer()
 	allocateInfo.commandBufferCount = 1;
 	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-	VkResult r = vkAllocateCommandBuffers(device, &allocateInfo, &commandBuffer);
-	assert(!r);
-
-	VkCommandBufferBeginInfo beginInfo = {};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	//beginInfo.flags = Default is OK, change this if multiple command buffers (primary & secondary)
-
-	// Begin recording commands to the command buffer
-	r = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	VkResult r = vkAllocateCommandBuffers(device, &allocateInfo, &drawCommandBuffer);
 	assert(!r);
 }
 
@@ -249,7 +260,7 @@ void VulkanBase::SetupDepthStencil()
 	res = vkBindImageMemory(device, depthStencil.image, depthStencil.memory, 0);
 	assert(!res);
 
-	vkTools::setImageLayout(commandBuffer, depthStencil.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	vkTools::setImageLayout(setupCmdBuffer, depthStencil.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 	viewCreateInfo.image = depthStencil.image;	// Connect the view with the image
 	res = vkCreateImageView(device, &viewCreateInfo, nullptr, &depthStencil.view);
@@ -341,87 +352,31 @@ void VulkanBase::SetupFrameBuffer()
 void VulkanBase::SetupSwapchain()
 {
 	// Note that we use the same command buffer for everything right now!
-	swapChain.create(commandBuffer, &windowWidth, &windowHeight);
+	// Uses the setup command buffer
+	swapChain.create(setupCmdBuffer, &windowWidth, &windowHeight);
 }
 
-void VulkanBase::Prepare()
+void VulkanBase::ExecuteSetupCommandBuffer()
 {
-	CreateCommandPool();
-	//CreateSetupCommandBuffer();
-	CreateCommandBuffer();
-	SetupSwapchain();	// Also starts recording to the command buffer with vkBeginCommandBuffer
-	SetupDepthStencil();
-	SetupRenderPass();
-	SetupFrameBuffer();
+	if (setupCmdBuffer == VK_NULL_HANDLE)
+		return;
 
-	// Create command buffers for drawing
-	// Render pass
-	// Depth stencil
-	// etc...
-
-
-	// Do a lot of setup stuff
-	// ...
-
-	// Call vkEndCommandBuffer() on the setupCommandBuffer and then submit it to the VkQueue
-
-
-
-
-
-
-
-	// This code will move to FlushSetupCommandBuffer()
-	/*VkResult err = vkEndCommandBuffer(setupCmdBuffer);
+	VkResult err = vkEndCommandBuffer(setupCmdBuffer);
 	assert(!err);
 
-	// Testing fences
-	{
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pCommandBuffers = &setupCmdBuffer;
-		submitInfo.commandBufferCount = 1;
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &setupCmdBuffer;
 
-		VkFenceCreateInfo fenceCreateInfo = {};
-		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	err = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+	assert(!err);
 
-		VkFence fence;
-		err = vkCreateFence(device, &fenceCreateInfo, nullptr, &fence);
-		assert(!err);
-
-		err = vkQueueSubmit(queue, 1, &submitInfo, fence);
-		assert(!err);
-
-		err = vkWaitForFences(device, 1, &fence, true, UINT64_MAX);	// Note that VK_TIMEOUT don't count as an error
-		vkDestroyFence(device, fence, nullptr);
-	}
-
-	// Testing semaphores
-	{
-		VkSemaphoreCreateInfo semaphoreCreateInfo = {};
-		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-		//semaphoreCreateInfo.flags
-			
-		VkSemaphore semaphore;
-		err = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphore);
-
-		// To test fences we need two command buffer submits to the queue
-		VkSubmitInfo submitInfo;
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pCommandBuffers = &setupCmdBuffer;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &semaphore;
-		
-		
-	}
-
-	// Wait for the queue to be idle again (very ineffective)
- 	//err = vkQueueWaitIdle(queue);
- 	//assert(!err);
+	err = vkQueueWaitIdle(queue);
+	assert(!err);
 
 	vkFreeCommandBuffers(device, commandPool, 1, &setupCmdBuffer);
-	setupCmdBuffer = VK_NULL_HANDLE;*/
+	setupCmdBuffer = VK_NULL_HANDLE;
 }
 
 void VulkanBase::InitSwapchain()
