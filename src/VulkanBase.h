@@ -67,11 +67,27 @@ private:
 	// Swap chain magic by Sascha Willems (https://github.com/SaschaWillems/Vulkan)
 	VulkanSwapChain		swapChain;
 
+	// Global render pass for frame buffer writes
+	VkRenderPass		renderPass;
+
+	// List of available frame buffers (same as number of swap chain images)
+	std::vector<VkFramebuffer>frameBuffers;
+
 	// Hardcoded for now, should be selected during init with proper tests
 	VkFormat			depthFormat		= VK_FORMAT_D32_SFLOAT_S8_UINT;
 
+	// Color buffer format
+	VkFormat colorformat = VK_FORMAT_B8G8R8A8_UNORM;
+
 	// Stores all available memory (type) properties for the physical device
 	VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
+
+	// Group everything with the depth stencil together in a struct (as in Vulkan samples)
+	struct {		
+		VkImage image;
+		VkDeviceMemory memory;
+		VkImageView view;
+	} depthStencil;
 	
 #if defined(_WIN32)
 	HWND				window;

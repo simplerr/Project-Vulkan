@@ -45,6 +45,18 @@ VulkanBase::~VulkanBase()
 
 	vkDestroyCommandPool(device, commandPool, nullptr);
 
+	// Cleanup depth stencil data
+	vkDestroyImageView(device, depthStencil.view, nullptr);
+	vkDestroyImage(device, depthStencil.image, nullptr);
+	vkFreeMemory(device, depthStencil.memory, nullptr);
+
+	vkDestroyRenderPass(device, renderPass, nullptr);
+
+	for (uint32_t i = 0; i < frameBuffers.size(); i++)
+	{
+		vkDestroyFramebuffer(device, frameBuffers[i], nullptr);
+	}
+
 	vkDestroyDevice(device, nullptr);
 
 	VulkanDebug::CleanupDebugging(instance);
@@ -222,39 +234,108 @@ void VulkanBase::SetupDepthStencil()
 	viewCreateInfo.subresourceRange.baseArrayLayer = 0;
 	viewCreateInfo.subresourceRange.layerCount = 1;
 
-	VkImage image;
-	VkResult res = vkCreateImage(device, &imageCreateInfo, nullptr, &image);
+	VkResult res = vkCreateImage(device, &imageCreateInfo, nullptr, &depthStencil.image);
 	assert(!res);
 
 	// Get memory requirements
 	VkMemoryRequirements memRequirments;
-	vkGetImageMemoryRequirements(device, image, &memRequirments);
+	vkGetImageMemoryRequirements(device, depthStencil.image, &memRequirments);
 	allocateInfo.allocationSize = memRequirments.size;
 	GetMemoryType(memRequirments.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocateInfo.memoryTypeIndex);
 
-	VkDeviceMemory memory;
-	res = vkAllocateMemory(device, &allocateInfo, nullptr, &memory);
+	res = vkAllocateMemory(device, &allocateInfo, nullptr, &depthStencil.memory);
 	assert(!res);
 
-	res = vkBindImageMemory(device, image, memory, 0);
+	res = vkBindImageMemory(device, depthStencil.image, depthStencil.memory, 0);
 	assert(!res);
 
-	vkTools::setImageLayout(commandBuffer, image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	vkTools::setImageLayout(commandBuffer, depthStencil.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-	VkImageView view;
-	viewCreateInfo.image = image;
-	res = vkCreateImageView(device, &viewCreateInfo, nullptr, &view);
+	viewCreateInfo.image = depthStencil.image;	// Connect the view with the image
+	res = vkCreateImageView(device, &viewCreateInfo, nullptr, &depthStencil.view);
 	assert(!res);
 }
 
 void VulkanBase::SetupRenderPass()
 {
+	// Subpass creation, standard code 100% from Vulkan samples
+	// Also specifices which attachments from pSubpasses to use
+	VkAttachmentReference colorReference = {};
+	colorReference.attachment = 0;
+	colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+	VkAttachmentReference depthReference = {};
+	depthReference.attachment = 1;
+	depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.flags = 0;
+	subpass.inputAttachmentCount = 0;
+	subpass.pInputAttachments = NULL;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorReference;
+	subpass.pResolveAttachments = NULL;
+	subpass.pDepthStencilAttachment = &depthReference;
+	subpass.preserveAttachmentCount = 0;
+	subpass.pPreserveAttachments = NULL;
+	
+	// Attachments creation, standard code 100% from Vulkan samples
+	// Basically creates one color attachment and one depth stencil attachment
+	VkAttachmentDescription attachments[2];
+	attachments[0].format = colorformat;
+	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	attachments[1].format = depthFormat;
+	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	
+	VkRenderPassCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	createInfo.attachmentCount = 2;
+	createInfo.subpassCount = 1;
+	createInfo.pSubpasses = &subpass;
+	createInfo.pAttachments = attachments;
+
+	VkResult res = vkCreateRenderPass(device, &createInfo, nullptr, &renderPass);
+	assert(!res);
 }
 
 void VulkanBase::SetupFrameBuffer()
 {
+	// The code here depends on the depth stencil buffer, the render pass and the swap chain
 
+	VkImageView attachments[2];
+	attachments[1] = depthStencil.view;
+
+	VkFramebufferCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	createInfo.renderPass = renderPass;
+	createInfo.attachmentCount = 2;
+	createInfo.pAttachments = attachments;
+	createInfo.width = windowWidth;
+	createInfo.height = windowHeight;
+	createInfo.layers = 1;
+
+	// Create a frame buffer for each swap chain image
+	frameBuffers.resize(swapChain.imageCount);
+	for (uint32_t i = 0; i < frameBuffers.size(); i++)
+	{
+		attachments[0] = swapChain.buffers[i].view;
+		VkResult res = vkCreateFramebuffer(device, &createInfo, nullptr, &frameBuffers[i]);
+		assert(!res);
+	}
 }
 
 void VulkanBase::SetupSwapchain()
