@@ -1,5 +1,4 @@
 #pragma once
-
 #pragma comment(linker, "/subsystem:windows")
 
 //#include "../external\vulkan\vulkan.h"
@@ -8,12 +7,20 @@
 
 #include <vulkan\vulkan.h>
 
-
-// Validation layer guide: http://gpuopen.com/using-the-vulkan-validation-layers/
-
 /*
-	This is the base class that contains common code for creating a Vulkan application
+ Resources
+
+	Validation layer guide: http://gpuopen.com/using-the-vulkan-validation-layers/
+	Vulkan specification: https://www.khronos.org/registry/vulkan/specs/1.0/xhtml/vkspec.html
+	Vulkan spec + WSI: https://www.khronos.org/registry/vulkan/specs/1.0-wsi_extensions/xhtml/vkspec.html#vkQueuePresentKHR
+	Vulkan in 30 minutes: https://renderdoc.org/vulkan-in-30-minutes.html
+	Memory management: https://developer.nvidia.com/vulkan-memory-management
+	Niko Kauppi videoes: https://www.youtube.com/watch?v=Bu581jeyTL0
+	Pipeleline barriers: https://github.com/philiptaylor/vulkan-sxs/tree/master/04-clear
 */
+
+
+// This is the base class that contains common code for creating a Vulkan application
 class VulkanBase
 {
 public:
@@ -27,9 +34,17 @@ public:
 
 	void CreateCommandPool();
 	void CreateSetupCommandBuffer();
+	void CreateCommandBuffer();
+
+	void SetupDepthStencil();
+	void SetupRenderPass();
+	void SetupFrameBuffer();
+	// Don't need pipeline cache
 
 	void InitSwapchain();
 	void SetupSwapchain();
+
+	VkBool32 GetMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex);
 
 	void RenderLoop();
 	void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -44,7 +59,7 @@ private:
 
 	// Command buffer
 	VkCommandPool		commandPool;
-	VkCommandBuffer		commandBuffer;
+	VkCommandBuffer		commandBuffer	= VK_NULL_HANDLE;
 
 	// Command buffer used for setup
 	VkCommandBuffer		setupCmdBuffer	= VK_NULL_HANDLE;
@@ -52,6 +67,11 @@ private:
 	// Swap chain magic by Sascha Willems (https://github.com/SaschaWillems/Vulkan)
 	VulkanSwapChain		swapChain;
 
+	// Hardcoded for now, should be selected during init with proper tests
+	VkFormat			depthFormat		= VK_FORMAT_D32_SFLOAT_S8_UINT;
+
+	// Stores all available memory (type) properties for the physical device
+	VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
 	
 #if defined(_WIN32)
 	HWND				window;

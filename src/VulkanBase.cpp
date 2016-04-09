@@ -30,6 +30,9 @@ VulkanBase::VulkanBase()
 	// Get the graphics queue
 	vkGetDeviceQueue(device, 0, 0, &queue);	// Note that queueFamilyIndex is hard coded to 0
 
+	// Gather physical device memory properties
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);
+
 	// Setup function pointers for the swap chain
 	swapChain.connect(instance, physicalDevice, device);
 
@@ -171,16 +174,104 @@ void VulkanBase::CreateSetupCommandBuffer()
 	assert(!r);
 }
 
+void VulkanBase::CreateCommandBuffer()
+{
+	VkCommandBufferAllocateInfo allocateInfo = {};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocateInfo.commandPool = commandPool;
+	allocateInfo.commandBufferCount = 1;
+	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	VkResult r = vkAllocateCommandBuffers(device, &allocateInfo, &commandBuffer);
+	assert(!r);
+
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	//beginInfo.flags = Default is OK, change this if multiple command buffers (primary & secondary)
+
+	// Begin recording commands to the command buffer
+	r = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	assert(!r);
+}
+
+void VulkanBase::SetupDepthStencil()
+{
+	VkImageCreateInfo imageCreateInfo = {};
+	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageCreateInfo.format = depthFormat;
+	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateInfo.extent = { windowWidth, windowHeight, 1 };
+	imageCreateInfo.mipLevels = 1;
+	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+	VkMemoryAllocateInfo allocateInfo = {};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	// The rest can have their default 0 value
+
+	VkImageViewCreateInfo viewCreateInfo = {};
+	viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewCreateInfo.format = depthFormat;
+	viewCreateInfo.subresourceRange = {};
+	viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+	viewCreateInfo.subresourceRange.baseMipLevel = 0;
+	viewCreateInfo.subresourceRange.levelCount = 1;
+	viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+	viewCreateInfo.subresourceRange.layerCount = 1;
+
+	VkImage image;
+	VkResult res = vkCreateImage(device, &imageCreateInfo, nullptr, &image);
+	assert(!res);
+
+	// Get memory requirements
+	VkMemoryRequirements memRequirments;
+	vkGetImageMemoryRequirements(device, image, &memRequirments);
+	allocateInfo.allocationSize = memRequirments.size;
+	GetMemoryType(memRequirments.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocateInfo.memoryTypeIndex);
+
+	VkDeviceMemory memory;
+	res = vkAllocateMemory(device, &allocateInfo, nullptr, &memory);
+	assert(!res);
+
+	res = vkBindImageMemory(device, image, memory, 0);
+	assert(!res);
+
+	vkTools::setImageLayout(commandBuffer, image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+	VkImageView view;
+	viewCreateInfo.image = image;
+	res = vkCreateImageView(device, &viewCreateInfo, nullptr, &view);
+	assert(!res);
+}
+
+void VulkanBase::SetupRenderPass()
+{
+
+}
+
+void VulkanBase::SetupFrameBuffer()
+{
+
+}
+
 void VulkanBase::SetupSwapchain()
 {
-	swapChain.create(setupCmdBuffer, &windowWidth, &windowHeight);
+	// Note that we use the same command buffer for everything right now!
+	swapChain.create(commandBuffer, &windowWidth, &windowHeight);
 }
 
 void VulkanBase::Prepare()
 {
 	CreateCommandPool();
-	CreateSetupCommandBuffer();
-	SetupSwapchain();
+	//CreateSetupCommandBuffer();
+	CreateCommandBuffer();
+	SetupSwapchain();	// Also starts recording to the command buffer with vkBeginCommandBuffer
+	SetupDepthStencil();
+	SetupRenderPass();
+	SetupFrameBuffer();
 
 	// Create command buffers for drawing
 	// Render pass
@@ -193,23 +284,63 @@ void VulkanBase::Prepare()
 
 	// Call vkEndCommandBuffer() on the setupCommandBuffer and then submit it to the VkQueue
 
+
+
+
+
+
+
 	// This code will move to FlushSetupCommandBuffer()
-	VkResult err = vkEndCommandBuffer(setupCmdBuffer);
+	/*VkResult err = vkEndCommandBuffer(setupCmdBuffer);
 	assert(!err);
 
-	VkSubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.pCommandBuffers = &setupCmdBuffer;
-	submitInfo.commandBufferCount = 1;
+	// Testing fences
+	{
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pCommandBuffers = &setupCmdBuffer;
+		submitInfo.commandBufferCount = 1;
 
-	err = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-	assert(!err);
+		VkFenceCreateInfo fenceCreateInfo = {};
+		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 
- 	err = vkQueueWaitIdle(queue);
- 	assert(!err);
+		VkFence fence;
+		err = vkCreateFence(device, &fenceCreateInfo, nullptr, &fence);
+		assert(!err);
+
+		err = vkQueueSubmit(queue, 1, &submitInfo, fence);
+		assert(!err);
+
+		err = vkWaitForFences(device, 1, &fence, true, UINT64_MAX);	// Note that VK_TIMEOUT don't count as an error
+		vkDestroyFence(device, fence, nullptr);
+	}
+
+	// Testing semaphores
+	{
+		VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		//semaphoreCreateInfo.flags
+			
+		VkSemaphore semaphore;
+		err = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphore);
+
+		// To test fences we need two command buffer submits to the queue
+		VkSubmitInfo submitInfo;
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pCommandBuffers = &setupCmdBuffer;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &semaphore;
+		
+		
+	}
+
+	// Wait for the queue to be idle again (very ineffective)
+ 	//err = vkQueueWaitIdle(queue);
+ 	//assert(!err);
 
 	vkFreeCommandBuffers(device, commandPool, 1, &setupCmdBuffer);
-	setupCmdBuffer = VK_NULL_HANDLE;
+	setupCmdBuffer = VK_NULL_HANDLE;*/
 }
 
 void VulkanBase::InitSwapchain()
@@ -294,4 +425,22 @@ HWND VulkanBase::CreateWin32Window(HINSTANCE hInstance, WNDPROC WndProc)
 	SetFocus(window);
 
 	return window;
+}
+
+// Code from Vulkan samples and SaschaWillems
+VkBool32 VulkanBase::GetMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex)
+{
+	for (uint32_t i = 0; i < 32; i++)
+	{
+		if ((typeBits & 1) == 1)
+		{
+			if ((deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			{
+				*typeIndex = i;
+				return true;
+			}
+		}
+		typeBits >>= 1;
+	}
+	return false;
 }
