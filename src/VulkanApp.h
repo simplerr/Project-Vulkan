@@ -17,6 +17,8 @@ public:
 
 	void PrepareVertices();
 	void PrepareUniformBuffers();
+	void SetupDescriptorSetLayout();
+
 	void UpdateUniformBuffers();
 
 	// Wraps everything that has to do with the vertices
@@ -46,5 +48,8 @@ public:
 		glm::mat4 projectionMatrix;
 		glm::mat4 modelMatrix;
 		glm::mat4 viewMatrix;
-	} uniformData;
+	} uniformData;		// Stored in uniformBuffer.memory in device memory
+
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkPipelineLayout pipelineLayout;
 };

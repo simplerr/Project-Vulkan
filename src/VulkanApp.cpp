@@ -21,6 +21,10 @@ VulkanApp::~VulkanApp()
 	// Cleanup uniform buffer
 	vkDestroyBuffer(device, uniformBuffer.buffer, nullptr);
 	vkFreeMemory(device, uniformBuffer.memory, nullptr);
+
+	// Cleanup descriptor set layout and pipeline layout
+	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 }
 
 void VulkanApp::Prepare()
@@ -29,11 +33,12 @@ void VulkanApp::Prepare()
 
 	PrepareVertices();
 	PrepareUniformBuffers();
+	SetupDescriptorSetLayout();
+
 
 	// Pipeline
 	// Uniform buffers
 	// Descriptor sets
-
 }
 
 void VulkanApp::PrepareVertices()
@@ -158,13 +163,13 @@ void VulkanApp::PrepareUniformBuffers()
 	VkMemoryAllocateInfo allocInfo = {};
 	VkMemoryRequirements memoryRequirments = {};
 
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = 0;
-	allocInfo.memoryTypeIndex = 0;
+	allocInfo.sType				= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize	= 0;								// Gets assigned with vkGetBufferMemoryRequirements
+	allocInfo.memoryTypeIndex	= 0;
 
-	createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	createInfo.size = sizeof(uniformData);						// 3x glm::mat4
-	createInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	createInfo.sType	= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	createInfo.size		= sizeof(uniformData);						// 3x glm::mat4
+	createInfo.usage	= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
 	VulkanDebug::ErrorCheck(vkCreateBuffer(device, &createInfo, nullptr, &uniformBuffer.buffer));
 	vkGetBufferMemoryRequirements(device, uniformBuffer.buffer, &memoryRequirments);
@@ -179,7 +184,36 @@ void VulkanApp::PrepareUniformBuffers()
 	uniformBuffer.descriptor.offset = 0;
 	uniformBuffer.descriptor.range = sizeof(uniformData);		// 3x glm::mat4
 
+	// This is where the data gets transfered to device memory w/ vkMapMemory/vkUnmapMemory and memcpy
 	UpdateUniformBuffers();
+}
+
+void VulkanApp::SetupDescriptorSetLayout()
+{
+	// Only one binding used (Binding: 0)
+	VkDescriptorSetLayoutBinding layoutBinding = {};
+	layoutBinding.binding				= 0;
+	layoutBinding.descriptorType		= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	layoutBinding.descriptorCount		= 1;
+	layoutBinding.stageFlags			= VK_SHADER_STAGE_VERTEX_BIT;				// Will be used by the vertex shader
+	layoutBinding.pImmutableSamplers	= NULL;
+
+	VkDescriptorSetLayoutCreateInfo createInfo = {};
+	createInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	createInfo.bindingCount = 1;
+	createInfo.pBindings	= &layoutBinding;
+
+	VulkanDebug::ErrorCheck(vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &descriptorSetLayout));
+
+	// Create the pipeline layout that will use the descriptor set layout
+	// The pipeline layout is used later when creating the pipeline
+	VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {};
+	pPipelineLayoutCreateInfo.sType				= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pPipelineLayoutCreateInfo.pNext				= NULL;
+	pPipelineLayoutCreateInfo.setLayoutCount	= 1;
+	pPipelineLayoutCreateInfo.pSetLayouts		= &descriptorSetLayout;
+
+	VulkanDebug::ErrorCheck(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 }
 
 // Call this every time any uniform buffer should be updated (view changes etc.)
