@@ -73,13 +73,16 @@ protected:
 	VkRenderPass		renderPass;
 
 	// List of available frame buffers (same as number of swap chain images)
-	std::vector<VkFramebuffer>frameBuffers;
+	std::vector<VkFramebuffer>	frameBuffers;
 
 	// Hardcoded for now, should be selected during init with proper tests
 	VkFormat			depthFormat			= VK_FORMAT_D32_SFLOAT_S8_UINT;
 
 	// Color buffer format
 	VkFormat			colorformat			= VK_FORMAT_B8G8R8A8_UNORM;
+
+	// Descriptor set pool
+	VkDescriptorPool	descriptorPool		= VK_NULL_HANDLE;
 
 	// Stores all available memory (type) properties for the physical device
 	VkPhysicalDeviceMemoryProperties deviceMemoryProperties;

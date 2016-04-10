@@ -18,6 +18,9 @@ public:
 	void PrepareVertices();
 	void PrepareUniformBuffers();
 	void SetupDescriptorSetLayout();
+	void SetupDescriptorPool();
+	void SetupDescriptorSet();
+	void PreparePipelines();
 
 	void UpdateUniformBuffers();
 
@@ -51,5 +54,8 @@ public:
 	} uniformData;		// Stored in uniformBuffer.memory in device memory
 
 	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorSet descriptorSet;
 	VkPipelineLayout pipelineLayout;
+
+	VkPipeline pipeline;
 };

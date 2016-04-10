@@ -43,6 +43,8 @@ VulkanBase::~VulkanBase()
 {
 	swapChain.cleanup();
 
+	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+
 	vkDestroyCommandPool(device, commandPool, nullptr);
 
 	// Cleanup depth stencil data

@@ -33,8 +33,11 @@ void VulkanApp::Prepare()
 
 	PrepareVertices();
 	PrepareUniformBuffers();
+	
 	SetupDescriptorSetLayout();
-
+	PreparePipelines();				// TODO
+	SetupDescriptorPool();
+	SetupDescriptorSet();
 
 	// Pipeline
 	// Uniform buffers
@@ -190,13 +193,15 @@ void VulkanApp::PrepareUniformBuffers()
 
 void VulkanApp::SetupDescriptorSetLayout()
 {
-	// Only one binding used (Binding: 0)
+	// Only one binding used for the uniform buffer containing the matrices (Binding: 0)
 	VkDescriptorSetLayoutBinding layoutBinding = {};
 	layoutBinding.binding				= 0;
 	layoutBinding.descriptorType		= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	layoutBinding.descriptorCount		= 1;
 	layoutBinding.stageFlags			= VK_SHADER_STAGE_VERTEX_BIT;				// Will be used by the vertex shader
 	layoutBinding.pImmutableSamplers	= NULL;
+
+	// One more binding would be used for a texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER and VK_SHADER_STAGE_FRAGMENT_BIT)
 
 	VkDescriptorSetLayoutCreateInfo createInfo = {};
 	createInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -214,6 +219,61 @@ void VulkanApp::SetupDescriptorSetLayout()
 	pPipelineLayoutCreateInfo.pSetLayouts		= &descriptorSetLayout;
 
 	VulkanDebug::ErrorCheck(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayout));
+}
+
+void VulkanApp::SetupDescriptorPool()
+{
+	// We need to tell the API the number of max. requested descriptors per type
+	// Only one descriptor type (uniform buffer) used
+	// More needed if images are used etc.
+	VkDescriptorPoolSize typeCounts[1];
+	typeCounts[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	typeCounts[0].descriptorCount = 1;		
+
+	VkDescriptorPoolCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	createInfo.poolSizeCount = 1;
+	createInfo.pPoolSizes = typeCounts;
+	createInfo.maxSets = 1;
+
+	VulkanDebug::ErrorCheck(vkCreateDescriptorPool(device, &createInfo, nullptr, &descriptorPool));
+}
+
+void VulkanApp::SetupDescriptorSet()
+{
+	VkDescriptorSetAllocateInfo allocInfo = {};
+	allocInfo.sType					= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool		= descriptorPool;
+	allocInfo.descriptorSetCount	= 1;
+	allocInfo.pSetLayouts			= &descriptorSetLayout;
+
+	VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet));
+
+	// Binding 0 : Uniform buffer
+	VkWriteDescriptorSet writeDescriptorSet = {};
+	writeDescriptorSet.sType			= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet.dstSet			= descriptorSet;
+	writeDescriptorSet.descriptorCount	= 1;
+	writeDescriptorSet.descriptorType	= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	writeDescriptorSet.pBufferInfo		= &uniformBuffer.descriptor;
+	// Binds this uniform buffer to binding point 0
+	writeDescriptorSet.dstBinding = 0;
+
+	vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, NULL);
+}
+
+void VulkanApp::PreparePipelines()
+{
+	VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
+	pipelineCreateInfo.sType				= VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineCreateInfo.layout				= pipelineLayout;
+	pipelineCreateInfo.renderPass			= renderPass;
+	pipelineCreateInfo.pVertexInputState	= &vertices.inputState;
+	// TODO... a alot...
+
+
+	// Create the pipeline
+	vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline);
 }
 
 // Call this every time any uniform buffer should be updated (view changes etc.)
