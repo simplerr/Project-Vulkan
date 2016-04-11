@@ -267,7 +267,7 @@ void VulkanApp::SetupDescriptorSet()
 void VulkanApp::PreparePipelines()
 {
 	// The pipeline consists of many stages, where each stage can have different states
-	// Creating a pipeline is simply defining the state for every stage
+	// Creating a pipeline is simply defining the state for every stage (and some more...)
 	// ...
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
@@ -310,33 +310,32 @@ void VulkanApp::RecordRenderingCommandBuffer()
 		{ 1.0f, 0.8f, 0.4f, 0.0f }
 	};
 
-	VkImageSubresourceRange image_subresource_range = {
-		VK_IMAGE_ASPECT_COLOR_BIT,                    // VkImageAspectFlags                     aspectMask
-		0,                                            // uint32_t                               baseMipLevel
-		1,                                            // uint32_t                               levelCount
-		0,                                            // uint32_t                               baseArrayLayer
-		1                                             // uint32_t                               layerCount
+	VkImageSubresourceRange image_subresource_range = { 
+		VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1                                            
 	};
+
+	VkRenderPassBeginInfo renderPassBeginInfo = {};
 
 	for (int i = 0; i < renderingCommandBuffers.size(); i++)
 	{
+		// Begin command buffer recording & the render pass
 		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(renderingCommandBuffers[i], &beginInfo));
+		vkCmdBeginRenderPass(renderingCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		vkCmdClearColorImage(renderingCommandBuffers[i], swapChain.images[i], VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &image_subresource_range);	// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 
+		// More stuff
+		// viewport, scissor, descriptor set, pipeline, vertex & index buffers
+		// TODO...
+
+		// Draw indexed triangle																													
+		vkCmdDrawIndexed(renderingCommandBuffers[i], indices.count, 1, 0, 0, 1);		
+
+		// End command buffer recording & the render pass
+		vkCmdEndRenderPass(renderingCommandBuffers[i]);
 		VulkanDebug::ErrorCheck(vkEndCommandBuffer(renderingCommandBuffers[i]));
 	}
 	
-}
-
-void VulkanApp::Render()
-{
-	//if (!prepared)
-	//	return;
-
-	vkDeviceWaitIdle(device);
-	Draw();
-	vkDeviceWaitIdle(device);
 }
 
 void VulkanApp::Draw()
@@ -381,4 +380,14 @@ void VulkanApp::Draw()
 
 	// Present the image
 	VulkanDebug::ErrorCheck(swapChain.queuePresent(queue, currentBuffer, renderComplete));
+}
+
+void VulkanApp::Render()
+{
+	//if (!prepared)
+	//	return;
+
+	vkDeviceWaitIdle(device);
+	Draw();
+	vkDeviceWaitIdle(device);
 }
