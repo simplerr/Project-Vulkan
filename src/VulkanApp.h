@@ -21,8 +21,12 @@ public:
 	void SetupDescriptorPool();
 	void SetupDescriptorSet();
 	void PreparePipelines();
-
 	void UpdateUniformBuffers();
+
+	void RecordRenderingCommandBuffer();
+
+	virtual void Render();
+	void Draw();
 
 	// Wraps everything that has to do with the vertices
 	// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()

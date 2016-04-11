@@ -35,13 +35,15 @@ void VulkanApp::Prepare()
 	PrepareUniformBuffers();
 	
 	SetupDescriptorSetLayout();
-	PreparePipelines();				// TODO
+	//PreparePipelines();				// TODO
 	SetupDescriptorPool();
 	SetupDescriptorSet();
 
-	// Pipeline
-	// Uniform buffers
-	// Descriptor sets
+	// This records all the rendering commands to a command buffer
+	// The command buffer will be sent to VkQueueSubmit in Draw() but this code only runs once
+	RecordRenderingCommandBuffer();
+
+	// Stuff unclear: swapchain, framebuffer, renderpass
 }
 
 void VulkanApp::PrepareVertices()
@@ -257,19 +259,23 @@ void VulkanApp::SetupDescriptorSet()
 	writeDescriptorSet.descriptorType	= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	writeDescriptorSet.pBufferInfo		= &uniformBuffer.descriptor;
 	// Binds this uniform buffer to binding point 0
-	writeDescriptorSet.dstBinding = 0;
+	writeDescriptorSet.dstBinding		= 0;
 
 	vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, NULL);
 }
 
 void VulkanApp::PreparePipelines()
 {
+	// The pipeline consists of many stages, where each stage can have different states
+	// Creating a pipeline is simply defining the state for every stage
+	// ...
+
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
 	pipelineCreateInfo.sType				= VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineCreateInfo.layout				= pipelineLayout;
 	pipelineCreateInfo.renderPass			= renderPass;
 	pipelineCreateInfo.pVertexInputState	= &vertices.inputState;
-	// TODO... a alot...
+	// TODO... a lot...
 
 
 	// Create the pipeline
@@ -293,4 +299,86 @@ void VulkanApp::UpdateUniformBuffers()
 	memcpy(data, &uniformData, sizeof(uniformData));
 	vkUnmapMemory(device, uniformBuffer.memory);
 	assert(!err);
+}
+
+void VulkanApp::RecordRenderingCommandBuffer()
+{
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+	VkClearColorValue clear_color = {
+		{ 1.0f, 0.8f, 0.4f, 0.0f }
+	};
+
+	VkImageSubresourceRange image_subresource_range = {
+		VK_IMAGE_ASPECT_COLOR_BIT,                    // VkImageAspectFlags                     aspectMask
+		0,                                            // uint32_t                               baseMipLevel
+		1,                                            // uint32_t                               levelCount
+		0,                                            // uint32_t                               baseArrayLayer
+		1                                             // uint32_t                               layerCount
+	};
+
+	for (int i = 0; i < renderingCommandBuffers.size(); i++)
+	{
+		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(renderingCommandBuffers[i], &beginInfo));
+
+		vkCmdClearColorImage(renderingCommandBuffers[i], swapChain.images[i], VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &image_subresource_range);	// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+
+		VulkanDebug::ErrorCheck(vkEndCommandBuffer(renderingCommandBuffers[i]));
+	}
+	
+}
+
+void VulkanApp::Render()
+{
+	//if (!prepared)
+	//	return;
+
+	vkDeviceWaitIdle(device);
+	Draw();
+	vkDeviceWaitIdle(device);
+}
+
+void VulkanApp::Draw()
+{
+	// When presenting (vkQueuePresentKHR) the swapchain image has to be in the VK_IMAGE_LAYOUT_PRESENT_SRC_KHR format
+	// When rendering to the swapchain image has to be in the VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	// The transition between these to formats is performed by using image memory barriers (VkImageMemoryBarrier)
+	// VkImageMemoryBarrier have oldLayout and newLayout fields that are used 
+
+	// Acquire the next image in the swap chain
+	VulkanDebug::ErrorCheck(swapChain.acquireNextImage(presentComplete, &currentBuffer));
+	
+	//
+	// Transition image format to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	//
+
+	SubmitPrePresentMemoryBarrier(swapChain.buffers[currentBuffer].image);
+
+	//
+	// Do rendering
+	//
+
+	// Submit the recorded draw command buffer to the queue
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount	= 1;
+	submitInfo.pCommandBuffers		= &renderingCommandBuffers[currentBuffer];		// Draw commands for the current command buffer
+	submitInfo.waitSemaphoreCount	= 1;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores		= &presentComplete;							// Waits for swapChain.acquireNextImage to complete
+	submitInfo.pSignalSemaphores	= &renderComplete;							// swapChain.queuePresent will wait for this submit to complete
+	VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	submitInfo.pWaitDstStageMask	= &stageFlags;
+
+	VulkanDebug::ErrorCheck(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+
+	//
+	// Transition image format to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+	//
+
+	SubmitPostPresentMemoryBarrier(swapChain.buffers[currentBuffer].image);
+
+	// Present the image
+	VulkanDebug::ErrorCheck(swapChain.queuePresent(queue, currentBuffer, renderComplete));
 }

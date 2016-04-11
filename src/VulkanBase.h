@@ -12,11 +12,12 @@
 
 	Validation layer guide: http://gpuopen.com/using-the-vulkan-validation-layers/
 	Vulkan specification: https://www.khronos.org/registry/vulkan/specs/1.0/xhtml/vkspec.html
-	Vulkan spec + WSI: https://www.khronos.org/registry/vulkan/specs/1.0-wsi_extensions/xhtml/vkspec.html#vkQueuePresentKHR
+	Vulkan spec + WSI: https://www.khronos.org/registry/vulkan/specs/1.0-wsi_extensions/xhtml/vkspec.html
 	Vulkan in 30 minutes: https://renderdoc.org/vulkan-in-30-minutes.html
 	Memory management: https://developer.nvidia.com/vulkan-memory-management
 	Niko Kauppi videoes: https://www.youtube.com/watch?v=Bu581jeyTL0
 	Pipeleline barriers: https://github.com/philiptaylor/vulkan-sxs/tree/master/04-clear
+	Intel Vulkan tutorial: https://software.intel.com/en-us/api-without-secrets-introduction-to-vulkan-part-2
 */
 
 
@@ -35,6 +36,7 @@ public:
 	void CreateCommandPool();
 	void CreateSetupCommandBuffer();
 	void CreateCommandBuffers();
+	void CreateSemaphores();
 
 	void SetupDepthStencil();
 	void SetupRenderPass();
@@ -46,6 +48,12 @@ public:
 
 	void ExecuteSetupCommandBuffer();
 
+	virtual void Render() = 0;
+
+	// To transition the swap chain image layout
+	void SubmitPrePresentMemoryBarrier(VkImage image);
+	void SubmitPostPresentMemoryBarrier(VkImage image);
+
 	VkBool32 GetMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex);
 
 	void RenderLoop();
@@ -54,17 +62,21 @@ public:
 	HWND CreateWin32Window(HINSTANCE hInstance, WNDPROC wndProc);
 
 protected:
-	VkInstance			instance			= VK_NULL_HANDLE;
-	VkPhysicalDevice	physicalDevice		= VK_NULL_HANDLE;
-	VkDevice			device				= VK_NULL_HANDLE;
-	VkQueue				queue				= VK_NULL_HANDLE;
+	VkInstance			instance				= VK_NULL_HANDLE;
+	VkPhysicalDevice	physicalDevice			= VK_NULL_HANDLE;
+	VkDevice			device					= VK_NULL_HANDLE;
+	VkQueue				queue					= VK_NULL_HANDLE;
 
 	// Command buffer
 	VkCommandPool		commandPool;
-	VkCommandBuffer		drawCommandBuffer	= VK_NULL_HANDLE;
+	std::vector<VkCommandBuffer> renderingCommandBuffers;
 
 	// Command buffer used for setup
-	VkCommandBuffer		setupCmdBuffer		= VK_NULL_HANDLE;
+	VkCommandBuffer		setupCmdBuffer			= VK_NULL_HANDLE;
+
+	// Command buffers used to change the swapchains image format
+	VkCommandBuffer		postPresentCmdBuffer	= VK_NULL_HANDLE;
+	VkCommandBuffer		prePresentCmdBuffer		= VK_NULL_HANDLE;
 
 	// Swap chain magic by Sascha Willems (https://github.com/SaschaWillems/Vulkan)
 	VulkanSwapChain		swapChain;
@@ -72,17 +84,23 @@ protected:
 	// Global render pass for frame buffer writes
 	VkRenderPass		renderPass;
 
+	VkSemaphore			presentComplete;
+	VkSemaphore			renderComplete;
+
 	// List of available frame buffers (same as number of swap chain images)
 	std::vector<VkFramebuffer>	frameBuffers;
 
+	// Active frame buffer index
+	uint32_t			currentBuffer			= 0;
+
 	// Hardcoded for now, should be selected during init with proper tests
-	VkFormat			depthFormat			= VK_FORMAT_D32_SFLOAT_S8_UINT;
+	VkFormat			depthFormat				= VK_FORMAT_D32_SFLOAT_S8_UINT;
 
 	// Color buffer format
-	VkFormat			colorformat			= VK_FORMAT_B8G8R8A8_UNORM;
+	VkFormat			colorformat				= VK_FORMAT_B8G8R8A8_UNORM;
 
 	// Descriptor set pool
-	VkDescriptorPool	descriptorPool		= VK_NULL_HANDLE;
+	VkDescriptorPool	descriptorPool			= VK_NULL_HANDLE;
 
 	// Stores all available memory (type) properties for the physical device
 	VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
