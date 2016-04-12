@@ -1,8 +1,8 @@
 # Project-Vulkan
 
 ### Todo
-- Load models with Assimp
-- Render models
+- Load textures with the models
+- Render textures
 - Render multiple models
 - Add a camera with user input
 - Render text
