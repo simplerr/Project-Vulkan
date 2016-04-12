@@ -3,12 +3,13 @@
 #include "VulkanApp.h"
 #include "VulkanDebug.h"
 #include "StaticModel.h"
+#include "Camera.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 
 VulkanApp::VulkanApp() : VulkanBase()
 {
-
+	camera = new Camera();
 }
 
 VulkanApp::~VulkanApp()
@@ -40,6 +41,7 @@ VulkanApp::~VulkanApp()
 	textureLoader->destroyTexture(testModel->texture);
 
 	delete testModel;
+	delete camera;
 }
 
 void VulkanApp::Prepare()
@@ -58,6 +60,8 @@ void VulkanApp::Prepare()
 	// This records all the rendering commands to a command buffer
 	// The command buffer will be sent to VkQueueSubmit in Draw() but this code only runs once
 	RecordRenderingCommandBuffer();
+
+	prepared = true;
 
 	// Stuff unclear: swapchain, framebuffer, renderpass
 }
@@ -414,8 +418,8 @@ void VulkanApp::UpdateUniformBuffers()
 	uniformData.projectionMatrix = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
 
 	float zoom = -8;
-	glm::mat4 viewMatrix = glm::mat4();
-	viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, zoom));
+	glm::mat4 viewMatrix = camera->GetViewMatrix();// glm::mat4();
+	//viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, zoom));
 	uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
 	//uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -612,4 +616,17 @@ void VulkanApp::Render()
 	vkDeviceWaitIdle(device);
 	Draw();
 	vkDeviceWaitIdle(device);
+}
+
+void VulkanApp::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	// Default message handling
+	VulkanBase::HandleMessages(hwnd, msg, wParam, lParam);
+
+	// Let the camera handle user input
+	camera->HandleMessages(hwnd, msg, wParam, lParam);
+
+	// NOTE: TODO: TESTING
+	if(prepared)
+		UpdateUniformBuffers();
 }

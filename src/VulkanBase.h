@@ -60,7 +60,7 @@ public:
 	VkBool32 GetMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex);
 
 	void RenderLoop();
-	void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	HWND CreateWin32Window(HINSTANCE hInstance, WNDPROC wndProc);
 

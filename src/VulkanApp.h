@@ -9,6 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 class StaticModel;
+class Camera;
 
 class VulkanApp : public VulkanBase
 {
@@ -32,6 +33,8 @@ public:
 
 	virtual void Render();
 	void Draw();
+
+	void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	// 
 	//	High level code
@@ -87,4 +90,7 @@ public:
 
 	ModelLoader modelLoader;
 	StaticModel* testModel;
+	Camera* camera;
+
+	bool prepared = false;
 };
