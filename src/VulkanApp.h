@@ -1,11 +1,14 @@
 #pragma once
 
 #include "VulkanBase.h"
+#include "ModelLoader.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+class StaticModel;
 
 class VulkanApp : public VulkanBase
 {
@@ -27,6 +30,11 @@ public:
 
 	virtual void Render();
 	void Draw();
+
+	// 
+	//	High level code
+	//
+	void LoadModels();
 
 	// Wraps everything that has to do with the vertices
 	// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
@@ -62,4 +70,11 @@ public:
 	VkPipelineLayout pipelineLayout;
 
 	VkPipeline pipeline;
+
+	// 
+	//	High level code
+	//
+
+	ModelLoader modelLoader;
+	StaticModel* testModel;
 };

@@ -578,6 +578,11 @@ HWND VulkanBase::CreateWin32Window(HINSTANCE hInstance, WNDPROC WndProc)
 	return window;
 }
 
+VkDevice VulkanBase::GetDevice()
+{
+	return device;
+}
+
 // Code from Vulkan samples and SaschaWillems
 VkBool32 VulkanBase::GetMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex)
 {

@@ -63,6 +63,8 @@ public:
 
 	HWND CreateWin32Window(HINSTANCE hInstance, WNDPROC wndProc);
 
+	VkDevice GetDevice();
+
 protected:
 	VkInstance			instance				= VK_NULL_HANDLE;
 	VkPhysicalDevice	physicalDevice			= VK_NULL_HANDLE;

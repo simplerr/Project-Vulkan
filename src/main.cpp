@@ -8,15 +8,12 @@
 
 #include "VulkanApp.h"
 
-// https://www.khronos.org/registry/vulkan/specs/1.0/xhtml/vkspec.html#VkApplicationInfo
-
-
-VulkanApp* vulkanApp = nullptr;
+// The Vulkan application
+VulkanApp vulkanApp;
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	if (vulkanApp != nullptr)
-		vulkanApp->HandleMessages(hwnd, msg, wParam, lParam);
+	vulkanApp.HandleMessages(hwnd, msg, wParam, lParam);
 
 	// Call default window procedure
 	return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -24,22 +21,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow)
 {
-	vulkanApp = new VulkanApp();
-	vulkanApp->CreateWin32Window(hInstance, WndProc);
-	vulkanApp->InitSwapchain();
-	vulkanApp->Prepare();
-
-	//vulkanApp->initSwapchain();
-	//vulkanApp->setupSwapchain(); // The command buffers needs to be created before the swapchain
-	vulkanApp->RenderLoop();
-	/*
-	vulkanApp->setupWindow(hInstance, WndProc);
-
-	
-	vulkanApp->prepare();
-	*/
-
-	delete vulkanApp;
+	vulkanApp.CreateWin32Window(hInstance, WndProc);
+	vulkanApp.InitSwapchain();
+	vulkanApp.Prepare();
+	vulkanApp.RenderLoop();
 
 	return 0;
 }

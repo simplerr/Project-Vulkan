@@ -154,6 +154,8 @@
     <ClCompile Include="base\vulkandebug.cpp" />
     <ClCompile Include="base\vulkantools.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\ModelLoader.cpp" />
+    <ClCompile Include="src\StaticModel.cpp" />
     <ClCompile Include="src\VulkanApp.cpp" />
     <ClCompile Include="src\VulkanBase.cpp" />
     <ClCompile Include="src\VulkanDebug.cpp" />
@@ -162,11 +164,14 @@
     <ClInclude Include="base\vulkandebug.h" />
     <ClInclude Include="base\vulkanswapchain.hpp" />
     <ClInclude Include="base\vulkantools.h" />
+    <ClInclude Include="src\ModelLoader.h" />
+    <ClInclude Include="src\StaticModel.h" />
     <ClInclude Include="src\VulkanApp.h" />
     <ClInclude Include="src\VulkanBase.h" />
     <ClInclude Include="src\VulkanDebug.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="README.md" />
     <None Include="shaders\triangle.frag" />
     <None Include="shaders\triangle.vert" />
   </ItemGroup>

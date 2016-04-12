@@ -19,6 +19,15 @@
     <Filter Include="Source Files\base">
       <UniqueIdentifier>{27e34110-f98a-4122-9e0d-2da713ccf6c4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\data">
+      <UniqueIdentifier>{8f4f8d60-9e57-4ab8-b5b5-639c8d34f9eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\model">
+      <UniqueIdentifier>{8b13239e-4687-457d-b504-4984ff8d414d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\model">
+      <UniqueIdentifier>{f41c60e4-90a9-4631-a507-823e88b4c058}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -38,6 +47,12 @@
     </ClCompile>
     <ClCompile Include="src\VulkanDebug.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\StaticModel.cpp">
+      <Filter>Source Files\model</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ModelLoader.cpp">
+      <Filter>Source Files\model</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -59,13 +74,22 @@
     <ClInclude Include="src\VulkanDebug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\ModelLoader.h">
+      <Filter>Header Files\model</Filter>
+    </ClInclude>
+    <ClInclude Include="src\StaticModel.h">
+      <Filter>Header Files\model</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\triangle.frag">
+    <None Include="README.md">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="shaders\triangle.frag">
+      <Filter>Source Files\data</Filter>
+    </None>
     <None Include="shaders\triangle.vert">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\data</Filter>
     </None>
   </ItemGroup>
 </Project>

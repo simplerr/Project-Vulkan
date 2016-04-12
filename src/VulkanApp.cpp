@@ -2,12 +2,13 @@
 
 #include "VulkanApp.h"
 #include "VulkanDebug.h"
+#include "StaticModel.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 
 VulkanApp::VulkanApp() : VulkanBase()
 {
-	
+
 }
 
 VulkanApp::~VulkanApp()
@@ -29,6 +30,14 @@ VulkanApp::~VulkanApp()
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 
 	vkDestroyPipeline(device, pipeline, nullptr);
+
+	// Has to cleanup for all the models TODO: List with many models need to be looped
+	vkDestroyBuffer(device, testModel->vertices.buffer, nullptr);
+	vkFreeMemory(device, testModel->vertices.memory, nullptr);
+	vkDestroyBuffer(device, testModel->indices.buffer, nullptr);
+	vkFreeMemory(device, testModel->indices.memory, nullptr);
+
+	delete testModel;
 }
 
 void VulkanApp::Prepare()
@@ -37,7 +46,7 @@ void VulkanApp::Prepare()
 
 	PrepareVertices();
 	PrepareUniformBuffers();
-	
+	LoadModels();						// NOTE: Custom function to load models
 	SetupDescriptorSetLayout();
 	PreparePipelines();				
 	SetupDescriptorPool();
@@ -48,6 +57,14 @@ void VulkanApp::Prepare()
 	RecordRenderingCommandBuffer();
 
 	// Stuff unclear: swapchain, framebuffer, renderpass
+}
+
+void VulkanApp::LoadModels()
+{
+	testModel = modelLoader.LoadModel("models/voyager/voyager.obj");
+	testModel->BuildBuffers(this);
+
+	// TODO: Needs setup the binding descriptions
 }
 
 void VulkanApp::PrepareVertices()
