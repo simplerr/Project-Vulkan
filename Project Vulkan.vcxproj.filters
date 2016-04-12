@@ -91,5 +91,11 @@
     <None Include="shaders\triangle.vert">
       <Filter>Source Files\data</Filter>
     </None>
+    <None Include="shaders\mesh\mesh.frag">
+      <Filter>Source Files\data</Filter>
+    </None>
+    <None Include="shaders\mesh\mesh.vert">
+      <Filter>Source Files\data</Filter>
+    </None>
   </ItemGroup>
 </Project>

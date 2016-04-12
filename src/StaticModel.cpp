@@ -30,6 +30,8 @@ void StaticModel::BuildBuffers(VulkanBase* vulkanBase)
 	uint32_t vertexBufferSize = vertexVector.size() * sizeof(Vertex);
 	uint32_t indexBufferSize = indexVector.size() * sizeof(uint32_t);
 
+	indicesCount = indexVector.size();	// NOTE maybe not smart
+
 	VkMemoryRequirements memoryRequirments;
 	VkMemoryAllocateInfo memoryAllocation = {};
 	memoryAllocation.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -79,5 +81,5 @@ void StaticModel::BuildBuffers(VulkanBase* vulkanBase)
 
 int StaticModel::GetNumIndices()
 {
-	return 0;
+	return indicesCount;
 }

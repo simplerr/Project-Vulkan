@@ -26,6 +26,8 @@ public:
 	void PreparePipelines();
 	void UpdateUniformBuffers();
 
+	void SetupVertexDescriptions();
+
 	void RecordRenderingCommandBuffer();
 
 	virtual void Render();
@@ -35,6 +37,14 @@ public:
 	//	High level code
 	//
 	void LoadModels();
+
+	// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
+	struct {
+		VkPipelineVertexInputStateCreateInfo inputState;
+		std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+	} vertexDescriptions;
+
 
 	// Wraps everything that has to do with the vertices
 	// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()

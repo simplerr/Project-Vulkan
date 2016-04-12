@@ -16,10 +16,10 @@ struct Vertex
 		: Pos(px, py, pz), Normal(nx, ny, nz), Tangent(tx, ty, tz, 1.0f), Tex(u, v), Color(r, g, b) {}
 
 	glm::vec3 Pos;
+	glm::vec3 Color;
 	glm::vec3 Normal;
 	glm::vec2 Tex;
 	glm::vec4 Tangent;
-	glm::vec3 Color;
 };
 
 struct Mesh
@@ -51,4 +51,5 @@ public:
 
 private:
 	std::vector<Mesh> mMeshes;
+	uint32_t indicesCount;
 };

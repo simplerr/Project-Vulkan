@@ -46,7 +46,8 @@ void VulkanApp::Prepare()
 
 	PrepareVertices();
 	PrepareUniformBuffers();
-	LoadModels();						// NOTE: Custom function to load models
+	LoadModels();						// Custom
+	SetupVertexDescriptions();			// Custom
 	SetupDescriptorSetLayout();
 	PreparePipelines();				
 	SetupDescriptorPool();
@@ -351,8 +352,8 @@ void VulkanApp::PreparePipelines()
 
 	// Load shader
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
-	shaderStages[0] = LoadShader("shaders/vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-	shaderStages[1] = LoadShader("shaders/frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	shaderStages[0] = LoadShader("shaders/mesh/vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = LoadShader("shaders/mesh/frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	// Assign all the states to the pipeline
 	// The states will be static and can't be changed after the pipeline is created
@@ -360,7 +361,7 @@ void VulkanApp::PreparePipelines()
 	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineCreateInfo.layout = pipelineLayout;
 	pipelineCreateInfo.renderPass = renderPass;
-	pipelineCreateInfo.pVertexInputState = &vertices.inputState;
+	pipelineCreateInfo.pVertexInputState = &vertexDescriptions.inputState;		// From base - &vertices.inputState;
 	pipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
 	pipelineCreateInfo.pRasterizationState = &rasterizationState;
 	pipelineCreateInfo.pColorBlendState = &colorBlendState;
@@ -380,17 +381,84 @@ void VulkanApp::UpdateUniformBuffers()
 {
 	uniformData.projectionMatrix = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
 
-	float zoom = -12.5;
+	float zoom = -10;
 	uniformData.viewMatrix = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, zoom));
-
 	uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
 	//uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	glm::vec3 rotation(-25, -123, 0);
+
+	uniformData.modelMatrix = glm::mat4();
+	uniformData.modelMatrix = uniformData.viewMatrix * glm::translate(uniformData.modelMatrix, glm::vec3(0, 0, 0));
+	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	// Map uniform buffer and update it
 	uint8_t *data;
 	VulkanDebug::ErrorCheck(vkMapMemory(device, uniformBuffer.memory, 0, sizeof(uniformData), 0, (void **)&data));
 	memcpy(data, &uniformData, sizeof(uniformData));
 	vkUnmapMemory(device, uniformBuffer.memory);
+}
+
+void VulkanApp::SetupVertexDescriptions()
+{
+	// First tell Vulkan about how large each vertex is, the binding ID and the inputRate
+	vertexDescriptions.bindingDescriptions.resize(1);
+	vertexDescriptions.bindingDescriptions[0].binding = VERTEX_BUFFER_BIND_ID;				// Bind to ID 0, this information will be used by the shader
+	vertexDescriptions.bindingDescriptions[0].stride = sizeof(Vertex);						// Size of each vertex
+	vertexDescriptions.bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+	// We need to tell Vulkan about the memory layout for each attribute
+	// 5 attributes: position, normal, texture coordinates, tangent and color
+	// See Vertex struct
+	vertexDescriptions.attributeDescriptions.resize(5);
+
+	// Location 0 : Position
+	vertexDescriptions.attributeDescriptions[0].binding = VERTEX_BUFFER_BIND_ID;
+	vertexDescriptions.attributeDescriptions[0].location = 0;								// Location 0 (will be used in the shader)
+	vertexDescriptions.attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+	vertexDescriptions.attributeDescriptions[0].offset = 0;									// First attribute can start at offset 0
+	vertexDescriptions.attributeDescriptions[0].binding = 0;
+
+	// Location 1 : Color
+	vertexDescriptions.attributeDescriptions[1].binding = VERTEX_BUFFER_BIND_ID;
+	vertexDescriptions.attributeDescriptions[1].location = 1;								// Location 1 (will be used in the shader)
+	vertexDescriptions.attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	vertexDescriptions.attributeDescriptions[1].offset = sizeof(float) * 3;					// Second attribute needs to start with offset = sizeof(attribute 1)
+	vertexDescriptions.attributeDescriptions[1].binding = 0;
+
+	// Location 2 : Normal
+	vertexDescriptions.attributeDescriptions[2].binding = VERTEX_BUFFER_BIND_ID;
+	vertexDescriptions.attributeDescriptions[2].location = 2;								
+	vertexDescriptions.attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+	vertexDescriptions.attributeDescriptions[2].offset = sizeof(float) * 6;					
+	vertexDescriptions.attributeDescriptions[2].binding = 0;
+
+	// Location 3 : Texture
+	vertexDescriptions.attributeDescriptions[3].binding = VERTEX_BUFFER_BIND_ID;
+	vertexDescriptions.attributeDescriptions[3].location = 3;
+	vertexDescriptions.attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
+	vertexDescriptions.attributeDescriptions[3].offset = sizeof(float) * 9;
+	vertexDescriptions.attributeDescriptions[3].binding = 0;
+
+	// Location 4 : Tangent
+	vertexDescriptions.attributeDescriptions[4].binding = VERTEX_BUFFER_BIND_ID;
+	vertexDescriptions.attributeDescriptions[4].location = 4;
+	vertexDescriptions.attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	vertexDescriptions.attributeDescriptions[4].offset = sizeof(float) * 11;
+	vertexDescriptions.attributeDescriptions[4].binding = 0;
+
+	// Neither the bindingDescriptions or the attributeDescriptions is used directly
+	// When creating a graphics pipeline a VkPipelineVertexInputStateCreateInfo structure is sent as an argument and this structure
+	// contains the VkVertexInputBindingDescription and VkVertexInputAttributeDescription
+	// The last thing to do is to assign the binding and attribute descriptions
+	vertexDescriptions.inputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexDescriptions.inputState.pNext = NULL;
+	vertexDescriptions.inputState.vertexBindingDescriptionCount = vertexDescriptions.bindingDescriptions.size();
+	vertexDescriptions.inputState.pVertexBindingDescriptions = vertexDescriptions.bindingDescriptions.data();
+	vertexDescriptions.inputState.vertexAttributeDescriptionCount = vertexDescriptions.attributeDescriptions.size();
+	vertexDescriptions.inputState.pVertexAttributeDescriptions = vertexDescriptions.attributeDescriptions.data();
 }
 
 void VulkanApp::RecordRenderingCommandBuffer()
@@ -445,19 +513,18 @@ void VulkanApp::RecordRenderingCommandBuffer()
 
 		// Bind triangle vertices
 		VkDeviceSize offsets[1] = { 0 };
-		vkCmdBindVertexBuffers(renderingCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &vertices.buffer, offsets);
+		vkCmdBindVertexBuffers(renderingCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &testModel->vertices.buffer, offsets);		// NOTE: testModel->vertices.buffer for testing
 
 		// Bind triangle indices
-		vkCmdBindIndexBuffer(renderingCommandBuffers[i], indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(renderingCommandBuffers[i], testModel->indices.buffer, 0, VK_INDEX_TYPE_UINT32);					// NOTE: testModel->indices.buffer for testing
 
 		// Draw indexed triangle																													
-		vkCmdDrawIndexed(renderingCommandBuffers[i], indices.count, 1, 0, 0, 1);		
+		vkCmdDrawIndexed(renderingCommandBuffers[i], testModel->GetNumIndices(), 1, 0, 0, 1);		
 
 		// End command buffer recording & the render pass
 		vkCmdEndRenderPass(renderingCommandBuffers[i]);
 		VulkanDebug::ErrorCheck(vkEndCommandBuffer(renderingCommandBuffers[i]));
-	}
-	
+	}	
 }
 
 void VulkanApp::Draw()
