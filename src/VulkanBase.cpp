@@ -63,6 +63,11 @@ VulkanBase::~VulkanBase()
 		vkDestroyFramebuffer(device, frameBuffers[i], nullptr);
 	}
 
+	for (auto& shaderModule : shaderModules)
+	{
+		vkDestroyShaderModule(device, shaderModule, nullptr);
+	}
+
 	vkDestroyDevice(device, nullptr);
 
 	VulkanDebug::CleanupDebugging(instance);
@@ -478,6 +483,22 @@ void VulkanBase::InitSwapchain()
 #if defined(_WIN32)
 	swapChain.initSurface(windowInstance, window);
 #endif
+}
+
+VkPipelineShaderStageCreateInfo VulkanBase::LoadShader(std::string fileName, VkShaderStageFlagBits stage)
+{
+	VkPipelineShaderStageCreateInfo shaderStage = {};
+	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStage.stage = stage;
+#if defined(__ANDROID__)
+	shaderStage.module = vkTools::loadShader(androidApp->activity->assetManager, fileName.c_str(), device, stage);
+#else
+	shaderStage.module = vkTools::loadShader(fileName.c_str(), device, stage);		// Uses helper functions (NOTE/TODO)
+#endif
+	shaderStage.pName = "main";
+	assert(shaderStage.module != NULL);
+	shaderModules.push_back(shaderStage.module);		// Add them to the vector so they can be cleaned up
+	return shaderStage;
 }
 
 void VulkanBase::RenderLoop()

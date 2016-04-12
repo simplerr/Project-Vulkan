@@ -1,3 +1,5 @@
+#include <array>
+
 #include "VulkanApp.h"
 #include "VulkanDebug.h"
 
@@ -25,6 +27,8 @@ VulkanApp::~VulkanApp()
 	// Cleanup descriptor set layout and pipeline layout
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+
+	vkDestroyPipeline(device, pipeline, nullptr);
 }
 
 void VulkanApp::Prepare()
@@ -35,7 +39,7 @@ void VulkanApp::Prepare()
 	PrepareUniformBuffers();
 	
 	SetupDescriptorSetLayout();
-	//PreparePipelines();				// TODO
+	PreparePipelines();				
 	SetupDescriptorPool();
 	SetupDescriptorSet();
 
@@ -270,16 +274,88 @@ void VulkanApp::PreparePipelines()
 	// Creating a pipeline is simply defining the state for every stage (and some more...)
 	// ...
 
-	VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
-	pipelineCreateInfo.sType				= VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineCreateInfo.layout				= pipelineLayout;
-	pipelineCreateInfo.renderPass			= renderPass;
-	pipelineCreateInfo.pVertexInputState	= &vertices.inputState;
-	// TODO... a lot...
+	// Input assembly state
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = {};
+	inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
+	// Rasterization state
+	VkPipelineRasterizationStateCreateInfo rasterizationState = {};
+	rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizationState.cullMode = VK_CULL_MODE_NONE;
+	rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rasterizationState.depthClampEnable = VK_FALSE;
+	rasterizationState.rasterizerDiscardEnable = VK_FALSE;
+	rasterizationState.depthBiasEnable = VK_FALSE;
+
+	// Color blend state
+	VkPipelineColorBlendStateCreateInfo colorBlendState = {};
+	colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	VkPipelineColorBlendAttachmentState blendAttachmentState[1] = {};
+	blendAttachmentState[0].colorWriteMask = 0xf;
+	blendAttachmentState[0].blendEnable = VK_FALSE;			// Blending disabled
+	colorBlendState.attachmentCount = 1;
+	colorBlendState.pAttachments = blendAttachmentState;
+
+	// Viewport state
+	VkPipelineViewportStateCreateInfo viewportState = {};
+	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState.viewportCount = 1;
+	viewportState.scissorCount = 1;
+	
+	// Dynamic state for the viewport so the pipeline don't have to be recreated when resizing the window
+	VkPipelineDynamicStateCreateInfo dynamicState = {};
+	std::vector<VkDynamicState> dynamicStateEnables;
+	dynamicStateEnables.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+	dynamicStateEnables.push_back(VK_DYNAMIC_STATE_SCISSOR);
+	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.pDynamicStates = dynamicStateEnables.data();
+	dynamicState.dynamicStateCount = dynamicStateEnables.size();
+
+	// Depth and stencil state
+	VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
+	depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencilState.depthTestEnable = VK_TRUE;
+	depthStencilState.depthWriteEnable = VK_TRUE;
+	depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+	depthStencilState.depthBoundsTestEnable = VK_FALSE;
+	depthStencilState.back.failOp = VK_STENCIL_OP_KEEP;
+	depthStencilState.back.passOp = VK_STENCIL_OP_KEEP;
+	depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
+	depthStencilState.stencilTestEnable = VK_FALSE;			// Stencil disabled
+	depthStencilState.front = depthStencilState.back;
+
+	// Multi sampling state
+	VkPipelineMultisampleStateCreateInfo multisampleState = {};
+	multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multisampleState.pSampleMask = NULL;
+	multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;		// Multi sampling not used
+
+	// Load shader
+	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
+	shaderStages[0] = LoadShader("shaders/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = LoadShader("shaders/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+	// Assign all the states to the pipeline
+	// The states will be static and can't be changed after the pipeline is created
+	VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
+	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineCreateInfo.layout = pipelineLayout;
+	pipelineCreateInfo.renderPass = renderPass;
+	pipelineCreateInfo.pVertexInputState = &vertices.inputState;
+	pipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
+	pipelineCreateInfo.pRasterizationState = &rasterizationState;
+	pipelineCreateInfo.pColorBlendState = &colorBlendState;
+	pipelineCreateInfo.pViewportState = &viewportState;
+	pipelineCreateInfo.pDynamicState = &dynamicState;
+	pipelineCreateInfo.pDepthStencilState = &depthStencilState;
+	pipelineCreateInfo.pMultisampleState = &multisampleState;
+	pipelineCreateInfo.stageCount = shaderStages.size();
+	pipelineCreateInfo.pStages = shaderStages.data();
 
 	// Create the pipeline
-	vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline);
+	VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline));
 }
 
 // Call this every time any uniform buffer should be updated (view changes etc.)
@@ -287,7 +363,7 @@ void VulkanApp::UpdateUniformBuffers()
 {
 	uniformData.projectionMatrix = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
 
-	float zoom = 0;
+	float zoom = -2.5;
 	uniformData.viewMatrix = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, zoom));
 
 	uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
@@ -306,27 +382,57 @@ void VulkanApp::RecordRenderingCommandBuffer()
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-	VkClearColorValue clear_color = {
-		{ 1.0f, 0.8f, 0.4f, 0.0f }
-	};
-
-	VkImageSubresourceRange image_subresource_range = { 
-		VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1                                            
-	};
+	VkClearValue clearValues[2];
+	clearValues[0].color = { 1.0f, 0.8f, 0.4f, 0.0f };
+	clearValues[1].depthStencil = { 1.0f, 0 };
 
 	VkRenderPassBeginInfo renderPassBeginInfo = {};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.renderPass = renderPass;
+	renderPassBeginInfo.renderArea.extent.width = windowWidth;
+	renderPassBeginInfo.renderArea.extent.height = windowHeight;
+	renderPassBeginInfo.clearValueCount = 2;
+	renderPassBeginInfo.pClearValues = clearValues;
 
 	for (int i = 0; i < renderingCommandBuffers.size(); i++)
 	{
+		// Set target frame buffer
+		renderPassBeginInfo.framebuffer = frameBuffers[i];
+
 		// Begin command buffer recording & the render pass
 		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(renderingCommandBuffers[i], &beginInfo));
 		vkCmdBeginRenderPass(renderingCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdClearColorImage(renderingCommandBuffers[i], swapChain.images[i], VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &image_subresource_range);	// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+		//vkCmdClearColorImage(renderingCommandBuffers[i], swapChain.images[i], VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &image_subresource_range);	// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 
-		// More stuff
-		// viewport, scissor, descriptor set, pipeline, vertex & index buffers
-		// TODO...
+		// Update dynamic viewport state
+		VkViewport viewport = {};
+		viewport.width = (float)windowWidth;
+		viewport.height = (float)windowHeight;
+		viewport.minDepth = (float) 0.0f;
+		viewport.maxDepth = (float) 1.0f;
+		vkCmdSetViewport(renderingCommandBuffers[i], 0, 1, &viewport);
+
+		// Update dynamic scissor state
+		VkRect2D scissor = {};
+		scissor.extent.width = windowWidth;
+		scissor.extent.height = windowHeight;
+		scissor.offset.x = 0;
+		scissor.offset.y = 0;
+		vkCmdSetScissor(renderingCommandBuffers[i], 0, 1, &scissor);
+
+		// Bind descriptor sets describing shader binding points
+		vkCmdBindDescriptorSets(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
+
+		// Bind the rendering pipeline (including the shaders)
+		vkCmdBindPipeline(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+		// Bind triangle vertices
+		VkDeviceSize offsets[1] = { 0 };
+		vkCmdBindVertexBuffers(renderingCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &vertices.buffer, offsets);
+
+		// Bind triangle indices
+		vkCmdBindIndexBuffer(renderingCommandBuffers[i], indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 		// Draw indexed triangle																													
 		vkCmdDrawIndexed(renderingCommandBuffers[i], indices.count, 1, 0, 0, 1);		

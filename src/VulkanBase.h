@@ -48,6 +48,8 @@ public:
 
 	void ExecuteSetupCommandBuffer();
 
+	VkPipelineShaderStageCreateInfo LoadShader(std::string fileName, VkShaderStageFlagBits stage);
+
 	virtual void Render() = 0;
 
 	// To transition the swap chain image layout
@@ -101,6 +103,9 @@ protected:
 
 	// Descriptor set pool
 	VkDescriptorPool	descriptorPool			= VK_NULL_HANDLE;
+
+	// List of shader modules created and that needs cleanup
+	std::vector<VkShaderModule> shaderModules;
 
 	// Stores all available memory (type) properties for the physical device
 	VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
