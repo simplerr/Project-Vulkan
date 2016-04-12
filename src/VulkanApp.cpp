@@ -37,6 +37,8 @@ VulkanApp::~VulkanApp()
 	vkDestroyBuffer(device, testModel->indices.buffer, nullptr);
 	vkFreeMemory(device, testModel->indices.memory, nullptr);
 
+	textureLoader->destroyTexture(testModel->texture);
+
 	delete testModel;
 }
 
@@ -65,6 +67,8 @@ void VulkanApp::LoadModels()
 	testModel = modelLoader.LoadModel("models/voyager/voyager.obj");// voyager / voyager.obj");
 	//testModel = modelLoader.LoadModel("models/teapot.3ds");
 	testModel->BuildBuffers(this);
+
+	textureLoader->loadTexture("models/voyager/voyager.ktx", VK_FORMAT_BC3_UNORM_BLOCK, &testModel->texture);
 
 	// TODO: Needs setup the binding descriptions
 }
@@ -219,19 +223,31 @@ void VulkanApp::PrepareUniformBuffers()
 void VulkanApp::SetupDescriptorSetLayout()
 {
 	// Only one binding used for the uniform buffer containing the matrices (Binding: 0)
-	VkDescriptorSetLayoutBinding layoutBinding = {};
-	layoutBinding.binding				= 0;
-	layoutBinding.descriptorType		= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	layoutBinding.descriptorCount		= 1;
-	layoutBinding.stageFlags			= VK_SHADER_STAGE_VERTEX_BIT;				// Will be used by the vertex shader
-	layoutBinding.pImmutableSamplers	= NULL;
+	std::vector<VkDescriptorSetLayoutBinding> layoutBinding = {
+		// Binding 0: Uniform buffer
+		{
+			0,
+			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			1,
+			VK_SHADER_STAGE_VERTEX_BIT,				// Will be used by the vertex shader
+			NULL
+		},
+		//  Binding 1: Image sampler
+		{
+			1,
+			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			1,
+			VK_SHADER_STAGE_FRAGMENT_BIT,			// Will be used by the vertex shader
+			NULL
+		}
+	};
 
 	// One more binding would be used for a texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER and VK_SHADER_STAGE_FRAGMENT_BIT)
 
 	VkDescriptorSetLayoutCreateInfo createInfo = {};
 	createInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	createInfo.bindingCount = 1;
-	createInfo.pBindings	= &layoutBinding;
+	createInfo.bindingCount = layoutBinding.size();
+	createInfo.pBindings	= layoutBinding.data();
 
 	VulkanDebug::ErrorCheck(vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &descriptorSetLayout));
 
@@ -251,15 +267,18 @@ void VulkanApp::SetupDescriptorPool()
 	// We need to tell the API the number of max. requested descriptors per type
 	// Only one descriptor type (uniform buffer) used
 	// More needed if images are used etc.
-	VkDescriptorPoolSize typeCounts[1];
-	typeCounts[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	VkDescriptorPoolSize typeCounts[2];
+	typeCounts[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;				// Uniform buffers
 	typeCounts[0].descriptorCount = 1;		
+
+	typeCounts[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;		// Image sampler
+	typeCounts[1].descriptorCount = 1;
 
 	VkDescriptorPoolCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	createInfo.poolSizeCount = 1;
+	createInfo.poolSizeCount = 2;
 	createInfo.pPoolSizes = typeCounts;
-	createInfo.maxSets = 1;
+	createInfo.maxSets = 2;
 
 	VulkanDebug::ErrorCheck(vkCreateDescriptorPool(device, &createInfo, nullptr, &descriptorPool));
 }
@@ -274,17 +293,29 @@ void VulkanApp::SetupDescriptorSet()
 
 	VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet));
 
-	// Binding 0 : Uniform buffer
-	VkWriteDescriptorSet writeDescriptorSet = {};
-	writeDescriptorSet.sType			= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSet.dstSet			= descriptorSet;
-	writeDescriptorSet.descriptorCount	= 1;
-	writeDescriptorSet.descriptorType	= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	writeDescriptorSet.pBufferInfo		= &uniformBuffer.descriptor;
-	// Binds this uniform buffer to binding point 0
-	writeDescriptorSet.dstBinding		= 0;
+	VkDescriptorImageInfo texDescriptor = {};
+	texDescriptor.sampler = testModel->texture.sampler;				// NOTE: TODO: This feels really bad, not scalable with more objects at all, fix!!! LoadModel() must run before this!!
+	texDescriptor.imageView = testModel->texture.view;
+	texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-	vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, NULL);
+	// Binding 0 : Uniform buffer
+	std::vector<VkWriteDescriptorSet> writeDescriptorSet(2);
+	writeDescriptorSet[0].sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet[0].dstSet			= descriptorSet;
+	writeDescriptorSet[0].descriptorCount	= 1;
+	writeDescriptorSet[0].descriptorType	= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	writeDescriptorSet[0].pBufferInfo		= &uniformBuffer.descriptor;
+	writeDescriptorSet[0].dstBinding		= 0;				// Binds this uniform buffer to binding point 0
+
+	//  Binding 1: Image sampler
+	writeDescriptorSet[1].sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet[1].dstSet			= descriptorSet;
+	writeDescriptorSet[1].descriptorCount	= 1;
+	writeDescriptorSet[1].descriptorType	= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writeDescriptorSet[1].pImageInfo		= &texDescriptor;
+	writeDescriptorSet[1].dstBinding		= 1;				// Binds the image sampler to binding point 1
+
+	vkUpdateDescriptorSets(device, writeDescriptorSet.size(), writeDescriptorSet.data(), 0, NULL);
 }
 
 void VulkanApp::PreparePipelines()
@@ -303,7 +334,7 @@ void VulkanApp::PreparePipelines()
 	rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizationState.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizationState.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizationState.depthClampEnable = VK_FALSE;
 	rasterizationState.rasterizerDiscardEnable = VK_FALSE;
 	rasterizationState.depthBiasEnable = VK_FALSE;
@@ -382,13 +413,13 @@ void VulkanApp::UpdateUniformBuffers()
 {
 	uniformData.projectionMatrix = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
 
-	float zoom = -10;
+	float zoom = -8;
 	glm::mat4 viewMatrix = glm::mat4();
 	viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, zoom));
 	uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
 	//uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	glm::vec3 rotation(150, -90, 0);
+	glm::vec3 rotation(140, 90, 0);
 
 	uniformData.modelMatrix = glm::mat4();
 	uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, glm::vec3(0, 0, 0));

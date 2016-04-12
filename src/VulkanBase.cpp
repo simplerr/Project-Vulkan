@@ -9,6 +9,7 @@
 
 #include "VulkanBase.h"
 #include "VulkanDebug.h"
+#include "../base/vulkanTextureLoader.hpp"
 
 /*
 	-	Right now this code assumes that queueFamilyIndex is = 0 in all places,
@@ -49,6 +50,9 @@ VulkanBase::~VulkanBase()
 
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
+	delete textureLoader;
+
+
 	vkDestroyCommandPool(device, commandPool, nullptr);
 
 	// Cleanup depth stencil data
@@ -67,6 +71,8 @@ VulkanBase::~VulkanBase()
 	{
 		vkDestroyShaderModule(device, shaderModule, nullptr);
 	}
+
+	
 
 	vkDestroyDevice(device, nullptr);
 
@@ -87,6 +93,9 @@ void VulkanBase::Prepare()
 	SetupFrameBuffer();				// Setup the frame buffer, it uses the depth stencil buffer, render pass and swap chain
 	ExecuteSetupCommandBuffer();	// Submit all commands so far to the queue, end and free the setup command buffer
 	CreateSetupCommandBuffer();		// The derived class will also record initialization commands to the setup command buffer
+
+	// Create a simple texture loader class
+	textureLoader = new vkTools::VulkanTextureLoader(physicalDevice, device, queue, commandPool);
 
 	// The derived class initializes:
 	// Pipeline

@@ -59,7 +59,6 @@ StaticModel * ModelLoader::LoadModel(std::string filename)
 					mesh.indices.push_back(assimpMesh->mFaces[faceId].mIndices[indexId]);
 			}
 			
-			// TODO: Load textures
 			model->AddMesh(mesh);
 		}
 	}

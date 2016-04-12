@@ -3,6 +3,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <vulkan\vulkan.h>
+#include "../base/vulkanTextureLoader.hpp"
 
 class VulkanBase;
 
@@ -34,7 +35,6 @@ public:
 	~StaticModel();
 
 	void AddMesh(Mesh& mesh);
-
 	void BuildBuffers(VulkanBase* vulkanBase);
 
 	struct {
@@ -48,6 +48,8 @@ public:
 	} indices;
 
 	int GetNumIndices();
+
+	vkTools::VulkanTexture texture;
 
 private:
 	std::vector<Mesh> mMeshes;

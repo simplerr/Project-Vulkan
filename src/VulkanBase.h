@@ -4,6 +4,7 @@
 //#include "../external\vulkan\vulkan.h"
 #include "../base/vulkantools.h"	
 #include "../base/vulkanswapchain.hpp"
+#include "../base/vulkanTextureLoader.hpp"
 
 #include <vulkan\vulkan.h>
 
@@ -118,6 +119,9 @@ protected:
 		VkDeviceMemory memory;
 		VkImageView view;
 	} depthStencil;
+
+	// Simple texture loader
+	vkTools::VulkanTextureLoader *textureLoader	= nullptr;
 	
 #if defined(_WIN32)
 	HWND				window;

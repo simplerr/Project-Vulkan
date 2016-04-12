@@ -3,6 +3,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 
+layout (binding = 1) uniform sampler2D samplerColorMap;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec3 inColor;
@@ -14,7 +15,7 @@ layout (location = 0) out vec4 outFragColor;
 
 void main() 
 {
-	vec4 color = vec4(inColor, 1.0); // * texture(samplerColorMap, inUV) * 
+	vec4 color = texture(samplerColorMap, inUV) * vec4(inColor, 1.0);
 
 	vec3 N = normalize(inNormal);
 	vec3 L = normalize(inLightVec);
@@ -22,5 +23,7 @@ void main()
 	vec3 R = reflect(-L, N);
 	vec3 diffuse = max(dot(N, L), 0.0) * inColor;
 	vec3 specular = pow(max(dot(R, V), 0.0), 16.0) * vec3(0.75);
-	outFragColor = vec4(vec3(0.2, 0.2, 0.2) + diffuse * color.rgb + specular, 1.0);		
+	outFragColor = vec4(diffuse * color.rgb + specular, 1.0);		
+
+	outFragColor = texture(samplerColorMap, inUV);
 }
