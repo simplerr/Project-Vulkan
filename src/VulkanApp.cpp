@@ -64,7 +64,7 @@ void VulkanApp::PrepareVertices()
 
 	struct Vertex {
 		float pos[3];		// VK_FORMAT_R32G32B32_SFLOAT
-		float col[3];		// VK_FORMAT_R32G32B32_SFLOAT
+		float col[4];		// VK_FORMAT_R32G32B32_SFLOAT
 	};
 
 	// Vertices
@@ -334,8 +334,8 @@ void VulkanApp::PreparePipelines()
 
 	// Load shader
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
-	shaderStages[0] = LoadShader("shaders/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-	shaderStages[1] = LoadShader("shaders/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	shaderStages[0] = LoadShader("shaders/vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = LoadShader("shaders/frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	// Assign all the states to the pipeline
 	// The states will be static and can't be changed after the pipeline is created
@@ -363,18 +363,17 @@ void VulkanApp::UpdateUniformBuffers()
 {
 	uniformData.projectionMatrix = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
 
-	float zoom = -2.5;
+	float zoom = -12.5;
 	uniformData.viewMatrix = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, zoom));
 
 	uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
+	//uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	// Map uniform buffer and update it
 	uint8_t *data;
-	VkResult err = vkMapMemory(device, uniformBuffer.memory, 0, sizeof(uniformData), 0, (void **)&data);
-	assert(!err);
+	VulkanDebug::ErrorCheck(vkMapMemory(device, uniformBuffer.memory, 0, sizeof(uniformData), 0, (void **)&data));
 	memcpy(data, &uniformData, sizeof(uniformData));
 	vkUnmapMemory(device, uniformBuffer.memory);
-	assert(!err);
 }
 
 void VulkanApp::RecordRenderingCommandBuffer()
