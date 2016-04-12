@@ -68,11 +68,11 @@ void StaticModel::BuildBuffers(VulkanBase* vulkanBase)
 	VulkanDebug::ErrorCheck(vkCreateBuffer(vulkanBase->GetDevice(), &indexBufferInfo, nullptr, &indices.buffer));								// Create buffer
 	vkGetBufferMemoryRequirements(vulkanBase->GetDevice(), indices.buffer, &memoryRequirments);													// Get buffer size
 	memoryAllocation.allocationSize = memoryRequirments.size;
-	vulkanBase->GetMemoryType(memoryRequirments.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocation.memoryTypeIndex);					// Get memory type
+	vulkanBase->GetMemoryType(memoryRequirments.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memoryAllocation.memoryTypeIndex);		// Get memory type
 	VulkanDebug::ErrorCheck(vkAllocateMemory(vulkanBase->GetDevice(), &memoryAllocation, nullptr, &indices.memory));							// Allocate device memory
 	VulkanDebug::ErrorCheck(vkMapMemory(vulkanBase->GetDevice(), indices.memory, 0, memoryAllocation.allocationSize, 0, &data));				// Map device memory so the host can access it through data
 	memcpy(data, indexVector.data(), indexBufferSize);																							// Copy buffer data to the mapped data pointer
-	vkUnmapMemory(vulkanBase->GetDevice(), indices.memory);																										// Unmap memory
+	vkUnmapMemory(vulkanBase->GetDevice(), indices.memory);																						// Unmap memory
 	VulkanDebug::ErrorCheck(vkBindBufferMemory(vulkanBase->GetDevice(), indices.buffer, indices.memory, 0));									// Bind the buffer to the allocated device memory
 
 	// TODO:

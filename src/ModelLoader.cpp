@@ -17,14 +17,9 @@ StaticModel * ModelLoader::LoadModel(std::string filename)
 
 	Assimp::Importer importer;
 
+	
 	// Load scene from the file.
-	const aiScene* scene = importer.ReadFile(filename,
-		aiProcess_CalcTangentSpace |
-		aiProcess_Triangulate |
-		aiProcess_GenSmoothNormals |
-		aiProcess_SplitLargeMeshes |
-		aiProcess_ConvertToLeftHanded |
-		aiProcess_SortByPType);
+	const aiScene* scene = importer.ReadFile(filename, aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals);
 
 	if (scene != nullptr)
 	{

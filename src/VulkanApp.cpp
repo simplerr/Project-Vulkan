@@ -62,7 +62,8 @@ void VulkanApp::Prepare()
 
 void VulkanApp::LoadModels()
 {
-	testModel = modelLoader.LoadModel("models/voyager/voyager.obj");
+	testModel = modelLoader.LoadModel("models/voyager/voyager.obj");// voyager / voyager.obj");
+	//testModel = modelLoader.LoadModel("models/teapot.3ds");
 	testModel->BuildBuffers(this);
 
 	// TODO: Needs setup the binding descriptions
@@ -195,7 +196,7 @@ void VulkanApp::PrepareUniformBuffers()
 	allocInfo.memoryTypeIndex	= 0;
 
 	createInfo.sType	= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	createInfo.size		= sizeof(uniformData);						// 3x glm::mat4
+	createInfo.size		= sizeof(uniformData);						// 3x glm::mat4 NOTE: Not any more!!
 	createInfo.usage	= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
 	VulkanDebug::ErrorCheck(vkCreateBuffer(device, &createInfo, nullptr, &uniformBuffer.buffer));
@@ -301,8 +302,8 @@ void VulkanApp::PreparePipelines()
 	VkPipelineRasterizationStateCreateInfo rasterizationState = {};
 	rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizationState.cullMode = VK_CULL_MODE_NONE;
-	rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rasterizationState.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizationState.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterizationState.depthClampEnable = VK_FALSE;
 	rasterizationState.rasterizerDiscardEnable = VK_FALSE;
 	rasterizationState.depthBiasEnable = VK_FALSE;
@@ -382,14 +383,15 @@ void VulkanApp::UpdateUniformBuffers()
 	uniformData.projectionMatrix = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
 
 	float zoom = -10;
-	uniformData.viewMatrix = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, zoom));
+	glm::mat4 viewMatrix = glm::mat4();
+	viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, zoom));
 	uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
 	//uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	glm::vec3 rotation(-25, -123, 0);
+	glm::vec3 rotation(150, -90, 0);
 
 	uniformData.modelMatrix = glm::mat4();
-	uniformData.modelMatrix = uniformData.viewMatrix * glm::translate(uniformData.modelMatrix, glm::vec3(0, 0, 0));
+	uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, glm::vec3(0, 0, 0));
 	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
 	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
 	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -519,7 +521,7 @@ void VulkanApp::RecordRenderingCommandBuffer()
 		vkCmdBindIndexBuffer(renderingCommandBuffers[i], testModel->indices.buffer, 0, VK_INDEX_TYPE_UINT32);					// NOTE: testModel->indices.buffer for testing
 
 		// Draw indexed triangle																													
-		vkCmdDrawIndexed(renderingCommandBuffers[i], testModel->GetNumIndices(), 1, 0, 0, 1);		
+		vkCmdDrawIndexed(renderingCommandBuffers[i], testModel->GetNumIndices(), 1, 0, 0, 0);		
 
 		// End command buffer recording & the render pass
 		vkCmdEndRenderPass(renderingCommandBuffers[i]);
