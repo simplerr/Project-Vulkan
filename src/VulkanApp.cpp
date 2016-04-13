@@ -9,7 +9,8 @@
 
 VulkanApp::VulkanApp() : VulkanBase()
 {
-	camera = new Camera();
+	camera = new Camera(glm::vec3(0, 100, 0), 60.0f, (float)windowWidth / (float)windowHeight, 0.1f, 2560.0f);
+	camera->LookAt(glm::vec3(0, 0, 0));
 }
 
 VulkanApp::~VulkanApp()
@@ -68,8 +69,8 @@ void VulkanApp::Prepare()
 
 void VulkanApp::LoadModels()
 {
-	testModel = modelLoader.LoadModel("models/voyager/voyager.obj");// voyager / voyager.obj");
-	//testModel = modelLoader.LoadModel("models/teapot.3ds");
+	//testModel = modelLoader.LoadModel("models/voyager/voyager.obj");// voyager / voyager.obj");
+	testModel = modelLoader.LoadModel("models/teapot.3ds");
 	testModel->BuildBuffers(this);
 
 	textureLoader->loadTexture("models/voyager/voyager.ktx", VK_FORMAT_BC3_UNORM_BLOCK, &testModel->texture);
@@ -415,15 +416,15 @@ void VulkanApp::PreparePipelines()
 // Call this every time any uniform buffer should be updated (view changes etc.)
 void VulkanApp::UpdateUniformBuffers()
 {
-	uniformData.projectionMatrix = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
+	uniformData.projectionMatrix = camera->GetProjection(); // glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
 
 	float zoom = -8;
-	glm::mat4 viewMatrix = camera->GetViewMatrix();// glm::mat4();
+	glm::mat4 viewMatrix = camera->GetView(); //camera->GetViewMatrix();// glm::mat4();
 	//viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, zoom));
 	uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
 	//uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	glm::vec3 rotation(140, 90, 0);
+	glm::vec3 rotation(180, 0, 0);
 
 	uniformData.modelMatrix = glm::mat4();
 	uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, glm::vec3(0, 0, 0));
@@ -614,7 +615,15 @@ void VulkanApp::Render()
 	//	return;
 
 	vkDeviceWaitIdle(device);
+
+	camera->Update();
+
+	// NOTE: TODO: TESTING
+	if (prepared)
+		UpdateUniformBuffers();
+
 	Draw();
+
 	vkDeviceWaitIdle(device);
 }
 
@@ -625,8 +634,4 @@ void VulkanApp::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 	// Let the camera handle user input
 	camera->HandleMessages(hwnd, msg, wParam, lParam);
-
-	// NOTE: TODO: TESTING
-	if(prepared)
-		UpdateUniformBuffers();
 }

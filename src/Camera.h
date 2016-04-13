@@ -7,25 +7,35 @@ class Camera
 {
 public:
 	Camera();
+	Camera(glm::vec3 position, float fieldOfView, float aspectRatio, float nearPlane, float farPlane);
+
+	void Update();
 
 	void HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	glm::vec3 GetDirection();
-	void UpdatePitchYaw();
 
-	glm::mat4 GetViewMatrix();
+	// New
+	glm::mat4 GetOrientation();
+	glm::mat4 GetView();
+	glm::mat4 GetProjection();
+	glm::mat4 GetMatrix();
+	glm::vec3 GetRight();
+	void AddOrientation(float yaw, float pitch);
+	void LookAt(glm::vec3 target);
+	void CapAngles();
+
 private:
-	glm::mat4 viewMatrix;
-
 	glm::vec3 position;
-	glm::vec3 target;
-	glm::vec3 direction;
-	glm::vec3 up;
-	glm::vec3 right;
+	float pitch;	// Vertical angle
+	float yaw;		// Horizontal angle
+	float fov;
+	float nearPlane;
+	float farPlane;
+	float aspectRatio;
 
-	float yaw, pitch;
 
-	float sensitivity = 0.01f;
-	float speed = 1.0f;
+	float sensitivity = 0.2f;
+	float speed = 0.1f;
 
 	int lastX, lastY;
 };

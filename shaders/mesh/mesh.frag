@@ -15,7 +15,7 @@ layout (location = 0) out vec4 outFragColor;
 
 void main() 
 {
-	vec4 color = texture(samplerColorMap, inUV) * vec4(inColor, 1.0);
+	vec4 color = vec4(inColor, 1.0);	//texture(samplerColorMap, inUV)
 
 	vec3 N = normalize(inNormal);
 	vec3 L = normalize(inLightVec);
@@ -25,5 +25,5 @@ void main()
 	vec3 specular = pow(max(dot(R, V), 0.0), 16.0) * vec3(0.75);
 	outFragColor = vec4(diffuse * color.rgb + specular, 1.0);		
 
-	outFragColor = texture(samplerColorMap, inUV);
+	//outFragColor = texture(samplerColorMap, inUV);
 }

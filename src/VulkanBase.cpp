@@ -6,6 +6,7 @@
 #include <array>
 #include <cassert>
 #include <sstream>
+#include <chrono>
 
 #include "VulkanBase.h"
 #include "VulkanDebug.h"
@@ -512,12 +513,44 @@ VkPipelineShaderStageCreateInfo VulkanBase::LoadShader(std::string fileName, VkS
 
 void VulkanBase::RenderLoop()
 {
-	MSG message;
+	MSG msg;
 
-	while (GetMessage(&message, nullptr, 0, 0)) {
+	while (true)
+	{
+		auto tStart = std::chrono::high_resolution_clock::now();
+
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_QUIT)
+			{
+				break;
+			}
+			else
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
 		Render();
-		TranslateMessage(&message);
-		DispatchMessage(&message);
+		frameCounter++;
+		auto tEnd = std::chrono::high_resolution_clock::now();
+		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+		frameTimer = (float)tDiff / 1000.0f;
+
+		// Convert to clamped timer value
+		timer += timerSpeed * frameTimer;
+		if (timer > 1.0)
+		{
+			timer -= 1.0f;
+		}
+		fpsTimer += (float)tDiff;
+		if (fpsTimer > 1000.0f)
+		{
+			std::string windowTitle = "Project Vulkan: " + std::to_string(frameCounter) + " fps";
+			SetWindowText(window, windowTitle.c_str());
+			fpsTimer = 0.0f;
+			frameCounter = 0.0f;
+		}
 	}
 }
 

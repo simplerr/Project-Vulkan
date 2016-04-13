@@ -6,3 +6,4 @@
 - Render multiple models
 - Render text
 - Add a frametime counter
+- Make a timer class
