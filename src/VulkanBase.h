@@ -19,6 +19,7 @@
 	Niko Kauppi videoes: https://www.youtube.com/watch?v=Bu581jeyTL0
 	Pipeleline barriers: https://github.com/philiptaylor/vulkan-sxs/tree/master/04-clear
 	Intel Vulkan tutorial: https://software.intel.com/en-us/api-without-secrets-introduction-to-vulkan-part-2
+	Shader resource bindings: https://developer.nvidia.com/vulkan-shader-resource-binding
 */
 
 

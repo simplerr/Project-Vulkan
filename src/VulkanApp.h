@@ -93,4 +93,7 @@ public:
 	Camera* camera;
 
 	bool prepared = false;
+	glm::vec3 modelPos = glm::vec3(0, 0, 0);
+
+	std::vector<glm::vec3>  modelPositions;
 };

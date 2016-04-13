@@ -9,7 +9,7 @@
 
 VulkanApp::VulkanApp() : VulkanBase()
 {
-	camera = new Camera(glm::vec3(0, 100, 0), 60.0f, (float)windowWidth / (float)windowHeight, 0.1f, 2560.0f);
+	camera = new Camera(glm::vec3(100, 100, 100), 60.0f, (float)windowWidth / (float)windowHeight, 0.1f, 2560.0f);
 	camera->LookAt(glm::vec3(0, 0, 0));
 }
 
@@ -71,9 +71,21 @@ void VulkanApp::LoadModels()
 {
 	//testModel = modelLoader.LoadModel("models/voyager/voyager.obj");// voyager / voyager.obj");
 	testModel = modelLoader.LoadModel("models/teapot.3ds");
+	//testModel = modelLoader.LoadModel("models/samplescene.obj");
+
 	testModel->BuildBuffers(this);
 
 	textureLoader->loadTexture("models/voyager/voyager.ktx", VK_FORMAT_BC3_UNORM_BLOCK, &testModel->texture);
+
+	// Generate some positions
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			modelPositions.push_back(glm::vec3(i * 100, 0, j * 100));
+		}
+	}
+
 
 	// TODO: Needs setup the binding descriptions
 }
@@ -264,6 +276,16 @@ void VulkanApp::SetupDescriptorSetLayout()
 	pPipelineLayoutCreateInfo.setLayoutCount	= 1;
 	pPipelineLayoutCreateInfo.pSetLayouts		= &descriptorSetLayout;
 
+	// Note: New!!
+	// Add push constants for the MVP matrix
+	VkPushConstantRange pushConstantRanges = {};
+	pushConstantRanges.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstantRanges.offset = 0;
+	pushConstantRanges.size = sizeof(glm::mat4);
+
+	pPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+	pPipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRanges;
+
 	VulkanDebug::ErrorCheck(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 }
 
@@ -421,13 +443,13 @@ void VulkanApp::UpdateUniformBuffers()
 	float zoom = -8;
 	glm::mat4 viewMatrix = camera->GetView(); //camera->GetViewMatrix();// glm::mat4();
 	//viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, zoom));
-	uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
+	//uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
 	//uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	glm::vec3 rotation(180, 0, 0);
 
 	uniformData.modelMatrix = glm::mat4();
-	uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, glm::vec3(0, 0, 0));
+	uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, modelPos);
 	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
 	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
 	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -555,9 +577,23 @@ void VulkanApp::RecordRenderingCommandBuffer()
 
 		// Bind triangle indices
 		vkCmdBindIndexBuffer(renderingCommandBuffers[i], testModel->indices.buffer, 0, VK_INDEX_TYPE_UINT32);					// NOTE: testModel->indices.buffer for testing
+		
+		//
+		// Testing push constant rendering with different matrices
+		//
+		for (auto pos : modelPositions)
+		{
+			glm::vec3 rotation(180, 0, 0);
 
-		// Draw indexed triangle																													
-		vkCmdDrawIndexed(renderingCommandBuffers[i], testModel->GetNumIndices(), 1, 0, 0, 0);		
+			// Push the MVP constant
+			glm::mat4 model = glm::translate(glm::mat4(), pos) * glm::rotate(glm::mat4(), glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+			glm::mat4 mvp = camera->GetProjection() * camera->GetView() * model;
+			int siss = sizeof(mvp);
+			vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mvp), &mvp);
+
+			// Draw indexed triangle																													
+			vkCmdDrawIndexed(renderingCommandBuffers[i], testModel->GetNumIndices(), 1, 0, 0, 0);
+		}
 
 		// End command buffer recording & the render pass
 		vkCmdEndRenderPass(renderingCommandBuffers[i]);
@@ -580,6 +616,9 @@ void VulkanApp::Draw()
 	//
 
 	SubmitPrePresentMemoryBarrier(swapChain.buffers[currentBuffer].image);
+
+	// NOTE: Testing
+	RecordRenderingCommandBuffer();
 
 	//
 	// Do rendering
@@ -634,4 +673,14 @@ void VulkanApp::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 	// Let the camera handle user input
 	camera->HandleMessages(hwnd, msg, wParam, lParam);
+
+	// Testing
+	if(msg == WM_KEYDOWN && wParam == 'R')
+	{
+		modelPos = glm::vec3(0, -50, 0);
+	}
+	else if (msg == WM_KEYDOWN && wParam == 'T')
+	{
+		modelPos = glm::vec3(0, 0, 0);
+	}
 }
