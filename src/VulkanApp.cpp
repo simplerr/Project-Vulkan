@@ -4,6 +4,7 @@
 #include "VulkanDebug.h"
 #include "StaticModel.h"
 #include "Camera.h"
+#include "Object.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 
@@ -39,10 +40,25 @@ VulkanApp::~VulkanApp()
 	vkDestroyBuffer(device, testModel->indices.buffer, nullptr);
 	vkFreeMemory(device, testModel->indices.memory, nullptr);
 
+	vkDestroyBuffer(device, testModel2->vertices.buffer, nullptr);
+	vkFreeMemory(device, testModel2->vertices.memory, nullptr);
+	vkDestroyBuffer(device, testModel2->indices.buffer, nullptr);
+	vkFreeMemory(device, testModel2->indices.memory, nullptr);
+
 	textureLoader->destroyTexture(testModel->texture);
+	textureLoader->destroyTexture(testModel2->texture);
 
 	delete testModel;
 	delete camera;
+
+	for (int i = 0; i < mObjects.size(); i++) {
+		vkDestroyBuffer(device, mObjects[i]->GetModel()->vertices.buffer, nullptr);
+		vkFreeMemory(device, mObjects[i]->GetModel()->vertices.memory, nullptr);
+		vkDestroyBuffer(device, mObjects[i]->GetModel()->indices.buffer, nullptr);
+		vkFreeMemory(device, mObjects[i]->GetModel()->indices.memory, nullptr);
+
+		delete mObjects[i];
+	}
 }
 
 void VulkanApp::Prepare()
@@ -71,18 +87,23 @@ void VulkanApp::LoadModels()
 {
 	//testModel = modelLoader.LoadModel("models/voyager/voyager.obj");// voyager / voyager.obj");
 	testModel = modelLoader.LoadModel("models/teapot.3ds");
-	//testModel = modelLoader.LoadModel("models/samplescene.obj");
-
 	testModel->BuildBuffers(this);
-
 	textureLoader->loadTexture("models/voyager/voyager.ktx", VK_FORMAT_BC3_UNORM_BLOCK, &testModel->texture);
 
+	testModel2 = modelLoader.LoadModel("models/torus.obj");
+	testModel2->BuildBuffers(this);
+	textureLoader->loadTexture("models/voyager/voyager.ktx", VK_FORMAT_BC3_UNORM_BLOCK, &testModel2->texture);
+
 	// Generate some positions
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 5; i++)
 	{
-		for (int j = 0; j < 10; j++)
+		for (int j = 0; j < 5; j++)
 		{
-			modelPositions.push_back(glm::vec3(i * 100, 0, j * 100));
+			Object* object = new Object(glm::vec3(i * 100, 0, j * 100));
+			object->SetRotation(glm::vec3(180, 0, 0));
+			object->SetModel(modelLoader.LoadModel("models/teapot.3ds"));
+			object->GetModel()->BuildBuffers(this);
+			mObjects.push_back(object);
 		}
 	}
 
@@ -547,6 +568,7 @@ void VulkanApp::RecordRenderingCommandBuffer()
 		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(renderingCommandBuffers[i], &beginInfo));
 		vkCmdBeginRenderPass(renderingCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+
 		//vkCmdClearColorImage(renderingCommandBuffers[i], swapChain.images[i], VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &image_subresource_range);	// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 
 		// Update dynamic viewport state
@@ -570,24 +592,19 @@ void VulkanApp::RecordRenderingCommandBuffer()
 
 		// Bind the rendering pipeline (including the shaders)
 		vkCmdBindPipeline(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-
-		// Bind triangle vertices
-		VkDeviceSize offsets[1] = { 0 };
-		vkCmdBindVertexBuffers(renderingCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &testModel->vertices.buffer, offsets);		// NOTE: testModel->vertices.buffer for testing
-
-		// Bind triangle indices
-		vkCmdBindIndexBuffer(renderingCommandBuffers[i], testModel->indices.buffer, 0, VK_INDEX_TYPE_UINT32);					// NOTE: testModel->indices.buffer for testing
 		
 		//
 		// Testing push constant rendering with different matrices
 		//
-		for (auto pos : modelPositions)
+		for (auto& object : mObjects)
 		{
-			glm::vec3 rotation(180, 0, 0);
+			// Bind triangle vertices
+			VkDeviceSize offsets[1] = { 0 };
+			vkCmdBindVertexBuffers(renderingCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &object->GetModel()->vertices.buffer, offsets);		// NOTE: testModel->vertices.buffer for testing																																// Bind triangle indices
+			vkCmdBindIndexBuffer(renderingCommandBuffers[i], object->GetModel()->indices.buffer, 0, VK_INDEX_TYPE_UINT32);					// NOTE: testModel->indices.buffer for testing
 
 			// Push the MVP constant
-			glm::mat4 model = glm::translate(glm::mat4(), pos) * glm::rotate(glm::mat4(), glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-			glm::mat4 mvp = camera->GetProjection() * camera->GetView() * model;
+			glm::mat4 mvp = camera->GetProjection() * camera->GetView() * object->GetWorldMatrix();
 			int siss = sizeof(mvp);
 			vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mvp), &mvp);
 
@@ -614,7 +631,6 @@ void VulkanApp::Draw()
 	//
 	// Transition image format to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 	//
-
 	SubmitPrePresentMemoryBarrier(swapChain.buffers[currentBuffer].image);
 
 	// NOTE: Testing

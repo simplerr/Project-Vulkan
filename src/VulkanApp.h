@@ -10,6 +10,7 @@
 
 class StaticModel;
 class Camera;
+class Object;
 
 class VulkanApp : public VulkanBase
 {
@@ -90,10 +91,11 @@ public:
 
 	ModelLoader modelLoader;
 	StaticModel* testModel;
+	StaticModel* testModel2;
 	Camera* camera;
 
 	bool prepared = false;
 	glm::vec3 modelPos = glm::vec3(0, 0, 0);
 
-	std::vector<glm::vec3>  modelPositions;
+	std::vector<Object*>  mObjects;
 };
