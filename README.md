@@ -1,8 +1,7 @@
 # Project-Vulkan
 
 ### Todo
-- Make a scalable object hierarchy
-- Render multiple models
+- Fix error with push constants
 - Render text
 - Add a frametime counter
 - Make a timer class
