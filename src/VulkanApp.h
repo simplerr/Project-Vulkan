@@ -20,7 +20,6 @@ public:
 
 	void Prepare();
 
-	void PrepareVertices();
 	void PrepareUniformBuffers();
 	void SetupDescriptorSetLayout();
 	void SetupDescriptorPool();
@@ -43,29 +42,13 @@ public:
 	void LoadModels();
 
 	// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
+	// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
+	// inputState is the pVertexInputState when creating the graphics pipeline
 	struct {
 		VkPipelineVertexInputStateCreateInfo inputState;
 		std::vector<VkVertexInputBindingDescription> bindingDescriptions;
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	} vertexDescriptions;
-
-
-	// Wraps everything that has to do with the vertices
-	// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
-	// inputState is the pVertexInputState when creating the graphics pipeline
-	struct {
-		VkBuffer buffer;
-		VkDeviceMemory memory;
-		VkPipelineVertexInputStateCreateInfo inputState;
-		std::vector<VkVertexInputBindingDescription> bindingDescriptions;
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-	} vertices;
-
-	struct {
-		int count;
-		VkBuffer buffer;
-		VkDeviceMemory memory;
-	} indices;
 
 	struct {
 		VkBuffer buffer;
@@ -83,15 +66,17 @@ public:
 	VkDescriptorSet descriptorSet;
 	VkPipelineLayout pipelineLayout;
 
-	VkPipeline pipeline;
+	struct {
+		VkPipeline solid;
+		VkPipeline wireframe;
+	} pipelines;
 
 	// 
 	//	High level code
 	//
 
 	ModelLoader modelLoader;
-	StaticModel* testModel;
-	StaticModel* testModel2;
+	vkTools::VulkanTexture testTexture;		// NOTE: just for testing
 	Camera* camera;
 
 	bool prepared = false;

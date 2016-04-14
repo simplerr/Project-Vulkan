@@ -2,9 +2,16 @@
 #include "VulkanDebug.h"
 #include "VulkanBase.h"
 
+StaticModel::StaticModel()
+{
+	texture = nullptr;
+}
+
 StaticModel::~StaticModel()
 {
-	
+	// The model loader destroys the buffers for us
+
+	delete texture;
 }
 
 void StaticModel::AddMesh(Mesh & mesh)

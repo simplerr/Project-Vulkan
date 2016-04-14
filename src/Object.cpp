@@ -8,6 +8,7 @@ Object::Object(glm::vec3 position)
 	SetRotation(glm::vec3(0, 0, 0));
 	SetScale(glm::vec3(1.0f, 1.0f, 1.0f));
 	SetModel(nullptr);
+	SetPipeline(VK_NULL_HANDLE);		// Must be assigned later
 }
 
 Object::~Object()
@@ -32,6 +33,11 @@ void Object::SetRotation(glm::vec3 rotation)
 void Object::SetScale(glm::vec3 scale)
 {
 	mScale = scale;
+}
+
+void Object::SetPipeline(VkPipeline pipeline)
+{
+	mPipeline = pipeline;
 }
 
 StaticModel * Object::GetModel()
@@ -65,4 +71,9 @@ glm::mat4 Object::GetWorldMatrix()
 	world = glm::scale(world, mScale);
 
 	return world;
+}
+
+VkPipeline Object::GetPipeline()
+{
+	return mPipeline;
 }

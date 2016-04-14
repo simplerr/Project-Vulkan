@@ -19,14 +19,6 @@ VulkanApp::VulkanApp() : VulkanBase()
 
 VulkanApp::~VulkanApp()
 {
-	// Cleanup vertex buffer
-	vkDestroyBuffer(device, vertices.buffer, nullptr);
-	vkFreeMemory(device, vertices.memory, nullptr);
-
-	// Cleanup index buffer
-	vkDestroyBuffer(device, indices.buffer, nullptr);
-	vkFreeMemory(device, indices.memory, nullptr);
-
 	// Cleanup uniform buffer
 	vkDestroyBuffer(device, uniformBuffer.buffer, nullptr);
 	vkFreeMemory(device, uniformBuffer.memory, nullptr);
@@ -35,31 +27,16 @@ VulkanApp::~VulkanApp()
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 
-	vkDestroyPipeline(device, pipeline, nullptr);
+	vkDestroyPipeline(device, pipelines.solid, nullptr);
+	vkDestroyPipeline(device, pipelines.wireframe, nullptr);
 
-	// Has to cleanup for all the models TODO: List with many models need to be looped
-	vkDestroyBuffer(device, testModel->vertices.buffer, nullptr);
-	vkFreeMemory(device, testModel->vertices.memory, nullptr);
-	vkDestroyBuffer(device, testModel->indices.buffer, nullptr);
-	vkFreeMemory(device, testModel->indices.memory, nullptr);
+	// The model loader is responsible for cleaning up the model data
+	modelLoader.CleanupModels(device);
 
-	vkDestroyBuffer(device, testModel2->vertices.buffer, nullptr);
-	vkFreeMemory(device, testModel2->vertices.memory, nullptr);
-	vkDestroyBuffer(device, testModel2->indices.buffer, nullptr);
-	vkFreeMemory(device, testModel2->indices.memory, nullptr);
-
-	textureLoader->destroyTexture(testModel->texture);
-	textureLoader->destroyTexture(testModel2->texture);
-
-	delete testModel;
-	delete camera;
+	// Free the testing texture
+	textureLoader->destroyTexture(testTexture);
 
 	for (int i = 0; i < mObjects.size(); i++) {
-		vkDestroyBuffer(device, mObjects[i]->GetModel()->vertices.buffer, nullptr);
-		vkFreeMemory(device, mObjects[i]->GetModel()->vertices.memory, nullptr);
-		vkDestroyBuffer(device, mObjects[i]->GetModel()->indices.buffer, nullptr);
-		vkFreeMemory(device, mObjects[i]->GetModel()->indices.memory, nullptr);
-
 		delete mObjects[i];
 	}
 }
@@ -68,12 +45,11 @@ void VulkanApp::Prepare()
 {
 	VulkanBase::Prepare();
 
-	PrepareVertices();
-	PrepareUniformBuffers();
-	LoadModels();						// Custom
+	PrepareUniformBuffers();	
 	SetupVertexDescriptions();			// Custom
 	SetupDescriptorSetLayout();
-	PreparePipelines();				
+	PreparePipelines();	
+	LoadModels();						// Custom
 	SetupDescriptorPool();
 	SetupDescriptorSet();
 
@@ -88,33 +64,33 @@ void VulkanApp::Prepare()
 
 void VulkanApp::LoadModels()
 {
-	//testModel = modelLoader.LoadModel("models/voyager/voyager.obj");// voyager / voyager.obj");
-	testModel = modelLoader.LoadModel("models/teapot.3ds");
-	testModel->BuildBuffers(this);
-	textureLoader->loadTexture("models/voyager/voyager.ktx", VK_FORMAT_BC3_UNORM_BLOCK, &testModel->texture);
-
-	testModel2 = modelLoader.LoadModel("models/torus.obj");
-	testModel2->BuildBuffers(this);
-	textureLoader->loadTexture("models/voyager/voyager.ktx", VK_FORMAT_BC3_UNORM_BLOCK, &testModel2->texture);
+	// Load a random testing texture
+	textureLoader->loadTexture("models/voyager/voyager.ktx", VK_FORMAT_BC3_UNORM_BLOCK, &testTexture);
 
 	// Generate some positions
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 1; i++)
 	{
-		for (int j = 0; j < 5; j++)
+		for (int j = 0; j < 2; j++)
 		{
 			Object* object = new Object(glm::vec3(i * 100, 0, j * 100));
 			object->SetRotation(glm::vec3(rand() % 180, rand() % 180, rand() % 180));
 			object->SetScale(glm::vec3((rand() % 20) / 10.0f));
-			object->SetModel(modelLoader.LoadModel("models/teapot.3ds"));
-			object->GetModel()->BuildBuffers(this);
+			object->SetModel(modelLoader.LoadModel(this, "models/teapot.3ds"));
+
+			// Select pipeline
+			if (rand() % 2 == 0)
+				object->SetPipeline(pipelines.solid);
+			else
+				object->SetPipeline(pipelines.wireframe);
+
 			mObjects.push_back(object);
 		}
 	}
 
-
 	// TODO: Needs setup the binding descriptions
 }
 
+/*
 void VulkanApp::PrepareVertices()
 {
 	VkMemoryRequirements memoryRequirments;
@@ -227,7 +203,7 @@ void VulkanApp::PrepareVertices()
 	vertices.inputState.pVertexBindingDescriptions		= vertices.bindingDescriptions.data();
 	vertices.inputState.vertexAttributeDescriptionCount = vertices.attributeDescriptions.size();
 	vertices.inputState.pVertexAttributeDescriptions	= vertices.attributeDescriptions.data();
-}
+}*/
 
 void VulkanApp::PrepareUniformBuffers()
 {
@@ -346,8 +322,8 @@ void VulkanApp::SetupDescriptorSet()
 	VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet));
 
 	VkDescriptorImageInfo texDescriptor = {};
-	texDescriptor.sampler = testModel->texture.sampler;				// NOTE: TODO: This feels really bad, not scalable with more objects at all, fix!!! LoadModel() must run before this!!
-	texDescriptor.imageView = testModel->texture.view;
+	texDescriptor.sampler = testTexture.sampler;				// NOTE: TODO: This feels really bad, not scalable with more objects at all, fix!!! LoadModel() must run before this!!
+	texDescriptor.imageView = testTexture.view;
 	texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 	// Binding 0 : Uniform buffer
@@ -456,8 +432,12 @@ void VulkanApp::PreparePipelines()
 	pipelineCreateInfo.stageCount = shaderStages.size();
 	pipelineCreateInfo.pStages = shaderStages.data();
 
-	// Create the pipeline
-	VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline));
+	// Create the solid pipeline
+	VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipelines.solid));
+
+	// Create the wireframe pipeline
+	rasterizationState.polygonMode = VK_POLYGON_MODE_LINE;
+	VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipelines.wireframe));
 }
 
 // Call this every time any uniform buffer should be updated (view changes etc.)
@@ -572,9 +552,6 @@ void VulkanApp::RecordRenderingCommandBuffer()
 		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(renderingCommandBuffers[i], &beginInfo));
 		vkCmdBeginRenderPass(renderingCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-
-		//vkCmdClearColorImage(renderingCommandBuffers[i], swapChain.images[i], VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &image_subresource_range);	// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-
 		// Update dynamic viewport state
 		VkViewport viewport = {};
 		viewport.width = (float)windowWidth;
@@ -594,14 +571,14 @@ void VulkanApp::RecordRenderingCommandBuffer()
 		// Bind descriptor sets describing shader binding points
 		vkCmdBindDescriptorSets(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
-		// Bind the rendering pipeline (including the shaders)
-		vkCmdBindPipeline(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-		
 		//
 		// Testing push constant rendering with different matrices
 		//
 		for (auto& object : mObjects)
 		{
+			// Bind the rendering pipeline (including the shaders)
+			vkCmdBindPipeline(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, object->GetPipeline());
+
 			// Bind triangle vertices
 			VkDeviceSize offsets[1] = { 0 };
 			vkCmdBindVertexBuffers(renderingCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &object->GetModel()->vertices.buffer, offsets);		// NOTE: testModel->vertices.buffer for testing																																// Bind triangle indices
@@ -612,8 +589,9 @@ void VulkanApp::RecordRenderingCommandBuffer()
 			int siss = sizeof(mvp);
 			vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(mvp), &mvp);
 
-			// Draw indexed triangle																													
-			vkCmdDrawIndexed(renderingCommandBuffers[i], testModel->GetNumIndices(), 1, 0, 0, 0);
+			// Draw indexed triangle	
+			vkCmdSetLineWidth(renderingCommandBuffers[i], 1.0f);
+			vkCmdDrawIndexed(renderingCommandBuffers[i], object->GetModel()->GetNumIndices(), 1, 0, 0, 0);
 		}
 
 		// End command buffer recording & the render pass

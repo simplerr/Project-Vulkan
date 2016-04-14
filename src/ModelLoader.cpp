@@ -1,5 +1,6 @@
 #include "ModelLoader.h"
 #include "StaticModel.h"
+#include "VulkanBase.h"
 
 #include <vector>
 
@@ -11,10 +12,36 @@
 #include "../external/assimp/assimp/postprocess.h"
 #include "../external/assimp/assimp/scene.h"
 
-StaticModel * ModelLoader::LoadModel(std::string filename)
+void ModelLoader::CleanupModels(VkDevice device)
 {
-	StaticModel* model = nullptr;
+	for(auto& model : mModelMap)
+	{
+		// Free vertex and index buffers
+		vkDestroyBuffer(device, model.second->vertices.buffer, nullptr);
+		vkFreeMemory(device, model.second->vertices.memory, nullptr);
+		vkDestroyBuffer(device, model.second->indices.buffer, nullptr);
+		vkFreeMemory(device, model.second->indices.memory, nullptr);
 
+		// Free the texture (NOTE: not sure if this is the right place to delete them, texture loader maybe?)
+		if (model.second->texture != nullptr)
+		{
+			vkDestroyImageView(device, model.second->texture->view, nullptr);		// NOTE: Ugly
+			vkDestroyImage(device, model.second->texture->image, nullptr);
+			vkDestroySampler(device, model.second->texture->sampler, nullptr);
+			vkFreeMemory(device, model.second->texture->deviceMemory, nullptr);
+		}
+
+		delete model.second;
+	}
+}
+
+StaticModel * ModelLoader::LoadModel(VulkanBase* vulkanBase, std::string filename)
+{
+	// Check if the model already is loaded
+	if (mModelMap.find(filename) != mModelMap.end())
+		return mModelMap[filename];
+
+	StaticModel* model = nullptr;
 	Assimp::Importer importer;
 
 	
@@ -61,12 +88,15 @@ StaticModel * ModelLoader::LoadModel(std::string filename)
 			
 			model->AddMesh(mesh);
 		}
+
+		// Add the model to the model map
+		model->BuildBuffers(vulkanBase);		// Build the models buffers here
+		mModelMap[filename] = model;
 	}
-	else
-		assert(scene);
-
-
-
+	else {
+		// Loading of model failed
+		assert(scene);		
+	}
 
 	return model;
 }

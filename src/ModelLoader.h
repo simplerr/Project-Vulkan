@@ -1,14 +1,19 @@
 #pragma once
 
 #include <string>
+#include <map>
+#include <vulkan/vulkan.h>
 
 class StaticModel;
+class VulkanBase;
 
 // TODO: This will later work like a factory, where the same model only gets loaded once
 class ModelLoader
 {
 public:
-	StaticModel* LoadModel(std::string filename);
-private:
+	void CleanupModels(VkDevice device);
 
+	StaticModel* LoadModel(VulkanBase* vulkanBase, std::string filename);		// NOTE: TODO: Not a good idea to take VulkanBase as argument
+private:
+	std::map<std::string, StaticModel*> mModelMap;
 };

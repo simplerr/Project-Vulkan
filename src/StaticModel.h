@@ -32,10 +32,11 @@ struct Mesh
 class StaticModel
 {
 public:
+	StaticModel();
 	~StaticModel();
 
 	void AddMesh(Mesh& mesh);
-	void BuildBuffers(VulkanBase* vulkanBase);
+	void BuildBuffers(VulkanBase* vulkanBase);		// Gets called in ModelLoader::LoadModel()
 
 	struct {
 		VkBuffer buffer;
@@ -49,7 +50,7 @@ public:
 
 	int GetNumIndices();
 
-	vkTools::VulkanTexture texture;
+	vkTools::VulkanTexture* texture;
 
 private:
 	std::vector<Mesh> mMeshes;
