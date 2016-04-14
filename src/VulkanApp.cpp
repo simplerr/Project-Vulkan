@@ -1,4 +1,5 @@
 #include <array>
+#include <time.h>
 
 #include "VulkanApp.h"
 #include "VulkanDebug.h"
@@ -12,6 +13,8 @@ VulkanApp::VulkanApp() : VulkanBase()
 {
 	camera = new Camera(glm::vec3(100, 100, 100), 60.0f, (float)windowWidth / (float)windowHeight, 0.1f, 2560.0f);
 	camera->LookAt(glm::vec3(0, 0, 0));
+
+	srand(time(NULL));
 }
 
 VulkanApp::~VulkanApp()
@@ -100,7 +103,8 @@ void VulkanApp::LoadModels()
 		for (int j = 0; j < 5; j++)
 		{
 			Object* object = new Object(glm::vec3(i * 100, 0, j * 100));
-			object->SetRotation(glm::vec3(180, 0, 0));
+			object->SetRotation(glm::vec3(rand() % 180, rand() % 180, rand() % 180));
+			object->SetScale(glm::vec3((rand() % 20) / 10.0f));
 			object->SetModel(modelLoader.LoadModel("models/teapot.3ds"));
 			object->GetModel()->BuildBuffers(this);
 			mObjects.push_back(object);
