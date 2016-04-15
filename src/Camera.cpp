@@ -116,6 +116,11 @@ glm::vec3 Camera::GetRight()
 	//return glm::normalize(right);
 }
 
+glm::vec3 Camera::GetPosition()
+{
+	return position;
+}
+
 glm::mat4 Camera::GetOrientation()
 {
 	glm::mat4 orientation;

@@ -509,17 +509,17 @@ void VulkanApp::UpdateUniformBuffers()
 
 	float zoom = -8;
 	glm::mat4 viewMatrix = camera->GetView(); //camera->GetViewMatrix();// glm::mat4();
-	//viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, zoom));
-	//uniformData.modelMatrix = glm::mat4();	// Identity matrix, I think?
-	//uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	glm::vec3 rotation(180, 0, 0);
+	uniformData.viewMatrix = camera->GetView();
+	uniformData.projectionMatrix = camera->GetProjection();
+	uniformData.eyePos = camera->GetPosition();
 
-	uniformData.modelMatrix = glm::mat4();
+	/*uniformData.modelMatrix = glm::mat4();
 	uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, modelPos);
 	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
 	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+	uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));*/
+
 
 	// Map uniform buffer and update it
 	uint8_t *data;
@@ -642,8 +642,8 @@ void VulkanApp::RecordRenderingCommandBuffer()
 			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
 			vkCmdBindDescriptorSets(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
-			// Push the MVP constant
-			glm::mat4 mvp = camera->GetProjection() * camera->GetView() * object->GetWorldMatrix();
+			// Push the world matrix constant
+			glm::mat4 mvp = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
 			int siss = sizeof(mvp);
 			vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(mvp), &mvp);
 
@@ -664,8 +664,11 @@ void VulkanApp::RecordRenderingCommandBuffer()
 		// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
 		//vkCmdBindDescriptorSets(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &terrainDescriptorSet, 0, NULL);
 
-		// Push the MVP constant
-		glm::mat4 mvp = camera->GetProjection() * camera->GetView() * glm::mat4();
+		// Bind the rendering pipeline (including the shaders)
+		vkCmdBindPipeline(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.textured);
+
+		// Push the world matrix constant
+		glm::mat4 mvp = glm::mat4(); // camera->GetProjection() * camera->GetView() * glm::mat4();
 		int siss = sizeof(mvp);
 		vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(mvp), &mvp);
 

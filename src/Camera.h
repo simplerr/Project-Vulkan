@@ -20,6 +20,7 @@ public:
 	glm::mat4 GetProjection();
 	glm::mat4 GetMatrix();
 	glm::vec3 GetRight();
+	glm::vec3 GetPosition();
 	void AddOrientation(float yaw, float pitch);
 	void LookAt(glm::vec3 target);
 	void CapAngles();
@@ -35,7 +36,7 @@ private:
 
 
 	float sensitivity = 0.2f;
-	float speed = 0.1f;
+	float speed = 0.5f;
 
 	int lastX, lastY;
 };

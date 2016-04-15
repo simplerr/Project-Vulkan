@@ -61,8 +61,9 @@ public:
 
 	struct {
 		glm::mat4 projectionMatrix;
-		glm::mat4 modelMatrix;
-		glm::vec4 lightPos = glm::vec4(5.0f, 5.0f, 5.0f, 1.0f);
+		glm::mat4 viewMatrix;
+		glm::vec4 lightDir = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		glm::vec3 eyePos;
 	} uniformData;		// Stored in uniformBuffer.memory in device memory
 
 	VkDescriptorSetLayout descriptorSetLayout;
