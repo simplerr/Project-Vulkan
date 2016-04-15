@@ -16,6 +16,9 @@ struct Vertex
 	Vertex(float px, float py, float pz, float nx, float ny, float nz, float tx, float ty, float tz, float u, float v, float r, float g, float b)
 		: Pos(px, py, pz), Normal(nx, ny, nz), Tangent(tx, ty, tz, 1.0f), Tex(u, v), Color(r, g, b) {}
 
+	Vertex(glm::vec3 position, glm::vec3 normal, glm::vec2 tex, glm::vec3 tangent, glm::vec3 color)
+		: Pos(position), Normal(normal), Tex(tex), Tangent(tangent, 1.0f), Color(color) {}
+
 	glm::vec3 Pos;
 	glm::vec3 Color;
 	glm::vec3 Normal;

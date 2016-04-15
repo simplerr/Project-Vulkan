@@ -60,6 +60,9 @@
     <ClCompile Include="src\Object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\LoadTGA.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VulkanApp.h">
@@ -92,6 +95,9 @@
     <ClInclude Include="src\Object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\LoadTGA.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md">
@@ -107,6 +113,9 @@
       <Filter>Source Files\data</Filter>
     </None>
     <None Include="shaders\mesh\mesh.vert">
+      <Filter>Source Files\data</Filter>
+    </None>
+    <None Include="shaders\mesh\color.frag">
       <Filter>Source Files\data</Filter>
     </None>
   </ItemGroup>

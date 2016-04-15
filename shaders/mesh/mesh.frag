@@ -15,7 +15,7 @@ layout (location = 0) out vec4 outFragColor;
 
 void main() 
 {
-	vec4 color = vec4(inColor, 1.0);	// texture(samplerColorMap, inUV) * 
+	vec4 color = texture(samplerColorMap, inUV) * vec4(inColor, 1.0);	// texture(samplerColorMap, inUV) * 
 
 	vec3 N = normalize(inNormal);
 	vec3 L = normalize(inLightVec);

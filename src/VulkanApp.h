@@ -11,6 +11,7 @@
 class StaticModel;
 class Camera;
 class Object;
+class TextureData;
 
 class VulkanApp : public VulkanBase
 {
@@ -40,6 +41,8 @@ public:
 	//	High level code
 	//
 	void LoadModels();
+	StaticModel* GenerateTerrain(TextureData* data);
+	void SetupTerrainDescriptorSet();
 
 	// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
 	// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
@@ -67,20 +70,25 @@ public:
 	VkPipelineLayout pipelineLayout;
 
 	struct {
-		VkPipeline solid;
-		VkPipeline wireframe;
+		VkPipeline textured;
+		VkPipeline colored;
 	} pipelines;
 
 	// 
 	//	High level code
 	//
 
+	VkDescriptorSet terrainDescriptorSet;
+
 	ModelLoader modelLoader;
 	vkTools::VulkanTexture testTexture;		// NOTE: just for testing
+	vkTools::VulkanTexture terrainTexture;	// Testing for the terrain
 	Camera* camera;
 
 	bool prepared = false;
 	glm::vec3 modelPos = glm::vec3(0, 0, 0);
 
 	std::vector<Object*>  mObjects;
+
+	StaticModel* terrain;
 };

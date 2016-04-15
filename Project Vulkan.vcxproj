@@ -154,6 +154,7 @@
     <ClCompile Include="base\vulkandebug.cpp" />
     <ClCompile Include="base\vulkantools.cpp" />
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\LoadTGA.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ModelLoader.cpp" />
     <ClCompile Include="src\Object.cpp" />
@@ -167,6 +168,7 @@
     <ClInclude Include="base\vulkanswapchain.hpp" />
     <ClInclude Include="base\vulkantools.h" />
     <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\LoadTGA.h" />
     <ClInclude Include="src\ModelLoader.h" />
     <ClInclude Include="src\Object.h" />
     <ClInclude Include="src\StaticModel.h" />
@@ -176,6 +178,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include="shaders\mesh\color.frag" />
     <None Include="shaders\mesh\mesh.frag" />
     <None Include="shaders\mesh\mesh.vert" />
     <None Include="shaders\triangle.frag" />
