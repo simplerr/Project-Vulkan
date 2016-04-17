@@ -15,6 +15,7 @@ public:
 	void SetPosition(glm::vec3 position);
 	void SetRotation(glm::vec3 rotation);
 	void SetScale(glm::vec3 scale);
+	void SetColor(glm::vec3 color);
 
 	void SetPipeline(VkPipeline pipeline);
 
@@ -23,6 +24,7 @@ public:
 	glm::vec3 GetPosition();
 	glm::vec3 GetRotation();
 	glm::vec3 GetScale();
+	glm::vec3 GetColor();
 	glm::mat4 GetWorldMatrix();
 
 	VkPipeline GetPipeline();
@@ -31,6 +33,7 @@ private:
 	glm::vec3 mPosition;
 	glm::vec3 mRotation;
 	glm::vec3 mScale;
+	glm::vec3 mColor;
 
 	VkPipeline mPipeline;		// Points to a pipeline object stored somewhere else
 };

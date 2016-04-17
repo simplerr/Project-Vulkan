@@ -19,6 +19,7 @@ layout (std140, binding = 0) uniform UBO
 
 layout(push_constant) uniform PushConsts {
 	 mat4 world;	// Model View Projection
+	 vec3 color;	// Color
 } pushConsts;
 
 layout (location = 0) out vec3 OutNormalW;		// Normal in world coordinate system
@@ -30,7 +31,7 @@ layout (location = 4) out vec3 OutLightDirW;
 // Push constants
 void main() 
 {
-	OutColor = InColor;
+	OutColor = pushConsts.color; //InColor;
 	OutTex = InTex;
 	gl_Position = ubo.projection * ubo.view * pushConsts.world * vec4(InPosL.xyz, 1.0);
 	

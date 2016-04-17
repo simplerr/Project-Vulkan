@@ -126,7 +126,7 @@ StaticModel* ModelLoader::GenerateTerrain(VulkanBase* vulkanBase, std::string fi
 		for (z = 0; z < texture.height; z++)
 		{
 			// Vertex array. You need to scale this properly
-			float height = texture.imageData[(x + z * texture.width) * (texture.bpp / 8)] / 5.0f;
+			float height = texture.imageData[(x + z * texture.width) * (texture.bpp / 8)] / 20.0f;
 
 			glm::vec3 pos = glm::vec3(x / 1.0, height, z / 1.0);
 			glm::vec3 normal = glm::vec3(0, 0, 0);

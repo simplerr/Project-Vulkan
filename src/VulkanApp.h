@@ -42,6 +42,7 @@ public:
 	//
 	void LoadModels();
 	void SetupTerrainDescriptorSet();
+	void CompileShaders();
 
 	// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
 	// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
@@ -75,11 +76,17 @@ public:
 		VkPipeline starsphere;
 	} pipelines;
 
+	struct PushConstantBlock {
+		glm::mat4 world;
+		glm::vec3 color;
+	};
+
 	// 
 	//	High level code
 	//
 
 	VkDescriptorSet terrainDescriptorSet;
+	PushConstantBlock pushConstants;		// Gets updated with new push constants for each object
 
 	ModelLoader modelLoader;
 	vkTools::VulkanTexture testTexture;		// NOTE: just for testing

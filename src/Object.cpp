@@ -7,6 +7,7 @@ Object::Object(glm::vec3 position)
 	SetPosition(position);
 	SetRotation(glm::vec3(0, 0, 0));
 	SetScale(glm::vec3(1.0f, 1.0f, 1.0f));
+	SetColor(glm::vec3(1.0f, 1.0f, 1.0f));
 	SetModel(nullptr);
 	SetPipeline(VK_NULL_HANDLE);		// Must be assigned later
 }
@@ -35,6 +36,11 @@ void Object::SetScale(glm::vec3 scale)
 	mScale = scale;
 }
 
+void Object::SetColor(glm::vec3 color)
+{
+	mColor = color;
+}
+
 void Object::SetPipeline(VkPipeline pipeline)
 {
 	mPipeline = pipeline;
@@ -58,6 +64,11 @@ glm::vec3 Object::GetRotation()
 glm::vec3 Object::GetScale()
 {
 	return mScale;
+}
+
+glm::vec3 Object::GetColor()
+{
+	return mColor;
 }
 
 glm::mat4 Object::GetWorldMatrix()

@@ -29,9 +29,10 @@ void main()
 	color += diffuse;
 
 	// Specular
-	shade = pow(max(dot(R, V), 0.0), 216.0);
+	shade = pow(max(dot(R, V), 0.0), 512.0);
 	vec3 specular = shade * InColor;
-	color += specular;	
+	//color += specular;	
 
-	OutFragColor = texture(samplerColorMap, InTex) * vec4(color, 1.0f);
+	//OutFragColor = texture(samplerColorMap, InTex) * vec4(color, 1.0f);
+	OutFragColor = vec4(color, 1.0f);
 }

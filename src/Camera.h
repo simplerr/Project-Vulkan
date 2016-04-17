@@ -36,7 +36,7 @@ private:
 
 
 	float sensitivity = 0.2f;
-	float speed = 5.0f;
+	float speed = 2.5f;
 
 	int lastX, lastY;
 };

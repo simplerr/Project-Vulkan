@@ -84,6 +84,7 @@ VulkanBase::~VulkanBase()
 
 void VulkanBase::Prepare()
 {
+	CompileShaders();				// Compile shaders using batch files
 	CreateCommandPool();			// Create a command pool to allocate command buffers from
 	CreateSetupCommandBuffer();		// Create the setup command buffer used for queuing initialization command, also starts recording to the setup command buffer with vkBeginCommandBuffer
 	SetupSwapchain();				// Setup the swap chain with the helper class

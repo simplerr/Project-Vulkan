@@ -1,5 +1,6 @@
 #include <array>
 #include <time.h>
+#include <cstdlib>
 
 #include "VulkanApp.h"
 #include "VulkanDebug.h"
@@ -12,7 +13,7 @@
 
 VulkanApp::VulkanApp() : VulkanBase()
 {
-	camera = new Camera(glm::vec3(100, 100, 100), 60.0f, (float)windowWidth / (float)windowHeight, 0.1f, 25600.0f);
+	camera = new Camera(glm::vec3(500, 1300, 500), 60.0f, (float)windowWidth / (float)windowHeight, 0.1f, 25600.0f);
 	camera->LookAt(glm::vec3(0, 0, 0));
 
 	srand(time(NULL));
@@ -66,6 +67,14 @@ void VulkanApp::Prepare()
 	// Stuff unclear: swapchain, framebuffer, renderpass
 }
 
+void VulkanApp::CompileShaders()
+{
+	system("cd shaders/textured/ && generate-spirv.bat");
+	system("cd shaders/colored/ && generate-spirv.bat");
+	system("cd shaders/starsphere/ && generate-spirv.bat");
+	//system("cls");
+}
+
 void VulkanApp::LoadModels()
 {
 	// Load the starsphere
@@ -79,10 +88,11 @@ void VulkanApp::LoadModels()
 	textureLoader->loadTexture("textures/crate_bc3.dds", VK_FORMAT_BC3_UNORM_BLOCK, &testTexture);
 	textureLoader->loadTexture("textures/bricks.dds", VK_FORMAT_BC3_UNORM_BLOCK, &terrainTexture);
 
-	Object* terrain = new Object(glm::vec3(-10000, 0, -10000));
+	Object* terrain = new Object(glm::vec3(-1000, 0, -1000));
 	terrain->SetModel(modelLoader.GenerateTerrain(this, "textures/fft-terrain.tga"));
 	terrain->SetPipeline(pipelines.textured);
-	terrain->SetScale(glm::vec3(100, 100, 100));
+	terrain->SetScale(glm::vec3(10, 10, 10));
+	terrain->SetColor(glm::vec3(0.5, 0.5, 0.5));
 	mObjects.push_back(terrain);
 
 	// Generate some positions
@@ -90,9 +100,10 @@ void VulkanApp::LoadModels()
 	{
 		for (int j = 0; j < 5; j++)
 		{
-			Object* object = new Object(glm::vec3(i * 100, -1000, j * 100));
+			Object* object = new Object(glm::vec3(i * 100, -100, j * 100));
 			object->SetRotation(glm::vec3(rand() % 180, rand() % 180, rand() % 180));
 			object->SetScale(glm::vec3((rand() % 20) / 10.0f));
+			object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
 
 			if (rand() % 2 == 0) {
 				object->SetModel(modelLoader.LoadModel(this, "models/teapot.3ds"));
@@ -187,7 +198,7 @@ void VulkanApp::SetupDescriptorSetLayout()
 	VkPushConstantRange pushConstantRanges = {};
 	pushConstantRanges.stageFlags = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
 	pushConstantRanges.offset = 0;
-	pushConstantRanges.size = sizeof(glm::mat4);
+	pushConstantRanges.size = sizeof(PushConstantBlock);
 
 	pPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 	pPipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRanges;
@@ -539,9 +550,9 @@ void VulkanApp::RecordRenderingCommandBuffer()
 			vkCmdBindDescriptorSets(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
 			// Push the world matrix constant
-			glm::mat4 mvp = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
-			int siss = sizeof(mvp);
-			vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(mvp), &mvp);
+			pushConstants.world = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+			pushConstants.color = object->GetColor();
+			vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &pushConstants);
 
 			// Bind triangle vertices
 			VkDeviceSize offsets[1] = { 0 };

@@ -60,6 +60,8 @@ public:
 
 	VkBool32 GetMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex);
 
+	virtual void CompileShaders() = 0;
+
 	void RenderLoop();
 	virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 

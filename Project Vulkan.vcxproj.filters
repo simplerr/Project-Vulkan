@@ -113,10 +113,10 @@
       <Filter>Source Files\data</Filter>
     </None>
     <None Include="shaders\textured\textured.frag">
-      <Filter>Source Files\base</Filter>
+      <Filter>Source Files\data</Filter>
     </None>
     <None Include="shaders\textured\textured.vert">
-      <Filter>Source Files\base</Filter>
+      <Filter>Source Files\data</Filter>
     </None>
   </ItemGroup>
 </Project>
