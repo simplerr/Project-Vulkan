@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "VulkanApp.h"
+#include "Window.h"
 
 // The Vulkan application
 VulkanApp vulkanApp;
@@ -21,8 +22,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow)
 {
-	vulkanApp.CreateWin32Window(hInstance, WndProc);
-	vulkanApp.InitSwapchain();
+	Window window = Window(1280, 1024);
+
+#if defined(_WIN32)
+	window.SetupWindow(hInstance, WndProc);
+#elif defined(__linux__)
+	window.SetupWindow();
+#endif
+	vulkanApp.InitSwapchain(&window);
 	vulkanApp.Prepare();
 	vulkanApp.RenderLoop();
 

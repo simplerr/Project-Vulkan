@@ -9,6 +9,7 @@
 #include "VulkanBase.h"
 #include "VulkanDebug.h"
 #include "base/vulkanTextureLoader.hpp"
+#include "Window.h"
 
 /*
 	-	Right now this code assumes that queueFamilyIndex is = 0 in all places,
@@ -260,7 +261,7 @@ void VulkanBase::SetupDepthStencil()
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imageCreateInfo.format = depthFormat;
 	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-	imageCreateInfo.extent = { windowWidth, windowHeight, 1 };
+	imageCreateInfo.extent = { (uint32_t)GetWindowWidth(), (uint32_t)GetWindowHeight(), 1 };
 	imageCreateInfo.mipLevels = 1;
 	imageCreateInfo.arrayLayers = 1;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -372,8 +373,8 @@ void VulkanBase::SetupFrameBuffer()
 	createInfo.renderPass = renderPass;
 	createInfo.attachmentCount = 2;
 	createInfo.pAttachments = attachments;
-	createInfo.width = windowWidth;
-	createInfo.height = windowHeight;
+	createInfo.width = GetWindowWidth();
+	createInfo.height = GetWindowHeight();
 	createInfo.layers = 1;
 
 	// Create a frame buffer for each swap chain image
@@ -390,7 +391,7 @@ void VulkanBase::SetupSwapchain()
 {
 	// Note that we use the same command buffer for everything right now!
 	// Uses the setup command buffer
-	swapChain.create(setupCmdBuffer, &windowWidth, &windowHeight);
+	swapChain.create(setupCmdBuffer, GetWindowWidth(), GetWindowHeight());
 }
 
 void VulkanBase::ExecuteSetupCommandBuffer()
@@ -486,11 +487,15 @@ void VulkanBase::SubmitPostPresentMemoryBarrier(VkImage image)
 	VulkanDebug::ErrorCheck(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
 }
 
-void VulkanBase::InitSwapchain()
+void VulkanBase::InitSwapchain(Window* window)
 {
+	mWindow = window;
+
 	// Platform dependent code to initialize the window surface
 #if defined(_WIN32)
-	swapChain.initSurface(windowInstance, window);
+	swapChain.initSurface(mWindow->GetInstance(), mWindow->GetHwnd());
+#elif defined(__linux__)
+	swapChain.initSurface(mWindow->GetConnection(), mWindow->GetWindow());
 #endif
 }
 
@@ -510,6 +515,7 @@ VkPipelineShaderStageCreateInfo VulkanBase::LoadShader(std::string fileName, VkS
 	return shaderStage;
 }
 
+#if defined(_WIN32)
 void VulkanBase::RenderLoop()
 {
 	MSG msg;
@@ -546,153 +552,13 @@ void VulkanBase::RenderLoop()
 		if (fpsTimer > 1000.0f)
 		{
 			std::string windowTitle = "Project Vulkan: " + std::to_string(frameCounter) + " fps";
-			SetWindowText(window, windowTitle.c_str());
+
+			SetWindowText(mWindow->GetHwnd(), windowTitle.c_str());
+
 			fpsTimer = 0.0f;
 			frameCounter = 0.0f;
 		}
 	}
-}
-
-#if defined(_WIN32)
-// Creates a window that Vulkan can use for rendering
-HWND VulkanBase::CreateWin32Window(HINSTANCE hInstance, WNDPROC WndProc)
-{
-	windowInstance = hInstance;
-
-	WNDCLASS wc;
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = WndProc;
-	wc.cbClsExtra = 0;
-	wc.cbWndExtra = 0;
-	wc.hInstance = windowInstance;
-	wc.hIcon = LoadIcon(0, IDI_APPLICATION);
-	wc.hCursor = LoadCursor(0, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	wc.lpszMenuName = 0;
-	wc.lpszClassName = "VulkanWndClassName";
-
-	if (!RegisterClass(&wc)) {
-		MessageBox(0, "RegisterClass FAILED", 0, 0);
-		PostQuitMessage(0);
-	}
-
-	RECT clientRect;
-	clientRect.left = GetSystemMetrics(SM_CXSCREEN) / 2 - windowWidth / 2.0f;
-	clientRect.right = GetSystemMetrics(SM_CXSCREEN) / 2 + windowWidth / 2.0f;
-	clientRect.top = GetSystemMetrics(SM_CYSCREEN) / 2 - windowHeight / 2.0f;
-	clientRect.bottom = GetSystemMetrics(SM_CYSCREEN) / 2 + windowHeight / 2.0f;
-
-	DWORD style = true ? WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN : WS_POPUP | WS_VISIBLE | WS_SYSMENU | WS_CLIPCHILDREN;
-
-	AdjustWindowRect(&clientRect, style, false);
-	int width = clientRect.right - clientRect.left;
-	int height = clientRect.bottom - clientRect.top;
-
-	// Create the window with a custom size and make it centered
-	// NOTE: WS_CLIPCHILDREN Makes the area under child windows not be displayed. (Useful when rendering DirectX and using windows controls).
-	window = CreateWindow("VulkanWndClassName", "Vulkan App",
-		style, GetSystemMetrics(SM_CXSCREEN) / 2 - (windowWidth / 2),
-		GetSystemMetrics(SM_CYSCREEN) / 2 - (windowHeight / 2), width, height,
-		0, 0, windowInstance, 0);
-
-	if (!window) {
-		auto error = GetLastError();
-		MessageBox(0, "CreateWindow() failed.", 0, 0);
-		PostQuitMessage(0);
-	}
-
-	// Show the newly created window.
-	ShowWindow(window, SW_SHOW);
-	SetForegroundWindow(window);
-	SetFocus(window);
-
-	return window;
-}
-
-void VulkanBase::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	switch (msg)
-	{
-	case WM_CLOSE:
-		DestroyWindow(window);
-		PostQuitMessage(0);
-		break;
-	}
-}
-
-#elif defined(__linux__)
-// Set up a window using XCB and request event types
-xcb_window_t VulkanExampleBase::setupWindow()
-{
-	uint32_t value_mask, value_list[32];
-
-	window = xcb_generate_id(connection);
-
-	value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-	value_list[0] = screen->black_pixel;
-	value_list[1] =
-		XCB_EVENT_MASK_KEY_RELEASE |
-		XCB_EVENT_MASK_EXPOSURE |
-		XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-		XCB_EVENT_MASK_POINTER_MOTION |
-		XCB_EVENT_MASK_BUTTON_PRESS |
-		XCB_EVENT_MASK_BUTTON_RELEASE;
-
-	xcb_create_window(connection,
-		XCB_COPY_FROM_PARENT,
-		window, screen->root,
-		0, 0, width, height, 0,
-		XCB_WINDOW_CLASS_INPUT_OUTPUT,
-		screen->root_visual,
-		value_mask, value_list);
-
-	/* Magic code that will send notification when window is destroyed */
-	xcb_intern_atom_cookie_t cookie = xcb_intern_atom(connection, 1, 12, "WM_PROTOCOLS");
-	xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(connection, cookie, 0);
-
-	xcb_intern_atom_cookie_t cookie2 = xcb_intern_atom(connection, 0, 16, "WM_DELETE_WINDOW");
-	atom_wm_delete_window = xcb_intern_atom_reply(connection, cookie2, 0);
-
-	xcb_change_property(connection, XCB_PROP_MODE_REPLACE,
-		window, (*reply).atom, 4, 32, 1,
-		&(*atom_wm_delete_window).atom);
-
-	std::string windowTitle = getWindowTitle();
-	xcb_change_property(connection, XCB_PROP_MODE_REPLACE,
-		window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
-		title.size(), windowTitle.c_str());
-
-	free(reply);
-
-	xcb_map_window(connection, window);
-
-	return(window);
-}
-
-// Initialize XCB connection
-void VulkanExampleBase::initxcbConnection()
-{
-	const xcb_setup_t *setup;
-	xcb_screen_iterator_t iter;
-	int scr;
-
-	connection = xcb_connect(NULL, &scr);
-	if (connection == NULL) {
-		printf("Could not find a compatible Vulkan ICD!\n");
-		fflush(stdout);
-		exit(1);
-	}
-
-	setup = xcb_get_setup(connection);
-	iter = xcb_setup_roots_iterator(setup);
-	while (scr-- > 0)
-		xcb_screen_next(&iter);
-	screen = iter.data;
-}
-
-void VulkanExampleBase::handleEvent(const xcb_generic_event_t *event)
-{
-	// TODO
 }
 #endif
 
@@ -717,4 +583,25 @@ VkBool32 VulkanBase::GetMemoryType(uint32_t typeBits, VkFlags properties, uint32
 		typeBits >>= 1;
 	}
 	return false;
+}
+
+void VulkanBase::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+	case WM_CLOSE:
+		DestroyWindow(mWindow->GetHwnd());
+		PostQuitMessage(0);
+		break;
+	}
+}
+
+int VulkanBase::GetWindowWidth()
+{
+	return mWindow->GetWidth();
+}
+
+int VulkanBase::GetWindowHeight()
+{
+	return mWindow->GetHeight();
 }

@@ -7,6 +7,7 @@
 #include "base/vulkantools.h"	
 #include "base/vulkanswapchain.hpp"
 #include "base/vulkanTextureLoader.hpp"
+#include "Window.h"
 
 #include <vulkan/vulkan.h>
 
@@ -47,7 +48,7 @@ public:
 	void SetupFrameBuffer();
 	// Don't need pipeline cache
 
-	void InitSwapchain();
+	void InitSwapchain(Window* window);
 	void SetupSwapchain();
 
 	void ExecuteSetupCommandBuffer();
@@ -67,15 +68,12 @@ public:
 	void RenderLoop();
 	
 	VkDevice GetDevice();
+	int GetWindowWidth();
+	int GetWindowHeight();
 
 	// Platform specific
 #if defined(_WIN32)
-	HWND CreateWin32Window(HINSTANCE hInstance, WNDPROC wndProc);
 	virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-#elif defined(__linux__)
-	xcb_window_t setupWindow();
-	void initxcbConnection();
-	void handleEvent(const xcb_generic_event_t *event);
 #endif
 
 protected:
@@ -148,21 +146,9 @@ protected:
 	float timerSpeed = 0.25f;
 
 	// FPS timer (one second interval)
-	float fpsTimer = 0.0f;
-	
-	// Platform specific 
-#if defined(_WIN32)
-	HWND				window;
-	HINSTANCE			windowInstance;
-#elif defined(__linux__)
-	bool quit;
-	xcb_connection_t *connection;
-	xcb_screen_t *screen;
-	xcb_window_t window;
-	xcb_intern_atom_reply_t *atom_wm_delete_window;
-#endif
+	float fpsTimer = 0.0f;	
 
-	uint32_t			windowWidth = 1280;
-	uint32_t			windowHeight = 1024;
+	// Wrapper class for the platform dependet window code
+	Window*				mWindow;
 };
 

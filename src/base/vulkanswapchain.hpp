@@ -235,7 +235,7 @@ public:
 	}
 
 	// Create the swap chain and get images with given width and height
-	void create(VkCommandBuffer cmdBuffer, uint32_t *width, uint32_t *height)
+	void create(VkCommandBuffer cmdBuffer, uint32_t width, uint32_t height)
 	{
 		VkResult err;
 		VkSwapchainKHR oldSwapchain = swapChain;
@@ -262,15 +262,15 @@ public:
 		{
 			// If the surface size is undefined, the size is set to
 			// the size of the images requested.
-			swapchainExtent.width = *width;
-			swapchainExtent.height = *height;
+			swapchainExtent.width = width;
+			swapchainExtent.height = height;
 		}
 		else
 		{
 			// If the surface size is defined, the swap chain size must match
 			swapchainExtent = surfCaps.currentExtent;
-			*width = surfCaps.currentExtent.width;
-			*height = surfCaps.currentExtent.height;
+			width = surfCaps.currentExtent.width;
+			height = surfCaps.currentExtent.height;
 		}
 
 		// Prefer mailbox mode if present, it's the lowest latency non-tearing present  mode

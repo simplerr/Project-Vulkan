@@ -13,9 +13,6 @@
 
 VulkanApp::VulkanApp() : VulkanBase()
 {
-	camera = new Camera(glm::vec3(500, 1300, 500), 60.0f, (float)windowWidth / (float)windowHeight, 0.1f, 25600.0f);
-	camera->LookAt(glm::vec3(0, 0, 0));
-
 	srand(time(NULL));
 }
 
@@ -49,11 +46,12 @@ void VulkanApp::Prepare()
 {
 	VulkanBase::Prepare();
 
-	PrepareUniformBuffers();	
+	
 	SetupVertexDescriptions();			// Custom
 	SetupDescriptorSetLayout();
 	PreparePipelines();	
 	LoadModels();						// Custom
+	PrepareUniformBuffers();
 	SetupDescriptorPool();
 	SetupDescriptorSet();
 	//SetupTerrainDescriptorSet();		// Custom
@@ -77,6 +75,10 @@ void VulkanApp::CompileShaders()
 
 void VulkanApp::LoadModels()
 {
+	// Create the camera
+	camera = new Camera(glm::vec3(500, 1300, 500), 60.0f, (float)GetWindowWidth() / (float)GetWindowHeight(), 0.1f, 25600.0f);
+	camera->LookAt(glm::vec3(0, 0, 0));
+
 	// Load the starsphere
 	Object* sphere = new Object(glm::vec3(0, 0, 0));
 	sphere->SetModel(modelLoader.LoadModel(this, "data/models/sphere.obj"));
@@ -507,8 +509,8 @@ void VulkanApp::RecordRenderingCommandBuffer()
 	VkRenderPassBeginInfo renderPassBeginInfo = {};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassBeginInfo.renderPass = renderPass;
-	renderPassBeginInfo.renderArea.extent.width = windowWidth;
-	renderPassBeginInfo.renderArea.extent.height = windowHeight;
+	renderPassBeginInfo.renderArea.extent.width = GetWindowWidth();
+	renderPassBeginInfo.renderArea.extent.height = GetWindowHeight();
 	renderPassBeginInfo.clearValueCount = 2;
 	renderPassBeginInfo.pClearValues = clearValues;
 
@@ -523,16 +525,16 @@ void VulkanApp::RecordRenderingCommandBuffer()
 
 		// Update dynamic viewport state
 		VkViewport viewport = {};
-		viewport.width = (float)windowWidth;
-		viewport.height = (float)windowHeight;
+		viewport.width = (float)GetWindowWidth();
+		viewport.height = (float)GetWindowHeight();
 		viewport.minDepth = (float) 0.0f;
 		viewport.maxDepth = (float) 1.0f;
 		vkCmdSetViewport(renderingCommandBuffers[i], 0, 1, &viewport);
 
 		// Update dynamic scissor state
 		VkRect2D scissor = {};
-		scissor.extent.width = windowWidth;
-		scissor.extent.height = windowHeight;
+		scissor.extent.width = GetWindowWidth();
+		scissor.extent.height = GetWindowHeight();
 		scissor.offset.x = 0;
 		scissor.offset.y = 0;
 		vkCmdSetScissor(renderingCommandBuffers[i], 0, 1, &scissor);
