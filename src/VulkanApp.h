@@ -41,7 +41,6 @@ public:
 	//	High level code
 	//
 	void LoadModels();
-	StaticModel* GenerateTerrain(TextureData* data);
 	void SetupTerrainDescriptorSet();
 
 	// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
@@ -88,9 +87,6 @@ public:
 	Camera* camera;
 
 	bool prepared = false;
-	glm::vec3 modelPos = glm::vec3(0, 0, 0);
 
 	std::vector<Object*>  mObjects;
-
-	StaticModel* terrain;
 };

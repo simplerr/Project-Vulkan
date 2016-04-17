@@ -1,6 +1,7 @@
 #include "ModelLoader.h"
 #include "StaticModel.h"
 #include "VulkanBase.h"
+#include "LoadTGA.h"
 
 #include <vector>
 
@@ -44,7 +45,6 @@ StaticModel * ModelLoader::LoadModel(VulkanBase* vulkanBase, std::string filenam
 	StaticModel* model = nullptr;
 	Assimp::Importer importer;
 
-	
 	// Load scene from the file.
 	const aiScene* scene = importer.ReadFile(filename, aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals);
 
@@ -99,4 +99,114 @@ StaticModel * ModelLoader::LoadModel(VulkanBase* vulkanBase, std::string filenam
 	}
 
 	return model;
+}
+
+StaticModel* ModelLoader::GenerateTerrain(VulkanBase* vulkanBase, std::string filename)
+{
+	// Check if the model already is loaded
+	if (mModelMap.find(filename) != mModelMap.end())
+		return mModelMap[filename];
+
+	// Load the terrain froma .tga file
+	TextureData texture;
+	LoadTGATextureData((char*)filename.c_str(), &texture);
+
+	StaticModel* terrain = new StaticModel;
+	Mesh mesh;
+
+	int vertexCount = texture.width * texture.height;
+	int triangleCount = (texture.width - 1) * (texture.height - 1) * 2;
+	int x, z;
+
+	mesh.vertices.resize(vertexCount);
+	mesh.indices.resize(triangleCount * 3);
+
+	printf("bpp %d\n", texture.bpp);
+	for (x = 0; x < texture.width; x++)
+		for (z = 0; z < texture.height; z++)
+		{
+			// Vertex array. You need to scale this properly
+			float height = texture.imageData[(x + z * texture.width) * (texture.bpp / 8)] / 5.0f;
+
+			glm::vec3 pos = glm::vec3(x / 1.0, height, z / 1.0);
+			glm::vec3 normal = glm::vec3(0, 0, 0);
+			glm::vec2 uv = glm::vec2(x / (float)texture.width, z / (float)texture.height);
+
+			Vertex vertex = Vertex(pos, normal, uv, glm::vec3(0, 0, 0), glm::vec3(1.0, 1.0, 1.0));
+			mesh.vertices[x + z * texture.width] = vertex;
+		}
+
+	// Normal vectors. You need to calculate these.
+	for (x = 0; x < texture.width; x++)
+	{
+		for (z = 0; z < texture.height; z++)
+		{
+			glm::vec3 p1, p2, p3;
+			glm::vec3 edge = { 0.0f, 0.0f, 0.0f };
+			int i;
+
+			// p1 [x-1][z-1]
+			if (x < 1 && z < 1)
+				i = (x + 1 + (z + 1) * texture.width);
+			else
+				i = (x - 1 + (z - 1) * texture.width);
+
+			// TODO: NOTE: HAX
+			if (i < 0)
+				i = 0;
+
+			p1 = mesh.vertices[i].Pos;
+
+			// p1 [x-1][z] (if on the edge use [x+1] instead of [x-1])
+			if (x < 1)
+				i = (x + 1 + (z)* texture.width);
+			else
+				i = (x - 1 + (z)* texture.width);
+
+			p2 = mesh.vertices[i].Pos;
+
+			// p1 [x][z-1]
+			if (z < 1)
+				i = (x + (z + 1) * texture.width);
+			else
+				i = (x + (z - 1) * texture.width);
+
+			p3 = mesh.vertices[i].Pos;
+
+			glm::vec3 e1 = p2 - p1;
+			glm::vec3 e2 = p3 - p1;
+			glm::vec3 normal = glm::cross(e1, e2);
+
+			if (normal != glm::vec3(0, 0, 0))
+				int asda = 1;
+
+			normal = glm::normalize(normal);
+
+			i = (x + z * texture.width);
+			mesh.vertices[i].Normal = normal;
+		}
+	}
+
+	for (x = 0; x < texture.width - 1; x++)
+	{
+		for (z = 0; z < texture.height - 1; z++)
+		{
+			// Triangle 1
+			mesh.indices[(x + z * (texture.width - 1)) * 6 + 0] = x + z * texture.width;
+			mesh.indices[(x + z * (texture.width - 1)) * 6 + 1] = x + (z + 1) * texture.width;
+			mesh.indices[(x + z * (texture.width - 1)) * 6 + 2] = x + 1 + z * texture.width;
+			// Triangle 2
+			mesh.indices[(x + z * (texture.width - 1)) * 6 + 3] = x + 1 + z * texture.width;
+			mesh.indices[(x + z * (texture.width - 1)) * 6 + 4] = x + (z + 1) * texture.width;
+			mesh.indices[(x + z * (texture.width - 1)) * 6 + 5] = x + 1 + (z + 1) * texture.width;
+		}
+	}
+
+	terrain->AddMesh(mesh);
+	terrain->BuildBuffers(vulkanBase);
+
+	// Add to the map
+	mModelMap[filename] = terrain;
+
+	return terrain;
 }

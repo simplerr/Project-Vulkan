@@ -12,7 +12,7 @@
 
 VulkanApp::VulkanApp() : VulkanBase()
 {
-	camera = new Camera(glm::vec3(100, 100, 100), 60.0f, (float)windowWidth / (float)windowHeight, 0.1f, 2560.0f);
+	camera = new Camera(glm::vec3(100, 100, 100), 60.0f, (float)windowWidth / (float)windowHeight, 0.1f, 25600.0f);
 	camera->LookAt(glm::vec3(0, 0, 0));
 
 	srand(time(NULL));
@@ -42,12 +42,6 @@ VulkanApp::~VulkanApp()
 	for (int i = 0; i < mObjects.size(); i++) {
 		delete mObjects[i];
 	}
-
-	// Free vertex and index buffers for the terrain
-	vkDestroyBuffer(device, terrain->vertices.buffer, nullptr);
-	vkFreeMemory(device, terrain->vertices.memory, nullptr);
-	vkDestroyBuffer(device, terrain->indices.buffer, nullptr);
-	vkFreeMemory(device, terrain->indices.memory, nullptr);
 }
 
 void VulkanApp::Prepare()
@@ -85,10 +79,11 @@ void VulkanApp::LoadModels()
 	textureLoader->loadTexture("textures/crate_bc3.dds", VK_FORMAT_BC3_UNORM_BLOCK, &testTexture);
 	textureLoader->loadTexture("textures/bricks.dds", VK_FORMAT_BC3_UNORM_BLOCK, &terrainTexture);
 
-	// Load the terrain froma .tga file
-	TextureData terrainTexture;
-	LoadTGATextureData("textures/fft-terrain.tga", &terrainTexture);
-	terrain = GenerateTerrain(&terrainTexture);
+	Object* terrain = new Object(glm::vec3(0, 0, 0));
+	terrain->SetModel(modelLoader.GenerateTerrain(this, "textures/fft-terrain.tga"));
+	terrain->SetPipeline(pipelines.textured);
+	terrain->SetScale(glm::vec3(10, 10, 10));
+	mObjects.push_back(terrain);
 
 	// Generate some positions
 	for (int i = 0; i < 5; i++)
@@ -114,117 +109,6 @@ void VulkanApp::LoadModels()
 	}
 
 	// TODO: Needs setup the binding descriptions
-}
-
-StaticModel* VulkanApp::GenerateTerrain(TextureData* texture)
-{
-	StaticModel* terrain = new StaticModel;
-	Mesh mesh;
-
-	int vertexCount = texture->width * texture->height;
-	int triangleCount = (texture->width - 1) * (texture->height - 1) * 2;
-	int x, z;
-
-	mesh.vertices.resize(vertexCount);
-	mesh.indices.resize(triangleCount * 3);
-
-	printf("bpp %d\n", texture->bpp);
-	for (x = 0; x < texture->width; x++)
-		for (z = 0; z < texture->height; z++)
-		{
-			// Vertex array. You need to scale this properly
-			float height = texture->imageData[(x + z * texture->width) * (texture->bpp / 8)] / 5.0f;
-
-			glm::vec3 pos = glm::vec3(x / 1.0, height, z / 1.0);
-			glm::vec3 normal = glm::vec3(0, 0, 0);
-			glm::vec2 uv = glm::vec2(x / (float)texture->width, z / (float)texture->height);
-
-			Vertex vertex = Vertex(pos, normal, uv, glm::vec3(0, 0, 0), glm::vec3(1.0, 1.0, 1.0));
-			mesh.vertices[x + z * texture->width] = vertex;
-		}
-
-	// Normal vectors. You need to calculate these.
-	for (x = 0; x < texture->width; x++)
-	{
-		for (z = 0; z < texture->height; z++)
-		{
-			glm::vec3 p1, p2, p3;
-			glm::vec3 edge = { 0.0f, 0.0f, 0.0f };
-			int i;
-
-			// p1 [x-1][z-1]
-			if (x < 1 && z < 1)
-				i = (x + 1 + (z + 1) * texture->width);
-			else
-				i = (x - 1 + (z - 1) * texture->width);
-
-			// TODO: NOTE: HAX
-			if (i < 0)
-				i = 0;
-
-			p1 = mesh.vertices[i].Pos;
-
-			// p1 [x-1][z] (if on the edge use [x+1] instead of [x-1])
-			if (x < 1)
-				i = (x + 1 + (z)* texture->width);
-			else
-				i = (x - 1 + (z)* texture->width);
-
-			p2 = mesh.vertices[i].Pos;
-
-			// p1 [x][z-1]
-			if (z < 1)
-				i = (x + (z + 1) * texture->width);
-			else
-				i = (x + (z - 1) * texture->width);
-
-			p3 = mesh.vertices[i].Pos;
-
-			glm::vec3 e1 = p2 - p1;
-			glm::vec3 e2 = p3 - p1;
-			glm::vec3 normal = glm::cross(e1, e2);
-
-			if (normal != glm::vec3(0, 0, 0))
-				int asda = 1;
-
-			normal = glm::normalize(normal);
-
-			i = (x + z * texture->width);
-			mesh.vertices[i].Normal = normal;
-		}
-	}
-
-	for (x = 0; x < texture->width - 1; x++)
-	{
-		for (z = 0; z < texture->height - 1; z++)
-		{
-			// Triangle 1
-			mesh.indices[(x + z * (texture->width - 1)) * 6 + 0] = x + z * texture->width;
-			mesh.indices[(x + z * (texture->width - 1)) * 6 + 1] = x + (z + 1) * texture->width;
-			mesh.indices[(x + z * (texture->width - 1)) * 6 + 2] = x + 1 + z * texture->width;
-			// Triangle 2
-			mesh.indices[(x + z * (texture->width - 1)) * 6 + 3] = x + 1 + z * texture->width;
-			mesh.indices[(x + z * (texture->width - 1)) * 6 + 4] = x + (z + 1) * texture->width;
-			mesh.indices[(x + z * (texture->width - 1)) * 6 + 5] = x + 1 + (z + 1) * texture->width;
-		}
-	}
-
-	terrain->AddMesh(mesh);
-	terrain->BuildBuffers(this);
-	// End of terrain generation
-
-	// Create Model and upload to GPU:
-
-/*	Model* model = LoadDataToModel(
-		vertexArray,
-		normalArray,
-		texCoordArray,
-		NULL,
-		indexArray,
-		vertexCount,
-		triangleCount * 3);*/
-
-	return terrain;
 }
 
 void VulkanApp::PrepareUniformBuffers()
@@ -677,23 +561,23 @@ void VulkanApp::RecordRenderingCommandBuffer()
 		//vkCmdBindDescriptorSets(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &terrainDescriptorSet, 0, NULL);
 
 		// Bind the rendering pipeline (including the shaders)
-		vkCmdBindPipeline(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.textured);
+		//vkCmdBindPipeline(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.textured);
 
-		// Push the world matrix constant
-		glm::mat4 mvp = glm::mat4(); // camera->GetProjection() * camera->GetView() * glm::mat4();
-		int siss = sizeof(mvp);
-		vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(mvp), &mvp);
+		//// Push the world matrix constant
+		//glm::mat4 mvp = glm::mat4(); // camera->GetProjection() * camera->GetView() * glm::mat4();
+		//int siss = sizeof(mvp);
+		//vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(mvp), &mvp);
 
-		// Bind triangle vertices
-		VkDeviceSize offsets[1] = { 0 };
-		vkCmdBindVertexBuffers(renderingCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &terrain->vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(renderingCommandBuffers[i], terrain->indices.buffer, 0, VK_INDEX_TYPE_UINT32);						
+		//// Bind triangle vertices
+		//VkDeviceSize offsets[1] = { 0 };
+		//vkCmdBindVertexBuffers(renderingCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &terrain->vertices.buffer, offsets);
+		//vkCmdBindIndexBuffer(renderingCommandBuffers[i], terrain->indices.buffer, 0, VK_INDEX_TYPE_UINT32);						
 
-		// Draw indexed triangle	
-		vkCmdSetLineWidth(renderingCommandBuffers[i], 1.0f);
-		vkCmdDrawIndexed(renderingCommandBuffers[i], terrain->GetNumIndices(), 1, 0, 0, 0);
+		//// Draw indexed triangle	
+		//vkCmdSetLineWidth(renderingCommandBuffers[i], 1.0f);
+		//vkCmdDrawIndexed(renderingCommandBuffers[i], terrain->GetNumIndices(), 1, 0, 0, 0);
 
-		// End command buffer recording & the render pass
+		//// End command buffer recording & the render pass
 		vkCmdEndRenderPass(renderingCommandBuffers[i]);
 		VulkanDebug::ErrorCheck(vkEndCommandBuffer(renderingCommandBuffers[i]));
 	}	
