@@ -151,7 +151,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="base\vulkandebug.cpp" />
     <ClCompile Include="base\vulkantools.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\LoadTGA.cpp" />
@@ -164,7 +163,6 @@
     <ClCompile Include="src\VulkanDebug.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="base\vulkandebug.h" />
     <ClInclude Include="base\vulkanswapchain.hpp" />
     <ClInclude Include="base\vulkantools.h" />
     <ClInclude Include="src\Camera.h" />
