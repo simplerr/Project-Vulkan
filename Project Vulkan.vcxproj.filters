@@ -118,5 +118,11 @@
     <None Include="shaders\mesh\color.frag">
       <Filter>Source Files\data</Filter>
     </None>
+    <None Include="shaders\starsphere\starsphere.frag">
+      <Filter>Source Files\data</Filter>
+    </None>
+    <None Include="shaders\starsphere\starsphere.vert">
+      <Filter>Source Files\data</Filter>
+    </None>
   </ItemGroup>
 </Project>

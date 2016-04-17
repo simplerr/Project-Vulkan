@@ -30,6 +30,7 @@ VulkanApp::~VulkanApp()
 
 	vkDestroyPipeline(device, pipelines.textured, nullptr);
 	vkDestroyPipeline(device, pipelines.colored, nullptr);
+	vkDestroyPipeline(device, pipelines.starsphere, nullptr);
 
 	// The model loader is responsible for cleaning up the model data
 	modelLoader.CleanupModels(device);
@@ -73,6 +74,13 @@ void VulkanApp::Prepare()
 
 void VulkanApp::LoadModels()
 {
+	// Load the starsphere
+	Object* sphere = new Object(glm::vec3(0, 0, 0));
+	sphere->SetModel(modelLoader.LoadModel(this, "models/sphere.obj"));
+	sphere->SetScale(glm::vec3(100));
+	sphere->SetPipeline(pipelines.starsphere);
+	mObjects.push_back(sphere);
+
 	// Load a random testing texture
 	textureLoader->loadTexture("textures/crate_bc3.dds", VK_FORMAT_BC3_UNORM_BLOCK, &testTexture);
 	textureLoader->loadTexture("textures/bricks.dds", VK_FORMAT_BC3_UNORM_BLOCK, &terrainTexture);
@@ -90,8 +98,6 @@ void VulkanApp::LoadModels()
 			Object* object = new Object(glm::vec3(i * 100, 0, j * 100));
 			object->SetRotation(glm::vec3(rand() % 180, rand() % 180, rand() % 180));
 			object->SetScale(glm::vec3((rand() % 20) / 10.0f));
-
-			//object->SetModel(modelLoader.LoadModel(this, "models/voyager/voyager.obj"));
 
 			if (rand() % 2 == 0) {
 				object->SetModel(modelLoader.LoadModel(this, "models/teapot.3ds"));
@@ -497,9 +503,15 @@ void VulkanApp::PreparePipelines()
 	VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipelines.textured));
 
 	// Create the wireframe pipeline
-	//rasterizationState.polygonMode = VK_POLYGON_MODE_LINE;
 	shaderStages[1] = LoadShader("shaders/mesh/color.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 	VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipelines.colored));
+
+	// Create the starsphere pipeline
+	rasterizationState.cullMode = VK_CULL_MODE_FRONT_BIT;
+	depthStencilState.depthWriteEnable = VK_FALSE;
+	shaderStages[0] = LoadShader("shaders/starsphere/starsphere.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = LoadShader("shaders/starsphere/starsphere.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	vkTools::checkResult(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipelines.starsphere));
 }
 
 // Call this every time any uniform buffer should be updated (view changes etc.)

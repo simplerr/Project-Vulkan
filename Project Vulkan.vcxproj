@@ -181,6 +181,8 @@
     <None Include="shaders\mesh\color.frag" />
     <None Include="shaders\mesh\mesh.frag" />
     <None Include="shaders\mesh\mesh.vert" />
+    <None Include="shaders\starsphere\starsphere.frag" />
+    <None Include="shaders\starsphere\starsphere.vert" />
     <None Include="shaders\triangle.frag" />
     <None Include="shaders\triangle.vert" />
   </ItemGroup>

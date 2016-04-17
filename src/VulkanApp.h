@@ -73,6 +73,7 @@ public:
 	struct {
 		VkPipeline textured;
 		VkPipeline colored;
+		VkPipeline starsphere;
 	} pipelines;
 
 	// 
