@@ -16,7 +16,8 @@ layout (location = 0) out vec4 OutFragColor;
 void main() 
 {
 	// Ambient factor
-	vec3 color = vec3(0.2f);	
+	vec3 color = vec3(0.2f);
+	vec3 Color = vec3(1, 1, 1);	
 
 	vec3 normal = normalize(InNormalW);
 	vec3 lightDir = normalize(InLightDirW);
@@ -25,14 +26,14 @@ void main()
 
 	// Diffuse
 	float shade = clamp(dot(normal, lightDir), 0.0f, 1.0f);
-	vec3 diffuse = shade * InColor;
+	vec3 diffuse = shade * Color;
 	color += diffuse;
 
 	// Specular
 	shade = pow(max(dot(R, V), 0.0), 512.0);
-	vec3 specular = shade * InColor;
+	vec3 specular = shade * Color;
 	//color += specular;	
 
-	//OutFragColor = texture(samplerColorMap, InTex) * vec4(color, 1.0f);
-	OutFragColor = vec4(color, 1.0f);
+	OutFragColor = texture(samplerColorMap, InTex) * vec4(color, 1.0f);
+	//OutFragColor = vec4(color, 1.0f);
 }

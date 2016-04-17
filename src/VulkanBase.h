@@ -146,7 +146,7 @@ protected:
 	HINSTANCE			windowInstance;
 #endif
 
-	uint32_t			windowWidth = 1024;
-	uint32_t			windowHeight = 768;
+	uint32_t			windowWidth = 1280;
+	uint32_t			windowHeight = 1024;
 };
 

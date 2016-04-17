@@ -69,9 +69,9 @@ void VulkanApp::Prepare()
 
 void VulkanApp::CompileShaders()
 {
-	system("cd shaders/textured/ && generate-spirv.bat");
-	system("cd shaders/colored/ && generate-spirv.bat");
-	system("cd shaders/starsphere/ && generate-spirv.bat");
+	system("cd data/shaders/textured/ && generate-spirv.bat");
+	system("cd data/shaders/colored/ && generate-spirv.bat");
+	system("cd data/shaders/starsphere/ && generate-spirv.bat");
 	//system("cls");
 }
 
@@ -79,20 +79,20 @@ void VulkanApp::LoadModels()
 {
 	// Load the starsphere
 	Object* sphere = new Object(glm::vec3(0, 0, 0));
-	sphere->SetModel(modelLoader.LoadModel(this, "models/sphere.obj"));
+	sphere->SetModel(modelLoader.LoadModel(this, "data/models/sphere.obj"));
 	sphere->SetScale(glm::vec3(100));
 	sphere->SetPipeline(pipelines.starsphere);
 	mObjects.push_back(sphere);
 
 	// Load a random testing texture
-	textureLoader->loadTexture("textures/crate_bc3.dds", VK_FORMAT_BC3_UNORM_BLOCK, &testTexture);
-	textureLoader->loadTexture("textures/bricks.dds", VK_FORMAT_BC3_UNORM_BLOCK, &terrainTexture);
+	textureLoader->loadTexture("data/textures/crate_bc3.dds", VK_FORMAT_BC3_UNORM_BLOCK, &testTexture);
+	textureLoader->loadTexture("data/textures/bricks.dds", VK_FORMAT_BC3_UNORM_BLOCK, &terrainTexture);
 
 	Object* terrain = new Object(glm::vec3(-1000, 0, -1000));
-	terrain->SetModel(modelLoader.GenerateTerrain(this, "textures/fft-terrain.tga"));
-	terrain->SetPipeline(pipelines.textured);
+	terrain->SetModel(modelLoader.GenerateTerrain(this, "data/textures/fft-terrain.tga"));
+	terrain->SetPipeline(pipelines.colored);
 	terrain->SetScale(glm::vec3(10, 10, 10));
-	terrain->SetColor(glm::vec3(0.5, 0.5, 0.5));
+	terrain->SetColor(glm::vec3(0.0, 0.9, 0.0));
 	mObjects.push_back(terrain);
 
 	// Generate some positions
@@ -100,17 +100,17 @@ void VulkanApp::LoadModels()
 	{
 		for (int j = 0; j < 5; j++)
 		{
-			Object* object = new Object(glm::vec3(i * 100, -100, j * 100));
-			object->SetRotation(glm::vec3(rand() % 180, rand() % 180, rand() % 180));
+			Object* object = new Object(glm::vec3(i * 150, -100, j * 150));
 			object->SetScale(glm::vec3((rand() % 20) / 10.0f));
 			object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
 
 			if (rand() % 2 == 0) {
-				object->SetModel(modelLoader.LoadModel(this, "models/teapot.3ds"));
+				object->SetModel(modelLoader.LoadModel(this, "data/models/teapot.3ds"));
+				object->SetRotation(glm::vec3(180, 0, 0));
 				object->SetPipeline(pipelines.colored);
 			}
 			else {
-				object->SetModel(modelLoader.LoadModel(this, "models/cube.obj"));
+				object->SetModel(modelLoader.LoadModel(this, "data/models/box.obj"));
 				object->SetPipeline(pipelines.textured);
 				object->SetScale(glm::vec3(4.0f));
 			}
@@ -374,8 +374,8 @@ void VulkanApp::PreparePipelines()
 
 	// Load shader
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
-	shaderStages[0] = LoadShader("shaders/textured/textured.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-	shaderStages[1] = LoadShader("shaders/textured/textured.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	shaderStages[0] = LoadShader("data/shaders/textured/textured.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = LoadShader("data/shaders/textured/textured.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	// Assign all the states to the pipeline
 	// The states will be static and can't be changed after the pipeline is created
@@ -398,14 +398,14 @@ void VulkanApp::PreparePipelines()
 	VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipelines.textured));
 
 	// Create the wireframe pipeline
-	shaderStages[1] = LoadShader("shaders/colored/colored.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	shaderStages[1] = LoadShader("data/shaders/colored/colored.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 	VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipelines.colored));
 
 	// Create the starsphere pipeline
 	rasterizationState.cullMode = VK_CULL_MODE_FRONT_BIT;
 	depthStencilState.depthWriteEnable = VK_FALSE;
-	shaderStages[0] = LoadShader("shaders/starsphere/starsphere.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-	shaderStages[1] = LoadShader("shaders/starsphere/starsphere.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	shaderStages[0] = LoadShader("data/shaders/starsphere/starsphere.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = LoadShader("data/shaders/starsphere/starsphere.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 	vkTools::checkResult(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipelines.starsphere));
 }
 
