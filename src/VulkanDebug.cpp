@@ -58,12 +58,14 @@ namespace VulkanDebug
 	// Sets up a console window (Win32)
 	void SetupConsole(std::string title)
 	{
+#if defined(_WIN32)
 		AllocConsole();
 		AttachConsole(GetCurrentProcessId());
 		freopen("CON", "w", stdout);
 		SetConsoleTitle(TEXT(title.c_str()));
 
 		VulkanDebug::ConsolePrint("Debug console:");
+#endif
 	}
 
 	// This is the callback that receives all debug messages from the different validation layers 
@@ -102,11 +104,11 @@ namespace VulkanDebug
 		VulkanDebug::ConsolePrint(stream.str());
 
 		// Critical errors will be printed in a message box (Win32)
-		#ifdef _WIN32
+#ifdef _WIN32
 		if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
 			MessageBox(nullptr, stream.str().c_str(), "Vulkan Error!", 0);
 		}
-		#endif
+#endif
 
 		return VK_FALSE;
 	}

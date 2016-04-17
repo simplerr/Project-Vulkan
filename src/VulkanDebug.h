@@ -1,7 +1,7 @@
 #pragma once
 
-#include  <vector>
-#include <vulkan\vulkan.h>
+#include <vector>
+#include "Platform.h"
 
 #define ENUM_TO_STR(x) #x
 

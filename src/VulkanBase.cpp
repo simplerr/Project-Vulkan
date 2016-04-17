@@ -1,6 +1,4 @@
-#if defined(_WIN32)
-#include <Windows.h>
-#endif
+#include "Platform.h"
 
 #include <vector>
 #include <array>
@@ -10,7 +8,7 @@
 
 #include "VulkanBase.h"
 #include "VulkanDebug.h"
-#include "../base/vulkanTextureLoader.hpp"
+#include "base/vulkanTextureLoader.hpp"
 
 /*
 	-	Right now this code assumes that queueFamilyIndex is = 0 in all places,
@@ -555,17 +553,7 @@ void VulkanBase::RenderLoop()
 	}
 }
 
-void VulkanBase::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	switch (msg)
-	{
-	case WM_CLOSE:
-		DestroyWindow(window);
-		PostQuitMessage(0);
-		break;
-	}
-}
-
+#if defined(_WIN32)
 // Creates a window that Vulkan can use for rendering
 HWND VulkanBase::CreateWin32Window(HINSTANCE hInstance, WNDPROC WndProc)
 {
@@ -620,6 +608,93 @@ HWND VulkanBase::CreateWin32Window(HINSTANCE hInstance, WNDPROC WndProc)
 
 	return window;
 }
+
+void VulkanBase::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+	case WM_CLOSE:
+		DestroyWindow(window);
+		PostQuitMessage(0);
+		break;
+	}
+}
+
+#elif defined(__linux__)
+// Set up a window using XCB and request event types
+xcb_window_t VulkanExampleBase::setupWindow()
+{
+	uint32_t value_mask, value_list[32];
+
+	window = xcb_generate_id(connection);
+
+	value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+	value_list[0] = screen->black_pixel;
+	value_list[1] =
+		XCB_EVENT_MASK_KEY_RELEASE |
+		XCB_EVENT_MASK_EXPOSURE |
+		XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+		XCB_EVENT_MASK_POINTER_MOTION |
+		XCB_EVENT_MASK_BUTTON_PRESS |
+		XCB_EVENT_MASK_BUTTON_RELEASE;
+
+	xcb_create_window(connection,
+		XCB_COPY_FROM_PARENT,
+		window, screen->root,
+		0, 0, width, height, 0,
+		XCB_WINDOW_CLASS_INPUT_OUTPUT,
+		screen->root_visual,
+		value_mask, value_list);
+
+	/* Magic code that will send notification when window is destroyed */
+	xcb_intern_atom_cookie_t cookie = xcb_intern_atom(connection, 1, 12, "WM_PROTOCOLS");
+	xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(connection, cookie, 0);
+
+	xcb_intern_atom_cookie_t cookie2 = xcb_intern_atom(connection, 0, 16, "WM_DELETE_WINDOW");
+	atom_wm_delete_window = xcb_intern_atom_reply(connection, cookie2, 0);
+
+	xcb_change_property(connection, XCB_PROP_MODE_REPLACE,
+		window, (*reply).atom, 4, 32, 1,
+		&(*atom_wm_delete_window).atom);
+
+	std::string windowTitle = getWindowTitle();
+	xcb_change_property(connection, XCB_PROP_MODE_REPLACE,
+		window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
+		title.size(), windowTitle.c_str());
+
+	free(reply);
+
+	xcb_map_window(connection, window);
+
+	return(window);
+}
+
+// Initialize XCB connection
+void VulkanExampleBase::initxcbConnection()
+{
+	const xcb_setup_t *setup;
+	xcb_screen_iterator_t iter;
+	int scr;
+
+	connection = xcb_connect(NULL, &scr);
+	if (connection == NULL) {
+		printf("Could not find a compatible Vulkan ICD!\n");
+		fflush(stdout);
+		exit(1);
+	}
+
+	setup = xcb_get_setup(connection);
+	iter = xcb_setup_roots_iterator(setup);
+	while (scr-- > 0)
+		xcb_screen_next(&iter);
+	screen = iter.data;
+}
+
+void VulkanExampleBase::handleEvent(const xcb_generic_event_t *event)
+{
+	// TODO
+}
+#endif
 
 VkDevice VulkanBase::GetDevice()
 {

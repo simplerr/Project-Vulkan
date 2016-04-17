@@ -151,7 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="base\vulkantools.cpp" />
+    <ClCompile Include="src\base\vulkantools.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\LoadTGA.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -163,24 +163,26 @@
     <ClCompile Include="src\VulkanDebug.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="base\vulkanswapchain.hpp" />
-    <ClInclude Include="base\vulkantools.h" />
+    <ClInclude Include="src\base\vulkanswapchain.hpp" />
+    <ClInclude Include="src\base\vulkanTextureLoader.hpp" />
+    <ClInclude Include="src\base\vulkantools.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\LoadTGA.h" />
     <ClInclude Include="src\ModelLoader.h" />
     <ClInclude Include="src\Object.h" />
+    <ClInclude Include="src\Platform.h" />
     <ClInclude Include="src\StaticModel.h" />
     <ClInclude Include="src\VulkanApp.h" />
     <ClInclude Include="src\VulkanBase.h" />
     <ClInclude Include="src\VulkanDebug.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="data\shaders\colored\colored.frag" />
+    <None Include="data\shaders\starsphere\starsphere.frag" />
+    <None Include="data\shaders\starsphere\starsphere.vert" />
+    <None Include="data\shaders\textured\textured.frag" />
+    <None Include="data\shaders\textured\textured.vert" />
     <None Include="README.md" />
-    <None Include="shaders\colored\colored.frag" />
-    <None Include="shaders\starsphere\starsphere.frag" />
-    <None Include="shaders\starsphere\starsphere.vert" />
-    <None Include="shaders\textured\textured.frag" />
-    <None Include="shaders\textured\textured.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,12 +1,14 @@
 #pragma once
+#if defined(_WIN32)
 #pragma comment(linker, "/subsystem:windows")
+#endif
 
 //#include "../external\vulkan\vulkan.h"
-#include "../base/vulkantools.h"	
-#include "../base/vulkanswapchain.hpp"
-#include "../base/vulkanTextureLoader.hpp"
+#include "base/vulkantools.h"	
+#include "base/vulkanswapchain.hpp"
+#include "base/vulkanTextureLoader.hpp"
 
-#include <vulkan\vulkan.h>
+#include <vulkan/vulkan.h>
 
 /*
  Resources
@@ -63,11 +65,18 @@ public:
 	virtual void CompileShaders() = 0;
 
 	void RenderLoop();
-	virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-	HWND CreateWin32Window(HINSTANCE hInstance, WNDPROC wndProc);
-
+	
 	VkDevice GetDevice();
+
+	// Platform specific
+#if defined(_WIN32)
+	HWND CreateWin32Window(HINSTANCE hInstance, WNDPROC wndProc);
+	virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+#elif defined(__linux__)
+	xcb_window_t setupWindow();
+	void initxcbConnection();
+	void handleEvent(const xcb_generic_event_t *event);
+#endif
 
 protected:
 	VkInstance			instance				= VK_NULL_HANDLE;
@@ -138,12 +147,19 @@ protected:
 	// Multiplier for speeding up (or slowing down) the global timer
 	float timerSpeed = 0.25f;
 
-	// fps timer (one second interval)
+	// FPS timer (one second interval)
 	float fpsTimer = 0.0f;
 	
+	// Platform specific 
 #if defined(_WIN32)
 	HWND				window;
 	HINSTANCE			windowInstance;
+#elif defined(__linux__)
+	bool quit;
+	xcb_connection_t *connection;
+	xcb_screen_t *screen;
+	xcb_window_t window;
+	xcb_intern_atom_reply_t *atom_wm_delete_window;
 #endif
 
 	uint32_t			windowWidth = 1280;

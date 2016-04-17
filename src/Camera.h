@@ -1,6 +1,6 @@
 #pragma once
 
-#include <windows.h>
+#include "Platform.h"
 #include <glm/glm.hpp>
 
 class Camera
@@ -11,7 +11,10 @@ public:
 
 	void Update();
 
+#if defined(_WIN32)
 	void HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
+
 	glm::vec3 GetDirection();
 
 	// New
@@ -33,7 +36,6 @@ private:
 	float nearPlane;
 	float farPlane;
 	float aspectRatio;
-
 
 	float sensitivity = 0.2f;
 	float speed = 2.5f;

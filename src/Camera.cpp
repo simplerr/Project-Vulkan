@@ -27,6 +27,8 @@ Camera::Camera(glm::vec3 position, float fieldOfView, float aspectRatio, float n
 
 void Camera::Update()
 {
+#if defined(_WIN32)
+
 	if (GetAsyncKeyState('W')) {
 		glm::vec3 dir = GetDirection();
 		position += speed * dir;
@@ -47,8 +49,11 @@ void Camera::Update()
 		position -= speed * right;
 
 	}
+
+#endif
 }
 
+#if defined(_WIN32)
 void Camera::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -91,6 +96,7 @@ void Camera::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 }
+#endif
 
 glm::vec3 Camera::GetDirection()
 {
