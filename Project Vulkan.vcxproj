@@ -178,13 +178,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
-    <None Include="shaders\mesh\color.frag" />
-    <None Include="shaders\mesh\mesh.frag" />
-    <None Include="shaders\mesh\mesh.vert" />
+    <None Include="shaders\colored\colored.frag" />
     <None Include="shaders\starsphere\starsphere.frag" />
     <None Include="shaders\starsphere\starsphere.vert" />
-    <None Include="shaders\triangle.frag" />
-    <None Include="shaders\triangle.vert" />
+    <None Include="shaders\textured\textured.frag" />
+    <None Include="shaders\textured\textured.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

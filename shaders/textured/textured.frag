@@ -29,7 +29,7 @@ void main()
 	color += diffuse;
 
 	// Specular
-	shade = pow(max(dot(R, V), 0.0), 16.0);
+	shade = pow(max(dot(R, V), 0.0), 216.0);
 	vec3 specular = shade * InColor;
 	color += specular;	
 

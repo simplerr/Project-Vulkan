@@ -79,10 +79,10 @@ void VulkanApp::LoadModels()
 	textureLoader->loadTexture("textures/crate_bc3.dds", VK_FORMAT_BC3_UNORM_BLOCK, &testTexture);
 	textureLoader->loadTexture("textures/bricks.dds", VK_FORMAT_BC3_UNORM_BLOCK, &terrainTexture);
 
-	Object* terrain = new Object(glm::vec3(0, 0, 0));
+	Object* terrain = new Object(glm::vec3(-10000, 0, -10000));
 	terrain->SetModel(modelLoader.GenerateTerrain(this, "textures/fft-terrain.tga"));
 	terrain->SetPipeline(pipelines.textured);
-	terrain->SetScale(glm::vec3(10, 10, 10));
+	terrain->SetScale(glm::vec3(100, 100, 100));
 	mObjects.push_back(terrain);
 
 	// Generate some positions
@@ -90,7 +90,7 @@ void VulkanApp::LoadModels()
 	{
 		for (int j = 0; j < 5; j++)
 		{
-			Object* object = new Object(glm::vec3(i * 100, 0, j * 100));
+			Object* object = new Object(glm::vec3(i * 100, -1000, j * 100));
 			object->SetRotation(glm::vec3(rand() % 180, rand() % 180, rand() % 180));
 			object->SetScale(glm::vec3((rand() % 20) / 10.0f));
 
@@ -363,8 +363,8 @@ void VulkanApp::PreparePipelines()
 
 	// Load shader
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
-	shaderStages[0] = LoadShader("shaders/mesh/vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-	shaderStages[1] = LoadShader("shaders/mesh/frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	shaderStages[0] = LoadShader("shaders/textured/textured.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = LoadShader("shaders/textured/textured.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	// Assign all the states to the pipeline
 	// The states will be static and can't be changed after the pipeline is created
@@ -387,7 +387,7 @@ void VulkanApp::PreparePipelines()
 	VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipelines.textured));
 
 	// Create the wireframe pipeline
-	shaderStages[1] = LoadShader("shaders/mesh/color.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	shaderStages[1] = LoadShader("shaders/colored/colored.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 	VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipelines.colored));
 
 	// Create the starsphere pipeline
@@ -654,14 +654,4 @@ void VulkanApp::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 	// Let the camera handle user input
 	camera->HandleMessages(hwnd, msg, wParam, lParam);
-
-	// Testing
-	if(msg == WM_KEYDOWN && wParam == 'R')
-	{
-		modelPos = glm::vec3(0, -50, 0);
-	}
-	else if (msg == WM_KEYDOWN && wParam == 'T')
-	{
-		modelPos = glm::vec3(0, 0, 0);
-	}
 }

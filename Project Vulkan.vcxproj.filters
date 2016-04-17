@@ -103,26 +103,20 @@
     <None Include="README.md">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="shaders\triangle.frag">
-      <Filter>Source Files\data</Filter>
-    </None>
-    <None Include="shaders\triangle.vert">
-      <Filter>Source Files\data</Filter>
-    </None>
-    <None Include="shaders\mesh\mesh.frag">
-      <Filter>Source Files\data</Filter>
-    </None>
-    <None Include="shaders\mesh\mesh.vert">
-      <Filter>Source Files\data</Filter>
-    </None>
-    <None Include="shaders\mesh\color.frag">
-      <Filter>Source Files\data</Filter>
-    </None>
     <None Include="shaders\starsphere\starsphere.frag">
       <Filter>Source Files\data</Filter>
     </None>
     <None Include="shaders\starsphere\starsphere.vert">
       <Filter>Source Files\data</Filter>
+    </None>
+    <None Include="shaders\colored\colored.frag">
+      <Filter>Source Files\data</Filter>
+    </None>
+    <None Include="shaders\textured\textured.frag">
+      <Filter>Source Files\base</Filter>
+    </None>
+    <None Include="shaders\textured\textured.vert">
+      <Filter>Source Files\base</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -175,7 +175,7 @@ StaticModel* ModelLoader::GenerateTerrain(VulkanBase* vulkanBase, std::string fi
 
 			glm::vec3 e1 = p2 - p1;
 			glm::vec3 e2 = p3 - p1;
-			glm::vec3 normal = glm::cross(e1, e2);
+			glm::vec3 normal = glm::cross(e2, e1);
 
 			if (normal != glm::vec3(0, 0, 0))
 				int asda = 1;

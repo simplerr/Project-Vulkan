@@ -1,0 +1,1 @@
+glslangvalidator -V colored.frag -o colored.frag.spv
