@@ -703,7 +703,7 @@ void VulkanApp::Draw()
 	SubmitPrePresentMemoryBarrier(swapChain.buffers[currentBuffer].image);
 
 	// NOTE: Testing
-	RecordRenderingCommandBuffer();
+	//RecordRenderingCommandBuffer();
 
 	//
 	// Do rendering
