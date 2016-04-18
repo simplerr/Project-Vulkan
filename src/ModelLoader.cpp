@@ -147,35 +147,37 @@ namespace VulkanLib
 			{
 				vec3 p1, p2, p3;
 				vec3 edge = { 0.0f, 0.0f, 0.0f };
-				int i;
+				int i1;
 
 				// p1 [x-1][z-1]
 				if (x < 1 && z < 1)
-					i = (x + 1 + (z + 1) * texture.width);
+					i1 = (x + 1 + (z + 1) * texture.width);
 				else
-					i = (x - 1 + (z - 1) * texture.width);
+					i1 = (x - 1 + (z - 1) * texture.width);
 
 				// TODO: NOTE: HAX
-				if (i < 0)
-					i = 0;
+				if (i1 < 0)
+					i1 = 0;
 
-				p1 = mesh.vertices[i].Pos;
+				p1 = mesh.vertices[i1].Pos;
 
 				// p1 [x-1][z] (if on the edge use [x+1] instead of [x-1])
+				int i2;
 				if (x < 1)
-					i = (x + 1 + (z)* texture.width);
+					i2 = (x + 1 + (z)* texture.width);
 				else
-					i = (x - 1 + (z)* texture.width);
+					i2 = (x - 1 + (z)* texture.width);
 
-				p2 = mesh.vertices[i].Pos;
+				p2 = mesh.vertices[i2].Pos;
 
 				// p1 [x][z-1]
+				int i3;
 				if (z < 1)
-					i = (x + (z + 1) * texture.width);
+					i3 = (x + (z + 1) * texture.width);
 				else
-					i = (x + (z - 1) * texture.width);
+					i3 = (x + (z - 1) * texture.width);
 
-				p3 = mesh.vertices[i].Pos;
+				p3 = mesh.vertices[i3].Pos;
 
 				vec3 e1 = p2 - p1;
 				vec3 e2 = p3 - p1;
@@ -186,8 +188,13 @@ namespace VulkanLib
 
 				normal = glm::normalize(normal);
 
-				i = (x + z * texture.width);
-				mesh.vertices[i].Normal = normal;
+				//i = (x + 1 + (z + 1) * texture.width);
+				mesh.vertices[i1].Normal += normal;
+				mesh.vertices[i2].Normal += normal;
+				mesh.vertices[i3].Normal += normal;
+
+				// NOTE: Testing
+				//mesh.vertices[i].Normal = vec3(0, 0, 0);
 			}
 		}
 
@@ -204,6 +211,12 @@ namespace VulkanLib
 				mesh.indices[(x + z * (texture.width - 1)) * 6 + 4] = x + (z + 1) * texture.width;
 				mesh.indices[(x + z * (texture.width - 1)) * 6 + 5] = x + 1 + (z + 1) * texture.width;
 			}
+		}
+
+		// Now loop through each vertex vector, and average out all the normals stored.
+		for (int i = 0; i < mesh.vertices.size(); ++i)
+		{
+			mesh.vertices[i].Normal = glm::normalize(mesh.vertices[i].Normal);
 		}
 
 		terrain->AddMesh(mesh);

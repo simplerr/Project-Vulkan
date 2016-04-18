@@ -8,7 +8,7 @@ namespace VulkanLib
 	{
 	public:
 		void		FrameBegin();
-		uint32_t	FrameEnd();			// Returns the FPS if 1000.0f milliseconds have passed
+		uint32_t	FrameEnd();				// Returns the FPS if 1000.0f milliseconds have passed
 
 		uint32_t	GetFPS();
 		float		GetElapsedTime();
