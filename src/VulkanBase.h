@@ -8,6 +8,7 @@
 #include "base/vulkanswapchain.hpp"
 #include "base/vulkanTextureLoader.hpp"
 #include "Window.h"
+#include "Timer.h"
 
 #include <vulkan/vulkan.h>
 
@@ -23,6 +24,9 @@
 	Pipeleline barriers: https://github.com/philiptaylor/vulkan-sxs/tree/master/04-clear
 	Intel Vulkan tutorial: https://software.intel.com/en-us/api-without-secrets-introduction-to-vulkan-part-2
 	Shader resource bindings: https://developer.nvidia.com/vulkan-shader-resource-binding
+	Installation on Ubuntu: http://www.trentreed.net/blog/installing-nvidia-vulkan-driver-and-lunarg-sdk-on-ubuntu/
+
+	https://github.com/jcouv/dotfiles/blob/master/vsvimrc
 */
 
 
@@ -147,6 +151,9 @@ protected:
 
 	// FPS timer (one second interval)
 	float fpsTimer = 0.0f;	
+
+	// Wrapper class for the fps counter
+	Timer mTimer;
 
 	// Wrapper class for the platform dependet window code
 	Window*				mWindow;

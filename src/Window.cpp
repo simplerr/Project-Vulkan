@@ -85,7 +85,7 @@ HINSTANCE Window::GetInstance()
 
 #elif defined(__linux__)
 // Set up a window using XCB and request event types
-xcb_window_t Window::setupWindow()
+xcb_window_t Window::SetupWindow()
 {
 	uint32_t value_mask, value_list[32];
 
@@ -133,7 +133,7 @@ xcb_window_t Window::setupWindow()
 }
 
 // Initialize XCB connection
-void Window::initxcbConnection()
+void Window::InitxcbConnection()
 {
 	const xcb_setup_t *setup;
 	xcb_screen_iterator_t iter;
@@ -153,7 +153,7 @@ void Window::initxcbConnection()
 	screen = iter.data;
 }
 
-void Window::handleEvent(const xcb_generic_event_t *event)
+void Window::HandleEvent(const xcb_generic_event_t *event)
 {
 	// TODO
 }

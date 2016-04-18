@@ -522,7 +522,8 @@ void VulkanBase::RenderLoop()
 
 	while (true)
 	{
-		auto tStart = std::chrono::high_resolution_clock::now();
+		// Frame begin
+		mTimer.FrameBegin();				
 
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
@@ -536,27 +537,17 @@ void VulkanBase::RenderLoop()
 				DispatchMessage(&msg);
 			}
 		}
-		Render();
-		frameCounter++;
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-		frameTimer = (float)tDiff / 1000.0f;
 
-		// Convert to clamped timer value
-		timer += timerSpeed * frameTimer;
-		if (timer > 1.0)
-		{
-			timer -= 1.0f;
-		}
-		fpsTimer += (float)tDiff;
-		if (fpsTimer > 1000.0f)
-		{
-			std::string windowTitle = "Project Vulkan: " + std::to_string(frameCounter) + " fps";
+		Render();							
 
+		// Frame end
+		auto fps = mTimer.FrameEnd();		
+
+		// Only display fps when 1.0s have passed
+		if (fps != -1)
+		{
+			std::string windowTitle = "Project Vulkan: " + std::to_string(fps) + " fps";
 			SetWindowText(mWindow->GetHwnd(), windowTitle.c_str());
-
-			fpsTimer = 0.0f;
-			frameCounter = 0.0f;
 		}
 	}
 }
