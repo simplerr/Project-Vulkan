@@ -125,27 +125,30 @@ namespace VulkanLib
 		mObjects.push_back(terrain);
 
 		// Generate some positions
-		for (int i = 0; i < 16; i++)
+		for (int x = 0; x < 6; x++)
 		{
-			for (int j = 0; j < 16; j++)
+			for (int y = 0; y < 6; y++)
 			{
-				Object* object = new Object(glm::vec3(i * 150, -100, j * 150));
-				object->SetScale(glm::vec3((rand() % 20) / 10.0f));
-				object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
-				object->SetId(OBJECT_ID_PROP);
+				for (int z = 0; z < 6; z++)
+				{
+					Object* object = new Object(glm::vec3(x * 150, -100 - y * 150, z * 150));
+					object->SetScale(glm::vec3((rand() % 20) / 10.0f));
+					object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
+					object->SetId(OBJECT_ID_PROP);
 
-				if (rand() % 2 == 0) {
-					object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
-					object->SetRotation(glm::vec3(180, 0, 0));
-					object->SetPipeline(mPipelines.colored);
-				}
-				else {
-					object->SetModel(mModelLoader.LoadModel(this, "data/models/box.obj"));
-					object->SetPipeline(mPipelines.textured);
-					object->SetScale(glm::vec3(4.0f));
-				}
+					if (rand() % 2 == 0) {
+						object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
+						object->SetRotation(glm::vec3(180, 0, 0));
+						object->SetPipeline(mPipelines.colored);
+					}
+					else {
+						object->SetModel(mModelLoader.LoadModel(this, "data/models/box.obj"));
+						object->SetPipeline(mPipelines.textured);
+						object->SetScale(glm::vec3(4.0f));
+					}
 
-				mObjects.push_back(object);
+					mObjects.push_back(object);
+				}
 			}
 		}
 
