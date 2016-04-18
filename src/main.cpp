@@ -10,7 +10,7 @@
 #include "Window.h"
 
 // The Vulkan application
-VulkanApp vulkanApp;
+VulkanLib::VulkanApp vulkanApp;
 
 #if defined(_WIN32)
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -35,14 +35,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 int main(const int argc, const char *argv[])
 #endif
 {
-	Window window = Window(1280, 1024);
+	VulkanLib::Window window = VulkanLib::Window(1280, 1024);
 
 #if defined(_WIN32)			// Win32
 	window.SetupWindow(hInstance, WndProc);
 #elif defined(__linux__)	// Linux
 	window.SetupWindow();
 #endif
-
 
 	vulkanApp.InitSwapchain(&window);
 	vulkanApp.Prepare();

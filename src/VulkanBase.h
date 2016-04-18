@@ -30,117 +30,120 @@
 */
 
 
-// This is the base class that contains common code for creating a Vulkan application
-class VulkanBase
+namespace VulkanLib
 {
-public:
-	VulkanBase(bool enableValidation);
-	~VulkanBase();
 
-	VkResult CreateInstance(const char* appName, bool enableValidation);
-	VkResult CreateDevice(bool enableValidation);
+	// This is the base class that contains common code for creating a Vulkan application
+	class VulkanBase
+	{
+	public:
+		VulkanBase(bool enableValidation);
+		~VulkanBase();
 
-	virtual void Prepare();
+		VkResult CreateInstance(const char* appName, bool enableValidation);
+		VkResult CreateDevice(bool enableValidation);
 
-	void CreateCommandPool();
-	void CreateSetupCommandBuffer();
-	void CreateCommandBuffers();
-	void CreateSemaphores();
+		virtual void Prepare();
 
-	void SetupDepthStencil();
-	void SetupRenderPass();
-	void SetupFrameBuffer();
-	// Don't need pipeline cache
+		void CreateCommandPool();
+		void CreateSetupCommandBuffer();
+		void CreateCommandBuffers();
+		void CreateSemaphores();
 
-	void InitSwapchain(Window* window);
-	void SetupSwapchain();
+		void SetupDepthStencil();
+		void SetupRenderPass();
+		void SetupFrameBuffer();
+		// Don't need pipeline cache
 
-	void ExecuteSetupCommandBuffer();
+		void InitSwapchain(Window* window);
+		void SetupSwapchain();
 
-	VkPipelineShaderStageCreateInfo LoadShader(std::string fileName, VkShaderStageFlagBits stage);
+		void ExecuteSetupCommandBuffer();
 
-	virtual void Render() = 0;
+		VkPipelineShaderStageCreateInfo LoadShader(std::string fileName, VkShaderStageFlagBits stage);
 
-	// To transition the swap chain image layout
-	void SubmitPrePresentMemoryBarrier(VkImage image);
-	void SubmitPostPresentMemoryBarrier(VkImage image);
+		virtual void Render() = 0;
 
-	VkBool32 GetMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex);
+		// To transition the swap chain image layout
+		void SubmitPrePresentMemoryBarrier(VkImage image);
+		void SubmitPostPresentMemoryBarrier(VkImage image);
 
-	virtual void CompileShaders() = 0;
+		VkBool32 GetMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex);
 
-	void RenderLoop();
-	
-	VkDevice GetDevice();
-	int GetWindowWidth();
-	int GetWindowHeight();
+		virtual void CompileShaders() = 0;
 
-	// Platform specific
+		void RenderLoop();
+
+		VkDevice GetDevice();
+		int GetWindowWidth();
+		int GetWindowHeight();
+
+		// Platform specific
 #if defined(_WIN32)
-	virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 #endif
 
-protected:
-	VkInstance			instance				= VK_NULL_HANDLE;
-	VkPhysicalDevice	physicalDevice			= VK_NULL_HANDLE;
-	VkDevice			device					= VK_NULL_HANDLE;
-	VkQueue				queue					= VK_NULL_HANDLE;
+	protected:
+		VkInstance			instance = VK_NULL_HANDLE;
+		VkPhysicalDevice	physicalDevice = VK_NULL_HANDLE;
+		VkDevice			device = VK_NULL_HANDLE;
+		VkQueue				queue = VK_NULL_HANDLE;
 
-	// Command buffer
-	VkCommandPool		commandPool;
-	std::vector<VkCommandBuffer> renderingCommandBuffers;
+		// Command buffer
+		VkCommandPool		commandPool;
+		std::vector<VkCommandBuffer> renderingCommandBuffers;
 
-	// Command buffer used for setup
-	VkCommandBuffer		setupCmdBuffer			= VK_NULL_HANDLE;
+		// Command buffer used for setup
+		VkCommandBuffer		setupCmdBuffer = VK_NULL_HANDLE;
 
-	// Command buffers used to change the swapchains image format
-	VkCommandBuffer		postPresentCmdBuffer	= VK_NULL_HANDLE;
-	VkCommandBuffer		prePresentCmdBuffer		= VK_NULL_HANDLE;
+		// Command buffers used to change the swapchains image format
+		VkCommandBuffer		postPresentCmdBuffer = VK_NULL_HANDLE;
+		VkCommandBuffer		prePresentCmdBuffer = VK_NULL_HANDLE;
 
-	// Swap chain magic by Sascha Willems (https://github.com/SaschaWillems/Vulkan)
-	VulkanSwapChain		swapChain;
+		// Swap chain magic by Sascha Willems (https://github.com/SaschaWillems/Vulkan)
+		VulkanSwapChain		swapChain;
 
-	// Global render pass for frame buffer writes
-	VkRenderPass		renderPass;
+		// Global render pass for frame buffer writes
+		VkRenderPass		renderPass;
 
-	VkSemaphore			presentComplete;
-	VkSemaphore			renderComplete;
+		VkSemaphore			presentComplete;
+		VkSemaphore			renderComplete;
 
-	// List of available frame buffers (same as number of swap chain images)
-	std::vector<VkFramebuffer>	frameBuffers;
+		// List of available frame buffers (same as number of swap chain images)
+		std::vector<VkFramebuffer>	frameBuffers;
 
-	// Active frame buffer index
-	uint32_t			currentBuffer			= 0;
+		// Active frame buffer index
+		uint32_t			currentBuffer = 0;
 
-	// Hardcoded for now, should be selected during init with proper tests
-	VkFormat			depthFormat				= VK_FORMAT_D32_SFLOAT_S8_UINT;
+		// Hardcoded for now, should be selected during init with proper tests
+		VkFormat			depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
-	// Color buffer format
-	VkFormat			colorformat				= VK_FORMAT_B8G8R8A8_UNORM;
+		// Color buffer format
+		VkFormat			colorformat = VK_FORMAT_B8G8R8A8_UNORM;
 
-	// Descriptor set pool
-	VkDescriptorPool	descriptorPool			= VK_NULL_HANDLE;
+		// Descriptor set pool
+		VkDescriptorPool	descriptorPool = VK_NULL_HANDLE;
 
-	// List of shader modules created and that needs cleanup
-	std::vector<VkShaderModule> shaderModules;
+		// List of shader modules created and that needs cleanup
+		std::vector<VkShaderModule> shaderModules;
 
-	// Stores all available memory (type) properties for the physical device
-	VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
+		// Stores all available memory (type) properties for the physical device
+		VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
 
-	// Group everything with the depth stencil together in a struct (as in Vulkan samples)
-	struct {		
-		VkImage image;
-		VkDeviceMemory memory;
-		VkImageView view;
-	} depthStencil;
+		// Group everything with the depth stencil together in a struct (as in Vulkan samples)
+		struct {
+			VkImage image;
+			VkDeviceMemory memory;
+			VkImageView view;
+		} depthStencil;
 
-	// Simple texture loader
-	vkTools::VulkanTextureLoader *textureLoader	= nullptr;
+		// Simple texture loader
+		vkTools::VulkanTextureLoader *textureLoader = nullptr;
 
-	// Wrapper class for the fps counter
-	Timer mTimer;
+		// Wrapper class for the fps counter
+		Timer mTimer;
 
-	// Wrapper class for the platform dependet window code
-	Window*				mWindow;
-};
-
+		// Wrapper class for the platform dependet window code
+		Window*				mWindow;
+	};
+}	// VulkanLib namespace

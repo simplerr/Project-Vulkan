@@ -5,57 +5,60 @@
 #include <vulkan\vulkan.h>
 #include "base/vulkanTextureLoader.hpp"
 
-class VulkanBase;
-
-struct Vertex
+namespace VulkanLib
 {
-	Vertex() {}
-	Vertex(glm::vec3 pos) : Pos(pos) {}
-	Vertex(float px, float py, float pz, float nx, float ny, float nz)
-		: Pos(px, py, pz), Normal(nx, ny, nz) {}
-	Vertex(float px, float py, float pz, float nx, float ny, float nz, float tx, float ty, float tz, float u, float v, float r, float g, float b)
-		: Pos(px, py, pz), Normal(nx, ny, nz), Tangent(tx, ty, tz, 1.0f), Tex(u, v), Color(r, g, b) {}
+	class VulkanBase;
 
-	Vertex(glm::vec3 position, glm::vec3 normal, glm::vec2 tex, glm::vec3 tangent, glm::vec3 color)
-		: Pos(position), Normal(normal), Tex(tex), Tangent(tangent, 1.0f), Color(color) {}
+	struct Vertex
+	{
+		Vertex() {}
+		Vertex(glm::vec3 pos) : Pos(pos) {}
+		Vertex(float px, float py, float pz, float nx, float ny, float nz)
+			: Pos(px, py, pz), Normal(nx, ny, nz) {}
+		Vertex(float px, float py, float pz, float nx, float ny, float nz, float tx, float ty, float tz, float u, float v, float r, float g, float b)
+			: Pos(px, py, pz), Normal(nx, ny, nz), Tangent(tx, ty, tz, 1.0f), Tex(u, v), Color(r, g, b) {}
 
-	glm::vec3 Pos;
-	glm::vec3 Color;
-	glm::vec3 Normal;
-	glm::vec2 Tex;
-	glm::vec4 Tangent;
-};
+		Vertex(glm::vec3 position, glm::vec3 normal, glm::vec2 tex, glm::vec3 tangent, glm::vec3 color)
+			: Pos(position), Normal(normal), Tex(tex), Tangent(tangent, 1.0f), Color(color) {}
 
-struct Mesh
-{
-	std::vector<Vertex> vertices;
-	std::vector<unsigned int> indices;
-};
+		glm::vec3 Pos;
+		glm::vec3 Color;
+		glm::vec3 Normal;
+		glm::vec2 Tex;
+		glm::vec4 Tangent;
+	};
 
-class StaticModel
-{
-public:
-	StaticModel();
-	~StaticModel();
+	struct Mesh
+	{
+		std::vector<Vertex> vertices;
+		std::vector<unsigned int> indices;
+	};
 
-	void AddMesh(Mesh& mesh);
-	void BuildBuffers(VulkanBase* vulkanBase);		// Gets called in ModelLoader::LoadModel()
+	class StaticModel
+	{
+	public:
+		StaticModel();
+		~StaticModel();
 
-	struct {
-		VkBuffer buffer;
-		VkDeviceMemory memory;
-	} vertices;
+		void AddMesh(Mesh& mesh);
+		void BuildBuffers(VulkanBase* vulkanBase);		// Gets called in ModelLoader::LoadModel()
 
-	struct {
-		VkBuffer buffer;
-		VkDeviceMemory memory;
-	} indices;
+		struct {
+			VkBuffer buffer;
+			VkDeviceMemory memory;
+		} vertices;
 
-	int GetNumIndices();
+		struct {
+			VkBuffer buffer;
+			VkDeviceMemory memory;
+		} indices;
 
-	vkTools::VulkanTexture* texture;
+		int GetNumIndices();
 
-private:
-	std::vector<Mesh> mMeshes;
-	uint32_t indicesCount;
-};
+		vkTools::VulkanTexture* texture;
+
+	private:
+		std::vector<Mesh> mMeshes;
+		uint32_t indicesCount;
+	};
+}	// VulkanLib namespace

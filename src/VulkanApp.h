@@ -8,96 +8,99 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-class StaticModel;
-class Camera;
-class Object;
-class TextureData;
-
-class VulkanApp : public VulkanBase
+namespace VulkanLib
 {
-public:
-	VulkanApp();
-	~VulkanApp();
+	class StaticModel;
+	class Camera;
+	class Object;
+	class TextureData;
 
-	void Prepare();
+	class VulkanApp : public VulkanBase
+	{
+	public:
+		VulkanApp();
+		~VulkanApp();
 
-	void PrepareUniformBuffers();
-	void SetupDescriptorSetLayout();
-	void SetupDescriptorPool();
-	void SetupDescriptorSet();
-	void PreparePipelines();
-	void UpdateUniformBuffers();
-	void PrepareCommandBuffers();		// Custom
-	void SetupVertexDescriptions();
+		void Prepare();
 
-	void RecordRenderingCommandBuffer(VkFramebuffer frameBuffer);
+		void PrepareUniformBuffers();
+		void SetupDescriptorSetLayout();
+		void SetupDescriptorPool();
+		void SetupDescriptorSet();
+		void PreparePipelines();
+		void UpdateUniformBuffers();
+		void PrepareCommandBuffers();		// Custom
+		void SetupVertexDescriptions();
 
-	virtual void Render();
-	void Draw();
+		void RecordRenderingCommandBuffer(VkFramebuffer frameBuffer);
 
-	void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		virtual void Render();
+		void Draw();
 
-	// 
-	//	High level code
-	//
-	void LoadModels();
-	void SetupTerrainDescriptorSet();
-	void CompileShaders();
+		void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
-	// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
-	// inputState is the pVertexInputState when creating the graphics pipeline
-	struct {
-		VkPipelineVertexInputStateCreateInfo inputState;
-		std::vector<VkVertexInputBindingDescription> bindingDescriptions;
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-	} vertexDescriptions;
+		// 
+		//	High level code
+		//
+		void LoadModels();
+		void SetupTerrainDescriptorSet();
+		void CompileShaders();
 
-	struct {
-		VkBuffer buffer;
-		VkDeviceMemory memory;
-		VkDescriptorBufferInfo descriptor;
-	} uniformBuffer;
+		// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
+		// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
+		// inputState is the pVertexInputState when creating the graphics pipeline
+		struct {
+			VkPipelineVertexInputStateCreateInfo inputState;
+			std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+			std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+		} vertexDescriptions;
 
-	struct {
-		glm::mat4 projectionMatrix;
-		glm::mat4 viewMatrix;
-		glm::vec4 lightDir = glm::vec4(1.0f, -1.0f, 1.0f, 1.0f);
-		glm::vec3 eyePos;
-	} uniformData;		// Stored in uniformBuffer.memory in device memory
+		struct {
+			VkBuffer buffer;
+			VkDeviceMemory memory;
+			VkDescriptorBufferInfo descriptor;
+		} uniformBuffer;
 
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorSet descriptorSet;
-	VkPipelineLayout pipelineLayout;
+		struct {
+			glm::mat4 projectionMatrix;
+			glm::mat4 viewMatrix;
+			glm::vec4 lightDir = glm::vec4(1.0f, -1.0f, 1.0f, 1.0f);
+			glm::vec3 eyePos;
+		} uniformData;		// Stored in uniformBuffer.memory in device memory
 
-	struct {
-		VkPipeline textured;
-		VkPipeline colored;
-		VkPipeline starsphere;
-	} pipelines;
+		VkDescriptorSetLayout descriptorSetLayout;
+		VkDescriptorSet descriptorSet;
+		VkPipelineLayout pipelineLayout;
 
-	struct PushConstantBlock {
-		glm::mat4 world;
-		glm::vec3 color;
+		struct {
+			VkPipeline textured;
+			VkPipeline colored;
+			VkPipeline starsphere;
+		} pipelines;
+
+		struct PushConstantBlock {
+			glm::mat4 world;
+			glm::vec3 color;
+		};
+
+		// This gets regenerated each frame so there is no need for command buffer per frame buffer
+		VkCommandBuffer primaryCommandBuffer;
+		VkCommandBuffer secondaryCommandBuffer;
+
+		// 
+		//	High level code
+		//
+
+		VkDescriptorSet terrainDescriptorSet;
+		PushConstantBlock pushConstants;		// Gets updated with new push constants for each object
+
+		ModelLoader modelLoader;
+		vkTools::VulkanTexture testTexture;		// NOTE: just for testing
+		vkTools::VulkanTexture terrainTexture;	// Testing for the terrain
+		Camera* camera;
+
+		bool prepared = false;
+
+		std::vector<Object*>  mObjects;
 	};
-
-	// This gets regenerated each frame so there is no need for command buffer per frame buffer
-	VkCommandBuffer primaryCommandBuffer;
-	VkCommandBuffer secondaryCommandBuffer;
-
-	// 
-	//	High level code
-	//
-
-	VkDescriptorSet terrainDescriptorSet;
-	PushConstantBlock pushConstants;		// Gets updated with new push constants for each object
-
-	ModelLoader modelLoader;
-	vkTools::VulkanTexture testTexture;		// NOTE: just for testing
-	vkTools::VulkanTexture terrainTexture;	// Testing for the terrain
-	Camera* camera;
-
-	bool prepared = false;
-
-	std::vector<Object*>  mObjects;
-};
+}	// VulkanLib namespace
