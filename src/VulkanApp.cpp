@@ -10,7 +10,7 @@
 #include "LoadTGA.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
-#define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
+#define VULKAN_ENABLE_VALIDATION true		// Debug validation layers toggle (affects performance a lot)
 
 // Temporary defines to not rotate the sky sphere and terrain
 #define OBJECT_ID_SKY 1
@@ -125,11 +125,12 @@ namespace VulkanLib
 		mObjects.push_back(terrain);
 
 		// Generate some positions
-		for (int x = 0; x < 6; x++)
+		int size = 6;
+		for (int x = 0; x < size; x++)
 		{
-			for (int y = 0; y < 6; y++)
+			for (int y = 0; y < size; y++)
 			{
-				for (int z = 0; z < 6; z++)
+				for (int z = 0; z < size; z++)
 				{
 					Object* object = new Object(glm::vec3(x * 150, -100 - y * 150, z * 150));
 					object->SetScale(glm::vec3((rand() % 20) / 10.0f));
@@ -599,9 +600,10 @@ namespace VulkanLib
 			mPushConstants.color = object->GetColor();
 			vkCmdPushConstants(mSecondaryCommandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &mPushConstants);
 
+			
 			// Bind triangle vertices
 			VkDeviceSize offsets[1] = { 0 };
-			vkCmdBindVertexBuffers(mSecondaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &object->GetModel()->vertices.buffer, offsets);
+			vkCmdBindVertexBuffers(mSecondaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &object->GetModel()->vertices.buffer, offsets);		// [TODO] The renderer should group the same object models together
 			vkCmdBindIndexBuffer(mSecondaryCommandBuffer, object->GetModel()->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 			// Draw indexed triangle	
@@ -672,7 +674,7 @@ namespace VulkanLib
 		//if (!prepared)
 		//	return;
 
-		vkDeviceWaitIdle(mDevice);		// NOTE: TODO: Is this really needed?
+		vkDeviceWaitIdle(mDevice);		// [NOTE] Is this really needed? - Yes, the validation layer complains otherwise!
 
 		mCamera->Update();
 
@@ -682,7 +684,7 @@ namespace VulkanLib
 
 		Draw();
 
-		vkDeviceWaitIdle(mDevice);		// NOTE: TODO: Is this really needed?
+		vkDeviceWaitIdle(mDevice);		// [NOTE] Is this really needed? - Yes, the validation layer complains otherwise!
 	}
 
 	void VulkanApp::Update()

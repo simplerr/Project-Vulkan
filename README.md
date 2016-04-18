@@ -3,6 +3,7 @@
 ### Todo
 - Make it run on Linux
 - Generate command buffers in multiple threads
+- Add a GPU time counter
 - Add a shader handler class
 - Clean up the code by adding a new classes
 - Fix the shaders
