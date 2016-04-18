@@ -19,6 +19,9 @@ namespace VulkanLib
 		void SetRotation(vec3 rotation);
 		void SetScale(vec3 scale);
 		void SetColor(vec3 color);
+		void SetId(int id);
+
+		void AddRotation(float x, float y, float z);
 
 		void SetPipeline(VkPipeline pipeline);
 
@@ -29,6 +32,7 @@ namespace VulkanLib
 		vec3 GetScale();
 		vec3 GetColor();
 		mat4 GetWorldMatrix();
+		int GetId();
 
 		VkPipeline GetPipeline();
 	private:
@@ -37,6 +41,7 @@ namespace VulkanLib
 		vec3 mRotation;
 		vec3 mScale;
 		vec3 mColor;
+		int mId; 
 
 		VkPipeline mPipeline;		// Points to a pipeline object stored somewhere else
 	};

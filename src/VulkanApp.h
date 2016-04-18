@@ -66,6 +66,7 @@ namespace VulkanLib
 		void RecordRenderingCommandBuffer(VkFramebuffer frameBuffer);
 
 		virtual void Render();
+		virtual void Update();
 		void Draw();
 
 		void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

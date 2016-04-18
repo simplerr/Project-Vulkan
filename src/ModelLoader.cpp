@@ -130,7 +130,7 @@ namespace VulkanLib
 			for (z = 0; z < texture.height; z++)
 			{
 				// Vertex array. You need to scale this properly
-				float height = texture.imageData[(x + z * texture.width) * (texture.bpp / 8)] / 20.0f;
+				float height = texture.imageData[(x + z * texture.width) * (texture.bpp / 8)] / 15.0f;
 
 				vec3 pos = vec3(x / 1.0, height, z / 1.0);
 				vec3 normal = vec3(0, 0, 0);

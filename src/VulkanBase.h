@@ -50,6 +50,9 @@ namespace VulkanLib
 
 		virtual void Prepare();
 
+		virtual void Update() = 0;
+		virtual void Render() = 0;
+
 		void CreateCommandPool();
 		void CreateSetupCommandBuffer();
 		void CreateCommandBuffers();
@@ -66,8 +69,6 @@ namespace VulkanLib
 		void ExecuteSetupCommandBuffer();
 
 		VkPipelineShaderStageCreateInfo LoadShader(std::string fileName, VkShaderStageFlagBits stage);
-
-		virtual void Render() = 0;
 
 		// To transition the swap chain image layout
 		void SubmitPrePresentMemoryBarrier(VkImage image);

@@ -548,6 +548,7 @@ namespace VulkanLib
 				}
 			}
 
+			Update();
 			Render();
 
 			// Frame end

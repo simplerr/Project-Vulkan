@@ -12,6 +12,7 @@ namespace VulkanLib
 		SetColor(vec3(1.0f, 1.0f, 1.0f));
 		SetModel(nullptr);
 		SetPipeline(VK_NULL_HANDLE);		// Must be assigned later
+		SetId(0);
 	}
 
 	Object::~Object()
@@ -41,6 +42,16 @@ namespace VulkanLib
 	void Object::SetColor(vec3 color)
 	{
 		mColor = color;
+	}
+
+	void Object::SetId(int id)
+	{
+		mId = id;
+	}
+
+	void Object::AddRotation(float x, float y, float z)
+	{
+		mRotation += vec3(x, y, z);
 	}
 
 	void Object::SetPipeline(VkPipeline pipeline)
@@ -84,6 +95,11 @@ namespace VulkanLib
 		world = glm::scale(world, mScale);
 
 		return world;
+	}
+
+	int Object::GetId()
+	{
+		return mId;
 	}
 
 	VkPipeline Object::GetPipeline()

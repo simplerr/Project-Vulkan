@@ -12,6 +12,11 @@
 #define VERTEX_BUFFER_BIND_ID 0
 #define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
 
+// Temporary defines to not rotate the sky sphere and terrain
+#define OBJECT_ID_SKY 1
+#define OBJECT_ID_TERRAIN 2
+#define OBJECT_ID_PROP 3
+
 namespace VulkanLib
 {
 	VulkanApp::VulkanApp() : VulkanBase(VULKAN_ENABLE_VALIDATION)
@@ -104,6 +109,7 @@ namespace VulkanLib
 		sphere->SetModel(mModelLoader.LoadModel(this, "data/models/sphere.obj"));
 		sphere->SetScale(glm::vec3(100));
 		sphere->SetPipeline(mPipelines.starsphere);
+		sphere->SetId(OBJECT_ID_SKY);
 		mObjects.push_back(sphere);
 
 		// Load a random testing texture
@@ -115,16 +121,18 @@ namespace VulkanLib
 		terrain->SetPipeline(mPipelines.colored);
 		terrain->SetScale(glm::vec3(10, 10, 10));
 		terrain->SetColor(glm::vec3(0.0, 0.9, 0.0));
+		terrain->SetId(OBJECT_ID_TERRAIN);
 		mObjects.push_back(terrain);
 
 		// Generate some positions
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < 16; i++)
 		{
-			for (int j = 0; j < 5; j++)
+			for (int j = 0; j < 16; j++)
 			{
 				Object* object = new Object(glm::vec3(i * 150, -100, j * 150));
 				object->SetScale(glm::vec3((rand() % 20) / 10.0f));
 				object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
+				object->SetId(OBJECT_ID_PROP);
 
 				if (rand() % 2 == 0) {
 					object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
@@ -672,6 +680,18 @@ namespace VulkanLib
 		Draw();
 
 		vkDeviceWaitIdle(mDevice);		// NOTE: TODO: Is this really needed?
+	}
+
+	void VulkanApp::Update()
+	{
+		// Rotate the objects
+		for (auto& object : mObjects)
+		{
+			// [NOTE] Just for testing
+			float speed = 50.0f;
+			if(object->GetId() == OBJECT_ID_PROP)
+				object->AddRotation(glm::radians(speed), glm::radians(speed), glm::radians(speed));
+		}
 	}
 
 	void VulkanApp::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
