@@ -10,8 +10,9 @@
 #include "LoadTGA.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
+#define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
 
-VulkanApp::VulkanApp() : VulkanBase()
+VulkanApp::VulkanApp() : VulkanBase(VULKAN_ENABLE_VALIDATION)
 {
 	srand(time(NULL));
 }

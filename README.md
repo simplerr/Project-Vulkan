@@ -4,6 +4,7 @@
 - Add a shader handler class
 - Fix normal calculation on the terrain
 - Rename member variables to mMemberVariableName
+- Add VulkanDebug::ErrorCheck everywhere
 - Make it run on Linux
 - Clean up the code by adding a new classes
 - Generate command buffers in multiple threads

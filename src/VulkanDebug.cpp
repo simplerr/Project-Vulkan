@@ -35,6 +35,16 @@ namespace VulkanDebug
 
 		// Add all standard validation layers http://gpuopen.com/using-the-vulkan-validation-layers/
 		validation_layers.push_back("VK_LAYER_LUNARG_standard_validation");
+
+		/*validation_layers.push_back("VK_LAYER_GOOGLE_threading");
+		validation_layers.push_back("VK_LAYER_LUNARG_mem_tracker");
+		validation_layers.push_back("VK_LAYER_LUNARG_object_tracker");
+		validation_layers.push_back("VK_LAYER_LUNARG_draw_state");
+		validation_layers.push_back("VK_LAYER_LUNARG_param_checker");
+		validation_layers.push_back("VK_LAYER_LUNARG_swapchain");
+		validation_layers.push_back("VK_LAYER_LUNARG_device_limits");
+		validation_layers.push_back("VK_LAYER_LUNARG_image");
+		validation_layers.push_back("VK_LAYER_GOOGLE_unique_objects");*/
 	}
 	void InitDebug(VkInstance instance)
 	{

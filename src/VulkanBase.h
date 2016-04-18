@@ -34,11 +34,11 @@
 class VulkanBase
 {
 public:
-	VulkanBase();
+	VulkanBase(bool enableValidation);
 	~VulkanBase();
 
-	VkResult CreateInstance(const char* appName);
-	VkResult CreateDevice();
+	VkResult CreateInstance(const char* appName, bool enableValidation);
+	VkResult CreateDevice(bool enableValidation);
 
 	virtual void Prepare();
 

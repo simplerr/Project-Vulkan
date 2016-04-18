@@ -16,17 +16,17 @@
 		no looping is done to find a queue that have the proper support
 */
 
-VulkanBase::VulkanBase()
+VulkanBase::VulkanBase(bool enableValidation)
 {
 	VulkanDebug::SetupDebugLayers();
 
 	// Create VkInstance
-	VulkanDebug::ErrorCheck( CreateInstance("Vulkan App") );
+	VulkanDebug::ErrorCheck( CreateInstance("Vulkan App", enableValidation) );
 
 	VulkanDebug::InitDebug(instance);
 
 	// Create VkDevice
-	VulkanDebug::ErrorCheck( CreateDevice() );
+	VulkanDebug::ErrorCheck( CreateDevice(enableValidation) );
 
 	// Get the graphics queue
 	vkGetDeviceQueue(device, 0, 0, &queue);	// Note that queueFamilyIndex is hard coded to 0
@@ -105,7 +105,7 @@ void VulkanBase::Prepare()
 	// Descriptor sets
 }
 
-VkResult VulkanBase::CreateInstance(const char* appName)
+VkResult VulkanBase::CreateInstance(const char* appName, bool enableValidation)
 {
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;			// Must be VK_STRUCTURE_TYPE_APPLICATION_INFO
@@ -135,15 +135,19 @@ VkResult VulkanBase::CreateInstance(const char* appName)
 	createInfo.pApplicationInfo = &appInfo;
 	createInfo.enabledExtensionCount = enabledExtensions.size();			// Extensions
 	createInfo.ppEnabledExtensionNames = enabledExtensions.data();
-	createInfo.enabledLayerCount = VulkanDebug::validation_layers.size();	// Debug validation layers
-	createInfo.ppEnabledLayerNames = VulkanDebug::validation_layers.data();
+
+	if (enableValidation)
+	{
+		createInfo.enabledLayerCount = VulkanDebug::validation_layers.size();	// Debug validation layers
+		createInfo.ppEnabledLayerNames = VulkanDebug::validation_layers.data();
+	}
 
 	VkResult res = vkCreateInstance(&createInfo, NULL, &instance);
 
 	return res;
 }
 
-VkResult VulkanBase::CreateDevice()
+VkResult VulkanBase::CreateDevice(bool enableValidation)
 {
 	// Query for the number of GPUs
 	uint32_t gpuCount = 0;
@@ -189,8 +193,12 @@ VkResult VulkanBase::CreateDevice()
 	deviceInfo.pEnabledFeatures = nullptr;
 	deviceInfo.enabledExtensionCount = enabledExtensions.size();			// Extensions
 	deviceInfo.ppEnabledExtensionNames = enabledExtensions.data();
-	deviceInfo.enabledLayerCount = VulkanDebug::validation_layers.size();	// Debug validation layers
-	deviceInfo.ppEnabledLayerNames = VulkanDebug::validation_layers.data();
+
+	if (enableValidation)
+	{
+		deviceInfo.enabledLayerCount = VulkanDebug::validation_layers.size();	// Debug validation layers
+		deviceInfo.ppEnabledLayerNames = VulkanDebug::validation_layers.data();
+	}
 	
 	result = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
 
@@ -477,7 +485,7 @@ void VulkanBase::SubmitPostPresentMemoryBarrier(VkImage image)
 		0, nullptr, // No memory barriers,
 		0, nullptr, // No buffer barriers,
 		1, &postPresentBarrier);
-
+	
 	VulkanDebug::ErrorCheck(vkEndCommandBuffer(postPresentCmdBuffer));
 
 	VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
