@@ -4,32 +4,32 @@ namespace VulkanLib
 {
 	void Timer::FrameBegin()
 	{
-		frameBegin = std::chrono::high_resolution_clock::now();
+		mFrameBegin = std::chrono::high_resolution_clock::now();
 	}
 
 	uint32_t Timer::FrameEnd()
 	{
-		frameCounter++;
+		mFrameCounter++;
 		auto frameEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(frameEnd - frameBegin).count();
-		frameTimer = (float)tDiff / 1000.0f;
+		auto tDiff = std::chrono::duration<double, std::milli>(frameEnd - mFrameBegin).count();
+		mFrameTimer = (float)tDiff / 1000.0f;
 
 		// Convert to clamped timer value
-		timer += timerSpeed * frameTimer;
-		if (timer > 1.0)
+		mTimer += mTimerSpeed * mFrameTimer;
+		if (mTimer > 1.0)
 		{
-			timer -= 1.0f;
+			mTimer -= 1.0f;
 		}
-		fpsTimer += (float)tDiff;
+		mFpsTimer += (float)tDiff;
 
 		// Increment frameCounter for 1 second, then update the FPS
-		if (fpsTimer > 1000.0f)
+		if (mFpsTimer > 1000.0f)
 		{
-			framesPerSecond = frameCounter;
-			fpsTimer = 0.0f;
-			frameCounter = 0;
+			mFramesPerSecond = mFrameCounter;
+			mFpsTimer = 0.0f;
+			mFrameCounter = 0;
 
-			return framesPerSecond;
+			return mFramesPerSecond;
 		}
 
 		return -1;
@@ -37,11 +37,11 @@ namespace VulkanLib
 
 	uint32_t Timer::GetFPS()
 	{
-		return framesPerSecond;
+		return mFramesPerSecond;
 	}
 
 	float Timer::GetElapsedTime()
 	{
-		return fpsTimer;
+		return mFpsTimer;
 	}
 }	// VulkanLib namespace

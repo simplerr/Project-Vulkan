@@ -29,13 +29,13 @@ namespace VulkanLib
 	private:
 		// Platform specific 
 	#if defined(_WIN32)
-		HWND				window;
-		HINSTANCE			windowInstance;
+		HWND				mWindow;
+		HINSTANCE			mWindowInstance;
 	#elif defined(__linux__)
 		bool quit;
-		xcb_connection_t *connection;
-		xcb_screen_t *screen;
-		xcb_window_t window;
+		xcb_connection_t *mConnection;
+		xcb_screen_t *mScreen;
+		xcb_window_t mWindow;
 		xcb_intern_atom_reply_t *atom_wm_delete_window;
 	#endif
 

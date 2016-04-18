@@ -32,6 +32,11 @@
 
 namespace VulkanLib
 {
+	struct DepthStencil{
+		VkImage image;
+		VkDeviceMemory memory;
+		VkImageView view;
+	};
 
 	// This is the base class that contains common code for creating a Vulkan application
 	class VulkanBase
@@ -84,66 +89,62 @@ namespace VulkanLib
 #endif
 
 	protected:
-		VkInstance			instance = VK_NULL_HANDLE;
-		VkPhysicalDevice	physicalDevice = VK_NULL_HANDLE;
-		VkDevice			device = VK_NULL_HANDLE;
-		VkQueue				queue = VK_NULL_HANDLE;
+		VkInstance						mInstance					= VK_NULL_HANDLE;
+		VkPhysicalDevice				mPhysicalDevice				= VK_NULL_HANDLE;
+		VkDevice						mDevice						= VK_NULL_HANDLE;
+		VkQueue							mQueue						= VK_NULL_HANDLE;
 
 		// Command buffer
-		VkCommandPool		commandPool;
-		std::vector<VkCommandBuffer> renderingCommandBuffers;
+		VkCommandPool					mCommandPool;
+		std::vector<VkCommandBuffer>	mRenderingCommandBuffers;
 
 		// Command buffer used for setup
-		VkCommandBuffer		setupCmdBuffer = VK_NULL_HANDLE;
+		VkCommandBuffer					mSetupCmdBuffer				= VK_NULL_HANDLE;
 
 		// Command buffers used to change the swapchains image format
-		VkCommandBuffer		postPresentCmdBuffer = VK_NULL_HANDLE;
-		VkCommandBuffer		prePresentCmdBuffer = VK_NULL_HANDLE;
+		VkCommandBuffer					mPostPresentCmdBuffer		= VK_NULL_HANDLE;
+		VkCommandBuffer					mPrePresentCmdBuffer		= VK_NULL_HANDLE;
 
 		// Swap chain magic by Sascha Willems (https://github.com/SaschaWillems/Vulkan)
-		VulkanSwapChain		swapChain;
+		VulkanSwapChain					mSwapChain;
 
 		// Global render pass for frame buffer writes
-		VkRenderPass		renderPass;
+		VkRenderPass					mRenderPass;
 
-		VkSemaphore			presentComplete;
-		VkSemaphore			renderComplete;
+		VkSemaphore						mPresentComplete;
+		VkSemaphore						mRenderComplete;
 
 		// List of available frame buffers (same as number of swap chain images)
-		std::vector<VkFramebuffer>	frameBuffers;
+		std::vector<VkFramebuffer>		mFrameBuffers;
 
 		// Active frame buffer index
-		uint32_t			currentBuffer = 0;
+		uint32_t						mCurrentBuffer				= 0;
 
 		// Hardcoded for now, should be selected during init with proper tests
-		VkFormat			depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+		VkFormat						mDepthFormat				= VK_FORMAT_D32_SFLOAT_S8_UINT;
 
 		// Color buffer format
-		VkFormat			colorformat = VK_FORMAT_B8G8R8A8_UNORM;
+		VkFormat						mColorFormat				= VK_FORMAT_B8G8R8A8_UNORM;
 
 		// Descriptor set pool
-		VkDescriptorPool	descriptorPool = VK_NULL_HANDLE;
+		VkDescriptorPool				mDescriptorPool				= VK_NULL_HANDLE;
 
 		// List of shader modules created and that needs cleanup
-		std::vector<VkShaderModule> shaderModules;
+		std::vector<VkShaderModule>		mShaderModules;
 
 		// Stores all available memory (type) properties for the physical device
-		VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
+		VkPhysicalDeviceMemoryProperties mDeviceMemoryProperties;
 
 		// Group everything with the depth stencil together in a struct (as in Vulkan samples)
-		struct {
-			VkImage image;
-			VkDeviceMemory memory;
-			VkImageView view;
-		} depthStencil;
+		DepthStencil					mDepthStencil;
 
 		// Simple texture loader
-		vkTools::VulkanTextureLoader *textureLoader = nullptr;
+		vkTools::VulkanTextureLoader*	mTextureLoader = nullptr;
 
 		// Wrapper class for the fps counter
-		Timer mTimer;
+		Timer							mTimer;
 
 		// Wrapper class for the platform dependet window code
-		Window*				mWindow;
+		Window*							mWindow;
 	};
 }	// VulkanLib namespace

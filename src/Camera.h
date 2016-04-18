@@ -1,7 +1,8 @@
 #pragma once
-
 #include "Platform.h"
 #include <glm/glm.hpp>
+
+using namespace glm;
 
 namespace VulkanLib
 {
@@ -9,7 +10,7 @@ namespace VulkanLib
 	{
 	public:
 		Camera();
-		Camera(glm::vec3 position, float fieldOfView, float aspectRatio, float nearPlane, float farPlane);
+		Camera(vec3 position, float fieldOfView, float aspectRatio, float nearPlane, float farPlane);
 
 		void Update();
 
@@ -17,31 +18,31 @@ namespace VulkanLib
 		void HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
 
-		glm::vec3 GetDirection();
+		vec3 GetDirection();
 
 		// New
-		glm::mat4 GetOrientation();
-		glm::mat4 GetView();
-		glm::mat4 GetProjection();
-		glm::mat4 GetMatrix();
-		glm::vec3 GetRight();
-		glm::vec3 GetPosition();
+		mat4 GetOrientation();
+		mat4 GetView();
+		mat4 GetProjection();
+		mat4 GetMatrix();
+		vec3 GetRight();
+		vec3 GetPosition();
 		void AddOrientation(float yaw, float pitch);
-		void LookAt(glm::vec3 target);
+		void LookAt(vec3 target);
 		void CapAngles();
 
 	private:
-		glm::vec3 position;
-		float pitch;	// Vertical angle
-		float yaw;		// Horizontal angle
-		float fov;
-		float nearPlane;
-		float farPlane;
-		float aspectRatio;
+		vec3 mPosition;
+		float mPitch;	// Vertical angle
+		float mYaw;		// Horizontal angle
+		float mFov;
+		float mNearPlane;
+		float mFarPlane;
+		float mAspectRatio;
 
-		float sensitivity = 0.2f;
-		float speed = 2.5f;
+		float mSensitivity = 0.2f;
+		float mSpeed = 2.5f;
 
-		int lastX, lastY;
+		int mLastX, mLastY;
 	};
 }	// VulkanLib namespace

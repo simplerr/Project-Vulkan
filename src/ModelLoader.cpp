@@ -13,6 +13,8 @@
 #include "../external/assimp/assimp/postprocess.h"
 #include "../external/assimp/assimp/scene.h"
 
+using namespace glm;
+
 namespace VulkanLib
 {
 	void ModelLoader::CleanupModels(VkDevice device)
@@ -130,11 +132,11 @@ namespace VulkanLib
 				// Vertex array. You need to scale this properly
 				float height = texture.imageData[(x + z * texture.width) * (texture.bpp / 8)] / 20.0f;
 
-				glm::vec3 pos = glm::vec3(x / 1.0, height, z / 1.0);
-				glm::vec3 normal = glm::vec3(0, 0, 0);
-				glm::vec2 uv = glm::vec2(x / (float)texture.width, z / (float)texture.height);
+				vec3 pos = vec3(x / 1.0, height, z / 1.0);
+				vec3 normal = vec3(0, 0, 0);
+				vec2 uv = vec2(x / (float)texture.width, z / (float)texture.height);
 
-				Vertex vertex = Vertex(pos, normal, uv, glm::vec3(0, 0, 0), glm::vec3(1.0, 1.0, 1.0));
+				Vertex vertex = Vertex(pos, normal, uv, vec3(0, 0, 0), vec3(1.0, 1.0, 1.0));
 				mesh.vertices[x + z * texture.width] = vertex;
 			}
 
@@ -143,8 +145,8 @@ namespace VulkanLib
 		{
 			for (z = 0; z < texture.height; z++)
 			{
-				glm::vec3 p1, p2, p3;
-				glm::vec3 edge = { 0.0f, 0.0f, 0.0f };
+				vec3 p1, p2, p3;
+				vec3 edge = { 0.0f, 0.0f, 0.0f };
 				int i;
 
 				// p1 [x-1][z-1]
@@ -175,11 +177,11 @@ namespace VulkanLib
 
 				p3 = mesh.vertices[i].Pos;
 
-				glm::vec3 e1 = p2 - p1;
-				glm::vec3 e2 = p3 - p1;
-				glm::vec3 normal = glm::cross(e2, e1);
+				vec3 e1 = p2 - p1;
+				vec3 e2 = p3 - p1;
+				vec3 normal = glm::cross(e2, e1);
 
-				if (normal != glm::vec3(0, 0, 0))
+				if (normal != vec3(0, 0, 0))
 					int asda = 1;
 
 				normal = glm::normalize(normal);

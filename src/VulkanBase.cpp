@@ -25,62 +25,62 @@ namespace VulkanLib
 		// Create VkInstance
 		VulkanDebug::ErrorCheck(CreateInstance("Vulkan App", enableValidation));
 
-		VulkanDebug::InitDebug(instance);
+		VulkanDebug::InitDebug(mInstance);
 
 		// Create VkDevice
 		VulkanDebug::ErrorCheck(CreateDevice(enableValidation));
 
 		// Get the graphics queue
-		vkGetDeviceQueue(device, 0, 0, &queue);	// Note that queueFamilyIndex is hard coded to 0
+		vkGetDeviceQueue(mDevice, 0, 0, &mQueue);	// Note that queueFamilyIndex is hard coded to 0
 
 		// Gather physical device memory properties
-		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);
+		vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &mDeviceMemoryProperties);
 
 		// Setup function pointers for the swap chain
-		swapChain.connect(instance, physicalDevice, device);
+		mSwapChain.connect(mInstance, mPhysicalDevice, mDevice);
 
 		// Synchronization code missing here, VkSemaphore etc.
 	}
 
 	VulkanBase::~VulkanBase()
 	{
-		swapChain.cleanup();
+		mSwapChain.cleanup();
 
 		// Destroy semaphores
-		vkDestroySemaphore(device, presentComplete, nullptr);
-		vkDestroySemaphore(device, renderComplete, nullptr);
+		vkDestroySemaphore(mDevice, mPresentComplete, nullptr);
+		vkDestroySemaphore(mDevice, mRenderComplete, nullptr);
 
-		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+		vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
 
-		delete textureLoader;
+		delete mTextureLoader;
 
 
-		vkDestroyCommandPool(device, commandPool, nullptr);
+		vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 
 		// Cleanup depth stencil data
-		vkDestroyImageView(device, depthStencil.view, nullptr);
-		vkDestroyImage(device, depthStencil.image, nullptr);
-		vkFreeMemory(device, depthStencil.memory, nullptr);
+		vkDestroyImageView(mDevice, mDepthStencil.view, nullptr);
+		vkDestroyImage(mDevice, mDepthStencil.image, nullptr);
+		vkFreeMemory(mDevice, mDepthStencil.memory, nullptr);
 
-		vkDestroyRenderPass(device, renderPass, nullptr);
+		vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 
-		for (uint32_t i = 0; i < frameBuffers.size(); i++)
+		for (uint32_t i = 0; i < mFrameBuffers.size(); i++)
 		{
-			vkDestroyFramebuffer(device, frameBuffers[i], nullptr);
+			vkDestroyFramebuffer(mDevice, mFrameBuffers[i], nullptr);
 		}
 
-		for (auto& shaderModule : shaderModules)
+		for (auto& shaderModule : mShaderModules)
 		{
-			vkDestroyShaderModule(device, shaderModule, nullptr);
+			vkDestroyShaderModule(mDevice, shaderModule, nullptr);
 		}
 
 
 
-		vkDestroyDevice(device, nullptr);
+		vkDestroyDevice(mDevice, nullptr);
 
-		VulkanDebug::CleanupDebugging(instance);
+		VulkanDebug::CleanupDebugging(mInstance);
 
-		vkDestroyInstance(instance, nullptr);
+		vkDestroyInstance(mInstance, nullptr);
 	}
 
 	void VulkanBase::Prepare()
@@ -98,7 +98,7 @@ namespace VulkanLib
 		CreateSetupCommandBuffer();		// The derived class will also record initialization commands to the setup command buffer
 
 		// Create a simple texture loader class
-		textureLoader = new vkTools::VulkanTextureLoader(physicalDevice, device, queue, commandPool);
+		mTextureLoader = new vkTools::VulkanTextureLoader(mPhysicalDevice, mDevice, mQueue, mCommandPool);
 
 		// The derived class initializes:
 		// Pipeline
@@ -144,7 +144,7 @@ namespace VulkanLib
 			createInfo.ppEnabledLayerNames = VulkanDebug::validation_layers.data();
 		}
 
-		VkResult res = vkCreateInstance(&createInfo, NULL, &instance);
+		VkResult res = vkCreateInstance(&createInfo, NULL, &mInstance);
 
 		return res;
 	}
@@ -153,7 +153,7 @@ namespace VulkanLib
 	{
 		// Query for the number of GPUs
 		uint32_t gpuCount = 0;
-		VkResult result = vkEnumeratePhysicalDevices(instance, &gpuCount, NULL);
+		VkResult result = vkEnumeratePhysicalDevices(mInstance, &gpuCount, NULL);
 
 		if (result != VK_SUCCESS)
 			VulkanDebug::ConsolePrint("vkEnumeratePhysicalDevices failed");
@@ -163,10 +163,10 @@ namespace VulkanLib
 
 		// Enumerate devices
 		std::vector<VkPhysicalDevice> physicalDevices(gpuCount);
-		result = vkEnumeratePhysicalDevices(instance, &gpuCount, physicalDevices.data());
+		result = vkEnumeratePhysicalDevices(mInstance, &gpuCount, physicalDevices.data());
 
 		// Assume that there only is 1 GPU
-		physicalDevice = physicalDevices[0];
+		mPhysicalDevice = physicalDevices[0];
 
 		// This is not used right now, but GPU vendor and model can be retrieved
 		//VkPhysicalDeviceProperties physicalDeviceProperties;
@@ -202,7 +202,7 @@ namespace VulkanLib
 			deviceInfo.ppEnabledLayerNames = VulkanDebug::validation_layers.data();
 		}
 
-		result = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
+		result = vkCreateDevice(mPhysicalDevice, &deviceInfo, nullptr, &mDevice);
 
 		return result;
 	}
@@ -213,7 +213,7 @@ namespace VulkanLib
 		createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		createInfo.queueFamilyIndex = 0;									// NOTE: TODO: Need to store this as a member (Use Swapchain)!!!!!
 		createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		VkResult r = vkCreateCommandPool(device, &createInfo, nullptr, &commandPool);
+		VkResult r = vkCreateCommandPool(mDevice, &createInfo, nullptr, &mCommandPool);
 		assert(!r);
 	}
 
@@ -221,11 +221,11 @@ namespace VulkanLib
 	{
 		VkCommandBufferAllocateInfo allocateInfo = {};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocateInfo.commandPool = commandPool;
+		allocateInfo.commandPool = mCommandPool;
 		allocateInfo.commandBufferCount = 1;
 		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-		VkResult r = vkAllocateCommandBuffers(device, &allocateInfo, &setupCmdBuffer);
+		VkResult r = vkAllocateCommandBuffers(mDevice, &allocateInfo, &mSetupCmdBuffer);
 		assert(!r);
 
 		VkCommandBufferBeginInfo beginInfo = {};
@@ -233,7 +233,7 @@ namespace VulkanLib
 		//beginInfo.flags = Default is OK, change this if multiple command buffers (primary & secondary)
 
 		// Begin recording commands to the setup command buffer
-		r = vkBeginCommandBuffer(setupCmdBuffer, &beginInfo);
+		r = vkBeginCommandBuffer(mSetupCmdBuffer, &beginInfo);
 		assert(!r);
 	}
 
@@ -241,19 +241,19 @@ namespace VulkanLib
 	{
 		VkCommandBufferAllocateInfo allocateInfo = {};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocateInfo.commandPool = commandPool;
+		allocateInfo.commandPool = mCommandPool;
 		allocateInfo.commandBufferCount = 1;
 		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
 		// Allocate the command buffers that the image memory barriers will use to change the swap chain image format
-		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(device, &allocateInfo, &prePresentCmdBuffer));
-		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(device, &allocateInfo, &postPresentCmdBuffer));
+		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mPrePresentCmdBuffer));
+		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mPostPresentCmdBuffer));
 
 		// Allocate a command buffer for each swap chain image
-		renderingCommandBuffers.resize(swapChain.imageCount);
-		allocateInfo.commandBufferCount = renderingCommandBuffers.size();
+		mRenderingCommandBuffers.resize(mSwapChain.imageCount);
+		allocateInfo.commandBufferCount = mRenderingCommandBuffers.size();
 
-		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(device, &allocateInfo, renderingCommandBuffers.data()));
+		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, mRenderingCommandBuffers.data()));
 	}
 
 	void VulkanBase::CreateSemaphores()
@@ -261,15 +261,15 @@ namespace VulkanLib
 		VkSemaphoreCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-		VulkanDebug::ErrorCheck(vkCreateSemaphore(device, &createInfo, nullptr, &presentComplete));
-		VulkanDebug::ErrorCheck(vkCreateSemaphore(device, &createInfo, nullptr, &renderComplete));
+		VulkanDebug::ErrorCheck(vkCreateSemaphore(mDevice, &createInfo, nullptr, &mPresentComplete));
+		VulkanDebug::ErrorCheck(vkCreateSemaphore(mDevice, &createInfo, nullptr, &mRenderComplete));
 	}
 
 	void VulkanBase::SetupDepthStencil()
 	{
 		VkImageCreateInfo imageCreateInfo = {};
 		imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageCreateInfo.format = depthFormat;
+		imageCreateInfo.format = mDepthFormat;
 		imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 		imageCreateInfo.extent = { (uint32_t)GetWindowWidth(), (uint32_t)GetWindowHeight(), 1 };
 		imageCreateInfo.mipLevels = 1;
@@ -285,7 +285,7 @@ namespace VulkanLib
 		VkImageViewCreateInfo viewCreateInfo = {};
 		viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		viewCreateInfo.format = depthFormat;
+		viewCreateInfo.format = mDepthFormat;
 		viewCreateInfo.subresourceRange = {};
 		viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 		viewCreateInfo.subresourceRange.baseMipLevel = 0;
@@ -293,25 +293,25 @@ namespace VulkanLib
 		viewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		viewCreateInfo.subresourceRange.layerCount = 1;
 
-		VkResult res = vkCreateImage(device, &imageCreateInfo, nullptr, &depthStencil.image);
+		VkResult res = vkCreateImage(mDevice, &imageCreateInfo, nullptr, &mDepthStencil.image);
 		assert(!res);
 
 		// Get memory requirements
 		VkMemoryRequirements memRequirments;
-		vkGetImageMemoryRequirements(device, depthStencil.image, &memRequirments);
+		vkGetImageMemoryRequirements(mDevice, mDepthStencil.image, &memRequirments);
 		allocateInfo.allocationSize = memRequirments.size;
 		GetMemoryType(memRequirments.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocateInfo.memoryTypeIndex);
 
-		res = vkAllocateMemory(device, &allocateInfo, nullptr, &depthStencil.memory);
+		res = vkAllocateMemory(mDevice, &allocateInfo, nullptr, &mDepthStencil.memory);
 		assert(!res);
 
-		res = vkBindImageMemory(device, depthStencil.image, depthStencil.memory, 0);
+		res = vkBindImageMemory(mDevice, mDepthStencil.image, mDepthStencil.memory, 0);
 		assert(!res);
 
-		vkTools::setImageLayout(setupCmdBuffer, depthStencil.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		vkTools::setImageLayout(mSetupCmdBuffer, mDepthStencil.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-		viewCreateInfo.image = depthStencil.image;	// Connect the view with the image
-		res = vkCreateImageView(device, &viewCreateInfo, nullptr, &depthStencil.view);
+		viewCreateInfo.image = mDepthStencil.image;	// Connect the view with the image
+		res = vkCreateImageView(mDevice, &viewCreateInfo, nullptr, &mDepthStencil.view);
 		assert(!res);
 	}
 
@@ -342,7 +342,7 @@ namespace VulkanLib
 		// Attachments creation, standard code 100% from Vulkan samples
 		// Basically creates one color attachment and one depth stencil attachment
 		VkAttachmentDescription attachments[2];
-		attachments[0].format = colorformat;
+		attachments[0].format = mColorFormat;
 		attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
 		attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -351,7 +351,7 @@ namespace VulkanLib
 		attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-		attachments[1].format = depthFormat;
+		attachments[1].format = mDepthFormat;
 		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
 		attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -367,7 +367,7 @@ namespace VulkanLib
 		createInfo.pSubpasses = &subpass;
 		createInfo.pAttachments = attachments;
 
-		VkResult res = vkCreateRenderPass(device, &createInfo, nullptr, &renderPass);
+		VkResult res = vkCreateRenderPass(mDevice, &createInfo, nullptr, &mRenderPass);
 		assert(!res);
 	}
 
@@ -376,11 +376,11 @@ namespace VulkanLib
 		// The code here depends on the depth stencil buffer, the render pass and the swap chain
 
 		VkImageView attachments[2];
-		attachments[1] = depthStencil.view;
+		attachments[1] = mDepthStencil.view;
 
 		VkFramebufferCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		createInfo.renderPass = renderPass;
+		createInfo.renderPass = mRenderPass;
 		createInfo.attachmentCount = 2;
 		createInfo.pAttachments = attachments;
 		createInfo.width = GetWindowWidth();
@@ -388,11 +388,11 @@ namespace VulkanLib
 		createInfo.layers = 1;
 
 		// Create a frame buffer for each swap chain image
-		frameBuffers.resize(swapChain.imageCount);
-		for (uint32_t i = 0; i < frameBuffers.size(); i++)
+		mFrameBuffers.resize(mSwapChain.imageCount);
+		for (uint32_t i = 0; i < mFrameBuffers.size(); i++)
 		{
-			attachments[0] = swapChain.buffers[i].view;
-			VkResult res = vkCreateFramebuffer(device, &createInfo, nullptr, &frameBuffers[i]);
+			attachments[0] = mSwapChain.buffers[i].view;
+			VkResult res = vkCreateFramebuffer(mDevice, &createInfo, nullptr, &mFrameBuffers[i]);
 			assert(!res);
 		}
 	}
@@ -401,30 +401,30 @@ namespace VulkanLib
 	{
 		// Note that we use the same command buffer for everything right now!
 		// Uses the setup command buffer
-		swapChain.create(setupCmdBuffer, GetWindowWidth(), GetWindowHeight());
+		mSwapChain.create(mSetupCmdBuffer, GetWindowWidth(), GetWindowHeight());
 	}
 
 	void VulkanBase::ExecuteSetupCommandBuffer()
 	{
-		if (setupCmdBuffer == VK_NULL_HANDLE)
+		if (mSetupCmdBuffer == VK_NULL_HANDLE)
 			return;
 
-		VkResult err = vkEndCommandBuffer(setupCmdBuffer);
+		VkResult err = vkEndCommandBuffer(mSetupCmdBuffer);
 		assert(!err);
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &setupCmdBuffer;
+		submitInfo.pCommandBuffers = &mSetupCmdBuffer;
 
-		err = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+		err = vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE);
 		assert(!err);
 
-		err = vkQueueWaitIdle(queue);
+		err = vkQueueWaitIdle(mQueue);
 		assert(!err);
 
-		vkFreeCommandBuffers(device, commandPool, 1, &setupCmdBuffer);
-		setupCmdBuffer = VK_NULL_HANDLE;
+		vkFreeCommandBuffers(mDevice, mCommandPool, 1, &mSetupCmdBuffer);
+		mSetupCmdBuffer = VK_NULL_HANDLE;
 	}
 
 	void VulkanBase::SubmitPrePresentMemoryBarrier(VkImage image)
@@ -432,7 +432,7 @@ namespace VulkanLib
 		// Copy & paste, I think this can be done smarter (TODO)
 		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
 
-		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(prePresentCmdBuffer, &cmdBufInfo));
+		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mPrePresentCmdBuffer, &cmdBufInfo));
 
 		VkImageMemoryBarrier prePresentBarrier = vkTools::initializers::imageMemoryBarrier();
 		prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -445,7 +445,7 @@ namespace VulkanLib
 		prePresentBarrier.image = image;
 
 		vkCmdPipelineBarrier(
-			prePresentCmdBuffer,
+			mPrePresentCmdBuffer,
 			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 			VK_FLAGS_NONE,
@@ -453,13 +453,13 @@ namespace VulkanLib
 			0, nullptr, // No buffer barriers,
 			1, &prePresentBarrier);
 
-		VulkanDebug::ErrorCheck(vkEndCommandBuffer(prePresentCmdBuffer));
+		VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPrePresentCmdBuffer));
 
 		VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &prePresentCmdBuffer;
+		submitInfo.pCommandBuffers = &mPrePresentCmdBuffer;
 
-		VulkanDebug::ErrorCheck(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+		VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE));
 	}
 
 	void VulkanBase::SubmitPostPresentMemoryBarrier(VkImage image)
@@ -467,7 +467,7 @@ namespace VulkanLib
 		// Copy & paste, I think this can be done smarter (TODO)
 		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
 
-		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(postPresentCmdBuffer, &cmdBufInfo));
+		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mPostPresentCmdBuffer, &cmdBufInfo));
 
 		VkImageMemoryBarrier postPresentBarrier = vkTools::initializers::imageMemoryBarrier();	// TODO: Remove VkTools code
 		postPresentBarrier.srcAccessMask = 0;
@@ -480,7 +480,7 @@ namespace VulkanLib
 		postPresentBarrier.image = image;
 
 		vkCmdPipelineBarrier(
-			postPresentCmdBuffer,
+			mPostPresentCmdBuffer,
 			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 			0,
@@ -488,13 +488,13 @@ namespace VulkanLib
 			0, nullptr, // No buffer barriers,
 			1, &postPresentBarrier);
 
-		VulkanDebug::ErrorCheck(vkEndCommandBuffer(postPresentCmdBuffer));
+		VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPostPresentCmdBuffer));
 
 		VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &postPresentCmdBuffer;
+		submitInfo.pCommandBuffers = &mPostPresentCmdBuffer;
 
-		VulkanDebug::ErrorCheck(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+		VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE));
 	}
 
 	void VulkanBase::InitSwapchain(Window* window)
@@ -503,9 +503,9 @@ namespace VulkanLib
 
 		// Platform dependent code to initialize the window surface
 #if defined(_WIN32)
-		swapChain.initSurface(mWindow->GetInstance(), mWindow->GetHwnd());
+		mSwapChain.initSurface(mWindow->GetInstance(), mWindow->GetHwnd());
 #elif defined(__linux__)
-		swapChain.initSurface(mWindow->GetConnection(), mWindow->GetWindow());
+		mSwapChain.initSurface(mWindow->GetConnection(), mWindow->GetWindow());
 #endif
 	}
 
@@ -515,13 +515,13 @@ namespace VulkanLib
 		shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStage.stage = stage;
 #if defined(__ANDROID__)
-		shaderStage.module = vkTools::loadShader(androidApp->activity->assetManager, fileName.c_str(), device, stage);
+		shaderStage.module = vkTools::loadShader(androidApp->activity->assetManager, fileName.c_str(), mDevice, stage);
 #else
-		shaderStage.module = vkTools::loadShader(fileName.c_str(), device, stage);		// Uses helper functions (NOTE/TODO)
+		shaderStage.module = vkTools::loadShader(fileName.c_str(), mDevice, stage);		// Uses helper functions (NOTE/TODO)
 #endif
 		shaderStage.pName = "main";
 		assert(shaderStage.module != NULL);
-		shaderModules.push_back(shaderStage.module);		// Add them to the vector so they can be cleaned up
+		mShaderModules.push_back(shaderStage.module);		// Add them to the vector so they can be cleaned up
 		return shaderStage;
 	}
 
@@ -565,7 +565,7 @@ namespace VulkanLib
 
 	VkDevice VulkanBase::GetDevice()
 	{
-		return device;
+		return mDevice;
 	}
 
 	// Code from Vulkan samples and SaschaWillems
@@ -575,7 +575,7 @@ namespace VulkanLib
 		{
 			if ((typeBits & 1) == 1)
 			{
-				if ((deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+				if ((mDeviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
 				{
 					*typeIndex = i;
 					return true;
