@@ -54,15 +54,32 @@ void VulkanApp::Prepare()
 	PrepareUniformBuffers();
 	SetupDescriptorPool();
 	SetupDescriptorSet();
+	PrepareCommandBuffers();
 	//SetupTerrainDescriptorSet();		// Custom
 
 	// This records all the rendering commands to a command buffer
 	// The command buffer will be sent to VkQueueSubmit in Draw() but this code only runs once
-	RecordRenderingCommandBuffer();
+	//RecordRenderingCommandBuffer();
 
 	prepared = true;
 
 	// Stuff unclear: swapchain, framebuffer, renderpass
+}
+
+void VulkanApp::PrepareCommandBuffers()
+{
+	VkCommandBufferAllocateInfo allocateInfo = {};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocateInfo.commandPool = commandPool;
+	allocateInfo.commandBufferCount = 1;
+	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	// Create the primary command buffer
+	VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(device, &allocateInfo, &primaryCommandBuffer));
+
+	// Create the secondary command buffer
+	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+	VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(device, &allocateInfo, &secondaryCommandBuffer));
 }
 
 void VulkanApp::CompileShaders()
@@ -497,7 +514,7 @@ void VulkanApp::SetupVertexDescriptions()
 	vertexDescriptions.inputState.pVertexAttributeDescriptions = vertexDescriptions.attributeDescriptions.data();
 }
 
-void VulkanApp::RecordRenderingCommandBuffer()
+void VulkanApp::RecordRenderingCommandBuffer(VkFramebuffer frameBuffer)
 {
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -513,87 +530,81 @@ void VulkanApp::RecordRenderingCommandBuffer()
 	renderPassBeginInfo.renderArea.extent.height = GetWindowHeight();
 	renderPassBeginInfo.clearValueCount = 2;
 	renderPassBeginInfo.pClearValues = clearValues;
+	renderPassBeginInfo.framebuffer = frameBuffer;
 
-	for (int i = 0; i < renderingCommandBuffers.size(); i++)
+	// Begin command buffer recording & the render pass
+	VulkanDebug::ErrorCheck(vkBeginCommandBuffer(primaryCommandBuffer, &beginInfo));
+	vkCmdBeginRenderPass(primaryCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	//
+	// Secondary command buffer
+	//
+	VkCommandBufferInheritanceInfo inheritanceInfo = {};
+	inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+	inheritanceInfo.renderPass = renderPass;
+	inheritanceInfo.framebuffer = frameBuffer;
+
+	// Secondary command buffer for the sky sphere
+	VkCommandBufferBeginInfo commandBufferBeginInfo = {};
+	commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+	commandBufferBeginInfo.pInheritanceInfo = &inheritanceInfo;
+
+	VulkanDebug::ErrorCheck(vkBeginCommandBuffer(secondaryCommandBuffer, &commandBufferBeginInfo));
+
+	// Update dynamic viewport state
+	VkViewport viewport = {};
+	viewport.width = (float)GetWindowWidth();
+	viewport.height = (float)GetWindowHeight();
+	viewport.minDepth = (float) 0.0f;
+	viewport.maxDepth = (float) 1.0f;
+	vkCmdSetViewport(secondaryCommandBuffer, 0, 1, &viewport);
+
+	// Update dynamic scissor state
+	VkRect2D scissor = {};
+	scissor.extent.width = GetWindowWidth();
+	scissor.extent.height = GetWindowHeight();
+	scissor.offset.x = 0;
+	scissor.offset.y = 0;
+	vkCmdSetScissor(secondaryCommandBuffer, 0, 1, &scissor);
+
+	//
+	// Testing push constant rendering with different matrices
+	//
+	for (auto& object : mObjects)
 	{
-		// Set target frame buffer
-		renderPassBeginInfo.framebuffer = frameBuffers[i];
-
-		// Begin command buffer recording & the render pass
-		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(renderingCommandBuffers[i], &beginInfo));
-		vkCmdBeginRenderPass(renderingCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		// Update dynamic viewport state
-		VkViewport viewport = {};
-		viewport.width = (float)GetWindowWidth();
-		viewport.height = (float)GetWindowHeight();
-		viewport.minDepth = (float) 0.0f;
-		viewport.maxDepth = (float) 1.0f;
-		vkCmdSetViewport(renderingCommandBuffers[i], 0, 1, &viewport);
-
-		// Update dynamic scissor state
-		VkRect2D scissor = {};
-		scissor.extent.width = GetWindowWidth();
-		scissor.extent.height = GetWindowHeight();
-		scissor.offset.x = 0;
-		scissor.offset.y = 0;
-		vkCmdSetScissor(renderingCommandBuffers[i], 0, 1, &scissor);
-
-		//
-		// Testing push constant rendering with different matrices
-		//
-		for (auto& object : mObjects)
-		{
 			
-			// Bind the rendering pipeline (including the shaders)
-			vkCmdBindPipeline(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, object->GetPipeline());
-
-			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
-			vkCmdBindDescriptorSets(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
-
-			// Push the world matrix constant
-			pushConstants.world = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
-			pushConstants.color = object->GetColor();
-			vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &pushConstants);
-
-			// Bind triangle vertices
-			VkDeviceSize offsets[1] = { 0 };
-			vkCmdBindVertexBuffers(renderingCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &object->GetModel()->vertices.buffer, offsets);							
-			vkCmdBindIndexBuffer(renderingCommandBuffers[i], object->GetModel()->indices.buffer, 0, VK_INDEX_TYPE_UINT32);						
-
-			// Draw indexed triangle	
-			vkCmdSetLineWidth(renderingCommandBuffers[i], 1.0f);
-			vkCmdDrawIndexed(renderingCommandBuffers[i], object->GetModel()->GetNumIndices(), 1, 0, 0, 0);
-		}
-
-		//
-		// Render the terrain
-		//
+		// Bind the rendering pipeline (including the shaders)
+		vkCmdBindPipeline(secondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object->GetPipeline());
 
 		// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
-		//vkCmdBindDescriptorSets(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &terrainDescriptorSet, 0, NULL);
+		vkCmdBindDescriptorSets(secondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
-		// Bind the rendering pipeline (including the shaders)
-		//vkCmdBindPipeline(renderingCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.textured);
+		// Push the world matrix constant
+		pushConstants.world = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+		pushConstants.color = object->GetColor();
+		vkCmdPushConstants(secondaryCommandBuffer, pipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &pushConstants);
 
-		//// Push the world matrix constant
-		//glm::mat4 mvp = glm::mat4(); // camera->GetProjection() * camera->GetView() * glm::mat4();
-		//int siss = sizeof(mvp);
-		//vkCmdPushConstants(renderingCommandBuffers[i], pipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(mvp), &mvp);
+		// Bind triangle vertices
+		VkDeviceSize offsets[1] = { 0 };
+		vkCmdBindVertexBuffers(secondaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &object->GetModel()->vertices.buffer, offsets);
+		vkCmdBindIndexBuffer(secondaryCommandBuffer, object->GetModel()->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		//// Bind triangle vertices
-		//VkDeviceSize offsets[1] = { 0 };
-		//vkCmdBindVertexBuffers(renderingCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &terrain->vertices.buffer, offsets);
-		//vkCmdBindIndexBuffer(renderingCommandBuffers[i], terrain->indices.buffer, 0, VK_INDEX_TYPE_UINT32);						
+		// Draw indexed triangle	
+		vkCmdSetLineWidth(secondaryCommandBuffer, 1.0f);
+		vkCmdDrawIndexed(secondaryCommandBuffer, object->GetModel()->GetNumIndices(), 1, 0, 0, 0);
+	}
 
-		//// Draw indexed triangle	
-		//vkCmdSetLineWidth(renderingCommandBuffers[i], 1.0f);
-		//vkCmdDrawIndexed(renderingCommandBuffers[i], terrain->GetNumIndices(), 1, 0, 0, 0);
+	// End secondary command buffer
+	VulkanDebug::ErrorCheck(vkEndCommandBuffer(secondaryCommandBuffer));
 
-		//// End command buffer recording & the render pass
-		vkCmdEndRenderPass(renderingCommandBuffers[i]);
-		VulkanDebug::ErrorCheck(vkEndCommandBuffer(renderingCommandBuffers[i]));
-	}	
+	// Execute render commands from the secondary command buffer
+	vkCmdExecuteCommands(primaryCommandBuffer, 1, &secondaryCommandBuffer);
+
+	// End command buffer recording & the render pass
+	vkCmdEndRenderPass(primaryCommandBuffer);
+	VulkanDebug::ErrorCheck(vkEndCommandBuffer(primaryCommandBuffer));
+
 }
 
 void VulkanApp::Draw()
@@ -612,7 +623,7 @@ void VulkanApp::Draw()
 	SubmitPrePresentMemoryBarrier(swapChain.buffers[currentBuffer].image);
 
 	// NOTE: Testing
-	//RecordRenderingCommandBuffer();
+	RecordRenderingCommandBuffer(frameBuffers[currentBuffer]);
 
 	//
 	// Do rendering
@@ -622,7 +633,7 @@ void VulkanApp::Draw()
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount	= 1;
-	submitInfo.pCommandBuffers		= &renderingCommandBuffers[currentBuffer];		// Draw commands for the current command buffer
+	submitInfo.pCommandBuffers		= &primaryCommandBuffer;		// Draw commands for the current command buffer
 	submitInfo.waitSemaphoreCount	= 1;
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores		= &presentComplete;							// Waits for swapChain.acquireNextImage to complete

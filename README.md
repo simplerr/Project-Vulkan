@@ -1,9 +1,9 @@
 # Project-Vulkan
 
 ### Todo
-- Make a timer class
+- Add a shader handler class
 - Fix normal calculation on the terrain
-- Remove the per-framebuffer command buffer generation
+- Rename member variables to mMemberVariableName
 - Make it run on Linux
 - Clean up the code by adding a new classes
 - Generate command buffers in multiple threads

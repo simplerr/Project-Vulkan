@@ -27,10 +27,10 @@ public:
 	void SetupDescriptorSet();
 	void PreparePipelines();
 	void UpdateUniformBuffers();
-
+	void PrepareCommandBuffers();		// Custom
 	void SetupVertexDescriptions();
 
-	void RecordRenderingCommandBuffer();
+	void RecordRenderingCommandBuffer(VkFramebuffer frameBuffer);
 
 	virtual void Render();
 	void Draw();
@@ -80,6 +80,10 @@ public:
 		glm::mat4 world;
 		glm::vec3 color;
 	};
+
+	// This gets regenerated each frame so there is no need for command buffer per frame buffer
+	VkCommandBuffer primaryCommandBuffer;
+	VkCommandBuffer secondaryCommandBuffer;
 
 	// 
 	//	High level code

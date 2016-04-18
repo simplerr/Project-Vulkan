@@ -137,21 +137,6 @@ protected:
 	// Simple texture loader
 	vkTools::VulkanTextureLoader *textureLoader	= nullptr;
 
-	// Last frame time, measured using a high performance timer (if available)
-	float frameTimer = 1.0f;
-
-	// Frame counter to display fps
-	uint32_t frameCounter = 0;
-
-	// Defines a frame rate independent timer value clamped from -1.0...1.0
-	// For use in animations, rotations, etc.
-	float timer = 0.0f;
-	// Multiplier for speeding up (or slowing down) the global timer
-	float timerSpeed = 0.25f;
-
-	// FPS timer (one second interval)
-	float fpsTimer = 0.0f;	
-
 	// Wrapper class for the fps counter
 	Timer mTimer;
 
