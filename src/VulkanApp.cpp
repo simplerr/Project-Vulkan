@@ -186,12 +186,12 @@ namespace VulkanLib
 		// Get # of available threads
 		mNumThreads = std::thread::hardware_concurrency();
 
-		mNumThreads = 1;
+		mNumThreads = 4;
 
 		mThreadData.resize(mNumThreads);
 		mThreadPool.setThreadCount(mNumThreads);
 
-		mNumObjects = 64*4;
+		mNumObjects = 64*4*4;
 
 		// Prepare each thread data
 		for (int t = 0; t < mNumThreads; t++)
@@ -269,7 +269,9 @@ namespace VulkanLib
 				Object* object = new Object(glm::vec3(i * 150, -250, t * 150));
 				object->SetColor(glm::vec3(1.0f, 0.0f, 1.0f));
 				object->SetId(OBJECT_ID_PROP);
-				object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
+				//object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
+				object->SetModel(mModelLoader.LoadModel(this, "data/models/Crate.obj"));
+				object->SetScale(vec3(15, 15, 15));
 				object->SetRotation(glm::vec3(180, 0, 0));
 				object->SetPipeline(mPipelines.colored);
 
@@ -795,6 +797,8 @@ namespace VulkanLib
 
 			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mThreadData[threadId].descriptorSet, 0, NULL);
+
+			object->AddRotation(0, 1, 0);
 
 			// Push the world matrix constant
 			PushConstantBlock pushConstants = {};
