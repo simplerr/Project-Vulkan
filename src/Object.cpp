@@ -27,16 +27,19 @@ namespace VulkanLib
 	void Object::SetPosition(vec3 position)
 	{
 		mPosition = position;
+		RebuildWorldMatrix();
 	}
 
 	void Object::SetRotation(vec3 rotation)
 	{
 		mRotation = rotation;
+		RebuildWorldMatrix();
 	}
 
 	void Object::SetScale(vec3 scale)
 	{
 		mScale = scale;
+		RebuildWorldMatrix();
 	}
 
 	void Object::SetColor(vec3 color)
@@ -52,6 +55,7 @@ namespace VulkanLib
 	void Object::AddRotation(float x, float y, float z)
 	{
 		mRotation += vec3(x, y, z);
+		RebuildWorldMatrix();
 	}
 
 	void Object::SetPipeline(VkPipeline pipeline)
@@ -86,15 +90,7 @@ namespace VulkanLib
 
 	mat4 Object::GetWorldMatrix()
 	{
-		mat4 world;
-
-		world = glm::translate(world, mPosition);
-		world = glm::rotate(world, glm::radians(mRotation.x), vec3(1.0f, 0.0f, 0.0f));
-		world = glm::rotate(world, glm::radians(mRotation.y), vec3(0.0f, 1.0f, 0.0f));
-		world = glm::rotate(world, glm::radians(mRotation.z), vec3(0.0f, 0.0f, 1.0f));
-		world = glm::scale(world, mScale);
-
-		return world;
+		return mWorld;
 	}
 
 	int Object::GetId()
@@ -105,5 +101,17 @@ namespace VulkanLib
 	VkPipeline Object::GetPipeline()
 	{
 		return mPipeline;
+	}
+	void Object::RebuildWorldMatrix()
+	{
+		mat4 world;
+
+		world = glm::translate(world, mPosition);
+		world = glm::rotate(world, glm::radians(mRotation.x), vec3(1.0f, 0.0f, 0.0f));
+		world = glm::rotate(world, glm::radians(mRotation.y), vec3(0.0f, 1.0f, 0.0f));
+		world = glm::rotate(world, glm::radians(mRotation.z), vec3(0.0f, 0.0f, 1.0f));
+		world = glm::scale(world, mScale);
+
+		mWorld = world;
 	}
 }	// VulkanLib namespace

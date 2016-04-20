@@ -191,7 +191,7 @@ namespace VulkanLib
 		mThreadData.resize(mNumThreads);
 		mThreadPool.setThreadCount(mNumThreads);
 
-		mNumObjects = 64*4*4;
+		mNumObjects = 64*4*4*2; // [NOTE][TODO] * 2 more crashes the computer!!
 
 		// Prepare each thread data
 		for (int t = 0; t < mNumThreads; t++)
@@ -797,8 +797,6 @@ namespace VulkanLib
 
 			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mThreadData[threadId].descriptorSet, 0, NULL);
-
-			object->AddRotation(0, 1, 0);
 
 			// Push the world matrix constant
 			PushConstantBlock pushConstants = {};
