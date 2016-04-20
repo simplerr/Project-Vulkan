@@ -48,6 +48,7 @@ namespace VulkanLib
 	};
 
 	struct ThreadData {
+		PushConstantBlock pushConstants;
 		VkCommandBuffer commandBuffer;
 		VkCommandPool commandPool;
 		VkDescriptorSet descriptorSet;			// Testing

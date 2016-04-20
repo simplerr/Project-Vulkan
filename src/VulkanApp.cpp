@@ -763,6 +763,7 @@ namespace VulkanLib
 
 	void VulkanApp::ThreadRecordCommandBuffer(int threadId, VkCommandBufferInheritanceInfo inheritanceInfo)
 	{
+		ThreadData *thread = &mThreadData[threadId];		// For faster access
 		VkCommandBuffer commandBuffer = mThreadData[threadId].commandBuffer;
 		auto objects = mThreadData[threadId].threadObjects;
 
@@ -796,13 +797,12 @@ namespace VulkanLib
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object->GetPipeline());
 
 			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mThreadData[threadId].descriptorSet, 0, NULL);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &thread->descriptorSet, 0, NULL);
 
 			// Push the world matrix constant
-			PushConstantBlock pushConstants = {};
-			pushConstants.world = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
-			pushConstants.color = object->GetColor();
-			vkCmdPushConstants(commandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &pushConstants);
+			thread->pushConstants.world = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+			thread->pushConstants.color = object->GetColor();
+			vkCmdPushConstants(commandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &thread->pushConstants);
 
 			// Bind triangle vertices
 			VkDeviceSize offsets[1] = { 0 };
