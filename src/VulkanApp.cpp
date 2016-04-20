@@ -1,6 +1,7 @@
 #include <array>
 #include <time.h>
 #include <cstdlib>
+#include <thread>
 
 #include "VulkanApp.h"
 #include "VulkanDebug.h"
@@ -10,7 +11,7 @@
 #include "LoadTGA.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
-#define VULKAN_ENABLE_VALIDATION true		// Debug validation layers toggle (affects performance a lot)
+#define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
 
 // Temporary defines to not rotate the sky sphere and terrain
 #define OBJECT_ID_SKY 1
@@ -48,6 +49,19 @@ namespace VulkanLib
 		for (int i = 0; i < mObjects.size(); i++) {
 			delete mObjects[i];
 		}
+
+		// Cleanup the multithreading memory
+		for (int t = 0; t < mThreadData.size(); t++)
+		{
+			vkFreeCommandBuffers(mDevice, mThreadData[t].commandPool, 1, &mThreadData[t].commandBuffer);
+			vkDestroyCommandPool(mDevice, mThreadData[t].commandPool, nullptr);
+			vkDestroyDescriptorPool(mDevice, mThreadData[t].descriptorPool, nullptr);
+
+			for (int i = 0; i < mThreadData[t].threadObjects.size(); i++)
+			{
+				delete mThreadData[t].threadObjects[i];
+			}
+		}
 	}
 
 	void VulkanApp::Prepare()
@@ -58,9 +72,12 @@ namespace VulkanLib
 		SetupVertexDescriptions();			// Custom
 		SetupDescriptorSetLayout();
 		PreparePipelines();
-		LoadModels();						// Custom
 		PrepareUniformBuffers();
 		SetupDescriptorPool();
+		LoadModels();						// Custom
+		SetupMultithreading();				// Custom
+
+
 		SetupDescriptorSet();
 		PrepareCommandBuffers();
 		//SetupTerrainDescriptorSet();		// Custom
@@ -124,8 +141,12 @@ namespace VulkanLib
 		terrain->SetId(OBJECT_ID_TERRAIN);
 		mObjects.push_back(terrain);
 
+		//
+		// Single threaded
+		//
+
 		// Generate some positions
-		int size = 6;
+		/*int size = 6;
 		for (int x = 0; x < size; x++)
 		{
 			for (int y = 0; y < size; y++)
@@ -151,9 +172,110 @@ namespace VulkanLib
 					mObjects.push_back(object);
 				}
 			}
-		}
+		}*/
+
+		// 
+		// Multi threaded
+		//
 
 		// TODO: Needs setup the binding descriptions
+	}
+
+	void VulkanApp::SetupMultithreading()
+	{
+		// Get # of available threads
+		mNumThreads = std::thread::hardware_concurrency();
+
+		mNumThreads = 1;
+
+		mThreadData.resize(mNumThreads);
+		mThreadPool.setThreadCount(mNumThreads);
+
+		mNumObjects = 64*4;
+
+		// Prepare each thread data
+		for (int t = 0; t < mNumThreads; t++)
+		{
+			// Setup thread command buffer pool
+			VkCommandPoolCreateInfo createInfo = {};
+			createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+			createInfo.queueFamilyIndex = 0;									// NOTE: TODO: Need to store this as a member (Use Swapchain)!!!!!
+			createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+			VulkanDebug::ErrorCheck(vkCreateCommandPool(mDevice, &createInfo, nullptr, &mThreadData[t].commandPool));
+
+			// Setup thread command buffer
+			VkCommandBufferAllocateInfo allocateInfo = {};
+			allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			allocateInfo.commandPool = mThreadData[t].commandPool;
+			allocateInfo.commandBufferCount = 1;
+			allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+			VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mThreadData[t].commandBuffer));
+
+			// We need to tell the API the number of max. requested descriptors per type
+			// Only one descriptor type (uniform buffer) used
+			// More needed if images are used etc.
+			VkDescriptorPoolSize typeCounts[2];
+			typeCounts[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;				// Uniform buffers
+			typeCounts[0].descriptorCount = 1;
+
+			typeCounts[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;		// Image sampler
+			typeCounts[1].descriptorCount = 1;
+
+			VkDescriptorPoolCreateInfo createInfo2 = {};
+			createInfo2.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+			createInfo2.poolSizeCount = 2;
+			createInfo2.pPoolSizes = typeCounts;
+			createInfo2.maxSets = 2;
+
+			VulkanDebug::ErrorCheck(vkCreateDescriptorPool(mDevice, &createInfo2, nullptr, &mThreadData[t].descriptorPool));
+
+			// Setup thread descriptor set
+			VkDescriptorSetAllocateInfo allocInfo = {};
+			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			allocInfo.descriptorPool = mThreadData[t].descriptorPool;			// Has to have a separate descriptor pool for each thread!
+			allocInfo.descriptorSetCount = 1;					
+			allocInfo.pSetLayouts = &mDescriptorSetLayout;
+
+			VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(mDevice, &allocInfo, &mThreadData[t].descriptorSet));
+
+			VkDescriptorImageInfo texDescriptor = {};
+			texDescriptor.sampler = mTestTexture.sampler;				// NOTE: TODO: This feels really bad, not scalable with more objects at all, fix!!! LoadModel() must run before this!!
+			texDescriptor.imageView = mTestTexture.view;
+			texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+			// Binding 0 : Uniform buffer
+			std::vector<VkWriteDescriptorSet> writeDescriptorSet(2);
+			writeDescriptorSet[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeDescriptorSet[0].dstSet = mThreadData[t].descriptorSet;
+			writeDescriptorSet[0].descriptorCount = 1;
+			writeDescriptorSet[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			writeDescriptorSet[0].pBufferInfo = &mUniformBuffer.descriptor;
+			writeDescriptorSet[0].dstBinding = 0;				// Binds this uniform buffer to binding point 0
+
+			//  Binding 1: Image sampler
+			writeDescriptorSet[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeDescriptorSet[1].dstSet = mThreadData[t].descriptorSet;
+			writeDescriptorSet[1].descriptorCount = 1;
+			writeDescriptorSet[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			writeDescriptorSet[1].pImageInfo = &texDescriptor;
+			writeDescriptorSet[1].dstBinding = 1;				// Binds the image sampler to binding point 1
+
+			vkUpdateDescriptorSets(mDevice, writeDescriptorSet.size(), writeDescriptorSet.data(), 0, NULL);
+
+
+			// Add objects to each thread data
+			for (int i = 0; i < mNumObjects / mNumThreads; i++)
+			{
+				Object* object = new Object(glm::vec3(i * 150, -250, t * 150));
+				object->SetColor(glm::vec3(1.0f, 0.0f, 1.0f));
+				object->SetId(OBJECT_ID_PROP);
+				object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
+				object->SetRotation(glm::vec3(180, 0, 0));
+				object->SetPipeline(mPipelines.colored);
+
+				mThreadData[t].threadObjects.push_back(object);
+			}
+		}
 	}
 
 	void VulkanApp::PrepareUniformBuffers()
@@ -261,6 +383,7 @@ namespace VulkanLib
 		VulkanDebug::ErrorCheck(vkCreateDescriptorPool(mDevice, &createInfo, nullptr, &mDescriptorPool));
 	}
 
+	// [TODO] Let each thread have a seperate descriptor set!!
 	void VulkanApp::SetupDescriptorSet()
 	{
 		VkDescriptorSetAllocateInfo allocInfo = {};
@@ -446,27 +569,30 @@ namespace VulkanLib
 	// Call this every time any uniform buffer should be updated (view changes etc.)
 	void VulkanApp::UpdateUniformBuffers()
 	{
-		mUniformData.projectionMatrix = mCamera->GetProjection(); // glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
+		if (mCamera != nullptr)
+		{
+			mUniformData.projectionMatrix = mCamera->GetProjection(); // glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
 
-		float zoom = -8;
-		glm::mat4 viewMatrix = mCamera->GetView(); //camera->GetViewMatrix();// glm::mat4();
+			float zoom = -8;
+			glm::mat4 viewMatrix = mCamera->GetView(); //camera->GetViewMatrix();// glm::mat4();
 
-		mUniformData.viewMatrix = mCamera->GetView();
-		mUniformData.projectionMatrix = mCamera->GetProjection();
-		mUniformData.eyePos = mCamera->GetPosition();
+			mUniformData.viewMatrix = mCamera->GetView();
+			mUniformData.projectionMatrix = mCamera->GetProjection();
+			mUniformData.eyePos = mCamera->GetPosition();
 
-		/*uniformData.modelMatrix = glm::mat4();
-		uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, modelPos);
-		uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-		uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-		uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));*/
+			/*uniformData.modelMatrix = glm::mat4();
+			uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, modelPos);
+			uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+			uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+			uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));*/
 
 
-		// Map uniform buffer and update it
-		uint8_t *data;
-		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, 0, sizeof(mUniformData), 0, (void **)&data));
-		memcpy(data, &mUniformData, sizeof(mUniformData));
-		vkUnmapMemory(mDevice, mUniformBuffer.memory);
+			// Map uniform buffer and update it
+			uint8_t *data;
+			VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, 0, sizeof(mUniformData), 0, (void **)&data));
+			memcpy(data, &mUniformData, sizeof(mUniformData));
+			vkUnmapMemory(mDevice, mUniformBuffer.memory);
+		}
 	}
 
 	void VulkanApp::SetupVertexDescriptions()
@@ -588,7 +714,6 @@ namespace VulkanLib
 		//
 		for (auto& object : mObjects)
 		{
-
 			// Bind the rendering pipeline (including the shaders)
 			vkCmdBindPipeline(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object->GetPipeline());
 
@@ -599,8 +724,7 @@ namespace VulkanLib
 			mPushConstants.world = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
 			mPushConstants.color = object->GetColor();
 			vkCmdPushConstants(mSecondaryCommandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &mPushConstants);
-
-			
+		
 			// Bind triangle vertices
 			VkDeviceSize offsets[1] = { 0 };
 			vkCmdBindVertexBuffers(mSecondaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &object->GetModel()->vertices.buffer, offsets);		// [TODO] The renderer should group the same object models together
@@ -614,13 +738,83 @@ namespace VulkanLib
 		// End secondary command buffer
 		VulkanDebug::ErrorCheck(vkEndCommandBuffer(mSecondaryCommandBuffer));
 
+		std::vector<VkCommandBuffer> commandBuffers;
+		commandBuffers.push_back(mSecondaryCommandBuffer);
+
+		// Now let every thread generate their command buffer and then add it to the command buffer vector
+		for (int t = 0; t < mThreadData.size(); t++)
+		{
+			mThreadPool.threads[t]->addJob([=] {ThreadRecordCommandBuffer(t, inheritanceInfo); });
+			commandBuffers.push_back(mThreadData[t].commandBuffer);
+		}
+
+		mThreadPool.wait();
+
 		// Execute render commands from the secondary command buffer
-		vkCmdExecuteCommands(mPrimaryCommandBuffer, 1, &mSecondaryCommandBuffer);
+		vkCmdExecuteCommands(mPrimaryCommandBuffer, commandBuffers.size(), commandBuffers.data());
 
 		// End command buffer recording & the render pass
 		vkCmdEndRenderPass(mPrimaryCommandBuffer);
 		VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPrimaryCommandBuffer));
 
+	}
+
+	void VulkanApp::ThreadRecordCommandBuffer(int threadId, VkCommandBufferInheritanceInfo inheritanceInfo)
+	{
+		VkCommandBuffer commandBuffer = mThreadData[threadId].commandBuffer;
+		auto objects = mThreadData[threadId].threadObjects;
+
+		// Secondary command buffer for the sky sphere
+		VkCommandBufferBeginInfo commandBufferBeginInfo = {};
+		commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+		commandBufferBeginInfo.pInheritanceInfo = &inheritanceInfo;
+
+		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
+
+		// Update dynamic viewport state
+		VkViewport viewport = {};
+		viewport.width = (float)GetWindowWidth();
+		viewport.height = (float)GetWindowHeight();
+		viewport.minDepth = (float) 0.0f;
+		viewport.maxDepth = (float) 1.0f;
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+		// Update dynamic scissor state
+		VkRect2D scissor = {};
+		scissor.extent.width = GetWindowWidth();
+		scissor.extent.height = GetWindowHeight();
+		scissor.offset.x = 0;
+		scissor.offset.y = 0;
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		for (auto& object : objects)
+		{
+			// Bind the rendering pipeline (including the shaders)
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object->GetPipeline());
+
+			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mThreadData[threadId].descriptorSet, 0, NULL);
+
+			// Push the world matrix constant
+			PushConstantBlock pushConstants = {};
+			pushConstants.world = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+			pushConstants.color = object->GetColor();
+			vkCmdPushConstants(commandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &pushConstants);
+
+			// Bind triangle vertices
+			VkDeviceSize offsets[1] = { 0 };
+			VkBuffer buffer = object->GetModel()->vertices.buffer;
+			vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &buffer, offsets);		// [TODO] The renderer should group the same object models together
+			vkCmdBindIndexBuffer(commandBuffer, object->GetModel()->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+			// Draw indexed triangle	
+			vkCmdSetLineWidth(commandBuffer, 1.0f);
+			vkCmdDrawIndexed(commandBuffer, object->GetModel()->GetNumIndices(), 1, 0, 0, 0);
+		}
+
+		// End secondary command buffer
+		VulkanDebug::ErrorCheck(vkEndCommandBuffer(commandBuffer));
 	}
 
 	void VulkanApp::Draw()

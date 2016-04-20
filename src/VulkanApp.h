@@ -1,6 +1,7 @@
 #pragma once
 #include "VulkanBase.h"
 #include "ModelLoader.h"
+#include "ThreadPool.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -46,6 +47,14 @@ namespace VulkanLib
 		vec3 color;
 	};
 
+	struct ThreadData {
+		VkCommandBuffer commandBuffer;
+		VkCommandPool commandPool;
+		VkDescriptorSet descriptorSet;			// Testing
+		VkDescriptorPool descriptorPool;
+		std::vector<Object*> threadObjects;
+	};
+
 	class VulkanApp : public VulkanBase
 	{
 	public:
@@ -63,7 +72,10 @@ namespace VulkanLib
 		void PrepareCommandBuffers();		// Custom
 		void SetupVertexDescriptions();
 
+		void SetupMultithreading();			// Custom
+
 		void RecordRenderingCommandBuffer(VkFramebuffer frameBuffer);
+		void ThreadRecordCommandBuffer(int threadId, VkCommandBufferInheritanceInfo inheritanceInfo);
 
 		virtual void Render();
 		virtual void Update();
@@ -77,6 +89,7 @@ namespace VulkanLib
 		void LoadModels();
 		void SetupTerrainDescriptorSet();
 		void CompileShaders();
+
 
 		// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
 		// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
@@ -109,5 +122,10 @@ namespace VulkanLib
 		Camera*							mCamera;
 		ModelLoader						mModelLoader;
 		std::vector<Object*>			mObjects;
+
+		std::vector<ThreadData>			mThreadData;
+		int								mNumThreads;
+		int								mNumObjects;
+		ThreadPool						mThreadPool;
 	};
 }	// VulkanLib namespace
