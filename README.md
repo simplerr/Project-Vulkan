@@ -2,12 +2,11 @@
 
 ### Todo
 - Make it run on Linux
-- Generate command buffers in multiple threads
+- Fix bug where more than 64*4*4*2 objects can't be rendered
 - Add a GPU time counter
 - Add a shader handler class
 - Clean up the code by adding a new classes
 - Fix the shaders
-- Add speed and rotation speed to object and update every frame
 - Add VulkanDebug::ErrorCheck everywhere
 - Allocating multiple descriptor sets with different textures
 - Create bounding box function for models

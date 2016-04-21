@@ -191,7 +191,7 @@ namespace VulkanLib
 		mThreadData.resize(mNumThreads);
 		mThreadPool.setThreadCount(mNumThreads);
 
-		mNumObjects = 64*4*4*2; // [NOTE][TODO] * 2 more crashes the computer!!
+		mNumObjects = 64 * 4 * 4 * 2; // [NOTE][TODO] * 2 more crashes the computer!!
 
 		// Prepare each thread data
 		for (int t = 0; t < mNumThreads; t++)
@@ -264,7 +264,9 @@ namespace VulkanLib
 
 
 			// Add objects to each thread data
-			for (int i = 0; i < mNumObjects / mNumThreads; i++)
+			int objectsPerThread = mNumObjects / mNumThreads;
+
+			/*for (int i = 0; i < objectsPerThread; i++)
 			{
 				Object* object = new Object(glm::vec3(i * 150, -250, t * 150));
 				object->SetColor(glm::vec3(1.0f, 0.0f, 1.0f));
@@ -276,6 +278,32 @@ namespace VulkanLib
 				object->SetPipeline(mPipelines.colored);
 
 				mThreadData[t].threadObjects.push_back(object);
+			}*/
+
+			for (int x = 0; x < sqrt(objectsPerThread); x++)
+			{
+				for (int z = 0; z < sqrt(objectsPerThread); z++)
+				{
+					Object* object = new Object(glm::vec3(x * 150, -250 - t * 150, z * 150));
+
+					if(t == 0)
+						object->SetColor(glm::vec3(1.0f, 1.0f, 1.0f));
+					else if(t == 1)
+						object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
+					else if (t == 2)
+						object->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
+					else if (t == 3)
+						object->SetColor(glm::vec3(0.0f, 0.0f, 1.0f));
+
+					object->SetId(OBJECT_ID_PROP);
+					//object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
+					object->SetModel(mModelLoader.LoadModel(this, "data/models/Crate.obj"));
+					object->SetScale(vec3(15, 15, 15));
+					object->SetRotation(glm::vec3(180, 0, 0));
+					object->SetPipeline(mPipelines.colored);
+
+					mThreadData[t].threadObjects.push_back(object);
+				}
 			}
 		}
 	}
