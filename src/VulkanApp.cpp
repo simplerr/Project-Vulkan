@@ -262,7 +262,6 @@ namespace VulkanLib
 
 			vkUpdateDescriptorSets(mDevice, writeDescriptorSet.size(), writeDescriptorSet.data(), 0, NULL);
 
-
 			// Add objects to each thread data
 			int objectsPerThread = mNumObjects / mNumThreads;
 
@@ -881,7 +880,21 @@ namespace VulkanLib
 		VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		submitInfo.pWaitDstStageMask = &stageFlags;
 
-		VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE));
+		VkFence renderFence = {};
+		VkFenceCreateInfo fenceCreateInfo = {};
+		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceCreateInfo.flags = VK_FLAGS_NONE;
+		vkCreateFence(mDevice, &fenceCreateInfo, NULL, &renderFence);
+
+		VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, renderFence));
+
+		// Wait for fence to signal that all command buffers are ready
+		VkResult fenceRes;
+		do
+		{
+			fenceRes = vkWaitForFences(mDevice, 1, &renderFence, VK_TRUE, 100000000);
+		} while (fenceRes == VK_TIMEOUT);
+		vkTools::checkResult(fenceRes);
 
 		//
 		// Transition image format to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
@@ -891,6 +904,10 @@ namespace VulkanLib
 
 		// Present the image
 		VulkanDebug::ErrorCheck(mSwapChain.queuePresent(mQueue, mCurrentBuffer, mRenderComplete));
+
+		vkDestroyFence(mDevice, renderFence, nullptr);
+
+		vkTools::checkResult(vkQueueWaitIdle(mQueue));
 	}
 
 	void VulkanApp::Render()
