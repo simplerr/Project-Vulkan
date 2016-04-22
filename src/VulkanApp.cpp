@@ -9,6 +9,7 @@
 #include "Camera.h"
 #include "Object.h"
 #include "LoadTGA.h"
+#include "VulkanHelpers.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
@@ -93,11 +94,13 @@ namespace VulkanLib
 
 	void VulkanApp::PrepareCommandBuffers()
 	{
-		VkCommandBufferAllocateInfo allocateInfo = {};
+		/*VkCommandBufferAllocateInfo allocateInfo = {};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocateInfo.commandPool = mCommandPool;
 		allocateInfo.commandBufferCount = 1;
-		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;*/
+
+		VkCommandBufferAllocateInfo allocateInfo = CreateInfo::CommandBuffer(mCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
 		// Create the primary command buffer
 		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mPrimaryCommandBuffer));
@@ -198,17 +201,11 @@ namespace VulkanLib
 		{
 			// Setup thread command buffer pool
 			VkCommandPoolCreateInfo createInfo = {};
-			createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-			createInfo.queueFamilyIndex = 0;									// NOTE: TODO: Need to store this as a member (Use Swapchain)!!!!!
-			createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+			createInfo = CreateInfo::CommandPool(0, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 			VulkanDebug::ErrorCheck(vkCreateCommandPool(mDevice, &createInfo, nullptr, &mThreadData[t].commandPool));
 
-			// Setup thread command buffer
 			VkCommandBufferAllocateInfo allocateInfo = {};
-			allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-			allocateInfo.commandPool = mThreadData[t].commandPool;
-			allocateInfo.commandBufferCount = 1;
-			allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+			allocateInfo = CreateInfo::CommandBuffer(mThreadData[t].commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY, 1);
 			VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mThreadData[t].commandBuffer));
 
 			// We need to tell the API the number of max. requested descriptors per type
@@ -222,19 +219,12 @@ namespace VulkanLib
 			typeCounts[1].descriptorCount = 1;
 
 			VkDescriptorPoolCreateInfo createInfo2 = {};
-			createInfo2.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			createInfo2.poolSizeCount = 2;
-			createInfo2.pPoolSizes = typeCounts;
-			createInfo2.maxSets = 2;
-
+			createInfo2 = CreateInfo::DescriptorPool(2, typeCounts, 2);
 			VulkanDebug::ErrorCheck(vkCreateDescriptorPool(mDevice, &createInfo2, nullptr, &mThreadData[t].descriptorPool));
 
 			// Setup thread descriptor set
 			VkDescriptorSetAllocateInfo allocInfo = {};
-			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			allocInfo.descriptorPool = mThreadData[t].descriptorPool;			// Has to have a separate descriptor pool for each thread!
-			allocInfo.descriptorSetCount = 1;					
-			allocInfo.pSetLayouts = &mDescriptorSetLayout;
+			allocInfo = CreateInfo::DescriptorSet(mThreadData[t].descriptorPool, 1, &mDescriptorSetLayout);
 
 			VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(mDevice, &allocInfo, &mThreadData[t].descriptorSet));
 
@@ -264,20 +254,6 @@ namespace VulkanLib
 
 			// Add objects to each thread data
 			int objectsPerThread = mNumObjects / mNumThreads;
-
-			/*for (int i = 0; i < objectsPerThread; i++)
-			{
-				Object* object = new Object(glm::vec3(i * 150, -250, t * 150));
-				object->SetColor(glm::vec3(1.0f, 0.0f, 1.0f));
-				object->SetId(OBJECT_ID_PROP);
-				//object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
-				object->SetModel(mModelLoader.LoadModel(this, "data/models/Crate.obj"));
-				object->SetScale(vec3(15, 15, 15));
-				object->SetRotation(glm::vec3(180, 0, 0));
-				object->SetPipeline(mPipelines.colored);
-
-				mThreadData[t].threadObjects.push_back(object);
-			}*/
 
 			for (int x = 0; x < sqrt(objectsPerThread); x++)
 			{
@@ -363,21 +339,12 @@ namespace VulkanLib
 		};
 
 		// One more binding would be used for a texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER and VK_SHADER_STAGE_FRAGMENT_BIT)
-
-		VkDescriptorSetLayoutCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		createInfo.bindingCount = layoutBinding.size();
-		createInfo.pBindings = layoutBinding.data();
-
+		VkDescriptorSetLayoutCreateInfo createInfo = CreateInfo::DescriptorSetLayout(layoutBinding.size(), layoutBinding.data());
 		VulkanDebug::ErrorCheck(vkCreateDescriptorSetLayout(mDevice, &createInfo, nullptr, &mDescriptorSetLayout));
 
 		// Create the pipeline layout that will use the descriptor set layout
 		// The pipeline layout is used later when creating the pipeline
-		VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {};
-		pPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pPipelineLayoutCreateInfo.pNext = NULL;
-		pPipelineLayoutCreateInfo.setLayoutCount = 1;
-		pPipelineLayoutCreateInfo.pSetLayouts = &mDescriptorSetLayout;
+		VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = CreateInfo::PipelineLayout(1, &mDescriptorSetLayout);
 
 		// Add push constants for the MVP matrix
 		VkPushConstantRange pushConstantRanges = {};

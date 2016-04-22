@@ -165,6 +165,7 @@
     <ClCompile Include="src\VulkanApp.cpp" />
     <ClCompile Include="src\VulkanBase.cpp" />
     <ClCompile Include="src\VulkanDebug.cpp" />
+    <ClCompile Include="src\VulkanHelpers.cpp" />
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -182,6 +183,7 @@
     <ClInclude Include="src\VulkanApp.h" />
     <ClInclude Include="src\VulkanBase.h" />
     <ClInclude Include="src\VulkanDebug.h" />
+    <ClInclude Include="src\VulkanHelpers.h" />
     <ClInclude Include="src\Window.h" />
   </ItemGroup>
   <ItemGroup>
