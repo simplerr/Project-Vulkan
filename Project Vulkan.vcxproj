@@ -156,6 +156,7 @@
   <ItemGroup>
     <ClCompile Include="src\base\vulkantools.cpp" />
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\Light.cpp" />
     <ClCompile Include="src\LoadTGA.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ModelLoader.cpp" />
@@ -173,6 +174,7 @@
     <ClInclude Include="src\base\vulkanTextureLoader.hpp" />
     <ClInclude Include="src\base\vulkantools.h" />
     <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\Light.h" />
     <ClInclude Include="src\LoadTGA.h" />
     <ClInclude Include="src\ModelLoader.h" />
     <ClInclude Include="src\Object.h" />

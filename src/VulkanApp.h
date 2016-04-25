@@ -16,6 +16,7 @@ namespace VulkanLib
 	class Camera;
 	class Object;
 	class TextureData;
+	class Light;
 
 	struct VertexDescriptions {
 		VkPipelineVertexInputStateCreateInfo inputState;
@@ -34,11 +35,13 @@ namespace VulkanLib
 			mat4 projectionMatrix;
 			mat4 viewMatrix;
 			vec4 lightDir = vec4(1.0f, -1.0f, 1.0f, 1.0f);
-			vec3 eyePos;
-		} matrices;
+			vec3 eyePos;			
+		} camera;
+
+		std::vector<Light*> lights;
 
 		// Array of world matrixes for the instances
-		mat4* instanceWorld;
+		//mat4* instanceWorld;
 	};	// Stored in uniformBuffer.memory in device memory
 
 	struct Pipelines {

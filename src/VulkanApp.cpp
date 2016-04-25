@@ -10,6 +10,7 @@
 #include "Object.h"
 #include "LoadTGA.h"
 #include "VulkanHelpers.h"
+#include "Light.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
@@ -190,7 +191,7 @@ namespace VulkanLib
 		mThreadData.resize(mNumThreads);
 		mThreadPool.setThreadCount(mNumThreads);
 
-		mNumObjects = 64 * 4 * 4 * 2; // [NOTE][TODO] * 2 more crashes the computer!!
+		mNumObjects = 2048; // [NOTE][TODO] * 2 more crashes the computer!!
 
 		// Prepare each thread data
 		for (int t = 0; t < mNumThreads; t++)
@@ -271,7 +272,7 @@ namespace VulkanLib
 					object->SetModel(mModelLoader.LoadModel(this, "data/models/Crate.obj"));
 					object->SetScale(vec3(15, 15, 15));
 					object->SetRotation(glm::vec3(180, 0, 0));
-					object->SetPipeline(mPipelines.textured);
+					object->SetPipeline(mPipelines.colored);
 
 					mThreadData[t].threadObjects.push_back(object);
 				}
@@ -281,7 +282,15 @@ namespace VulkanLib
 
 	void VulkanApp::PrepareUniformBuffers()
 	{
-		mUniformData.instanceWorld = new mat4[NUM_OBJECTS];
+		// Light
+		Light* light = new Light();
+		light->SetPosition(0, -150, 0);
+		light->SetDirection(0, 1, 0);
+		light->SetAtt(1, 0, 0);
+		light->SetIntensity(0, 0, 1);
+		mUniformData.lights.push_back(light);
+
+		//mUniformData.instanceWorld = new mat4[NUM_OBJECTS];
 
 		// Create the uniform buffer
 		// It's the same process as creating any buffer, except that the VkBufferCreateInfo.usage bit is different (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
@@ -294,8 +303,8 @@ namespace VulkanLib
 		allocInfo.memoryTypeIndex = 0;
 
 		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		int size = sizeof(mUniformData.matrices) + NUM_OBJECTS * sizeof(mat4);
-		createInfo.size = size;// sizeof(mUniformData);						// 3x glm::mat4 NOTE: Not any more!!
+		int size = sizeof(mUniformData.camera) + mUniformData.lights.size() * sizeof(Light);
+		createInfo.size = size;					// 3x glm::mat4 NOTE: Not any more!!
 		createInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
 		VulkanDebug::ErrorCheck(vkCreateBuffer(mDevice, &createInfo, nullptr, &mUniformBuffer.buffer));
@@ -311,8 +320,16 @@ namespace VulkanLib
 		mUniformBuffer.descriptor.offset = 0;
 		mUniformBuffer.descriptor.range = size;
 
+		// Update instanced part of the uniform buffer
+		uint8_t *pData;
+		uint32_t dataOffset = sizeof(mUniformData.camera);
+		uint32_t dataSize = mUniformData.lights.size() * sizeof(Light);
+		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&pData));
+		memcpy(pData, mUniformData.lights.data(), dataSize);
+		vkUnmapMemory(mDevice, mUniformBuffer.memory); 
+
 		// Set the instancing data
-		for (int i = 0; i < NUM_OBJECTS; i++)
+		/*for (int i = 0; i < NUM_OBJECTS; i++)
 		{
 			mUniformData.instanceWorld[i] = glm::translate(glm::mat4(), glm::vec3(i * 150, -150, 0));
 		}
@@ -323,7 +340,7 @@ namespace VulkanLib
 		uint32_t dataSize = NUM_OBJECTS * sizeof(mat4);
 		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&pData));
 		memcpy(pData, mUniformData.instanceWorld, dataSize);
-		vkUnmapMemory(mDevice, mUniformBuffer.memory);
+		vkUnmapMemory(mDevice, mUniformBuffer.memory);*/
 
 		// This is where the data gets transfered to device memory w/ vkMapMemory/vkUnmapMemory and memcpy
 		UpdateUniformBuffers();
@@ -580,14 +597,14 @@ namespace VulkanLib
 	{
 		if (mCamera != nullptr)
 		{
-			mUniformData.matrices.projectionMatrix = mCamera->GetProjection(); // glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
+			mUniformData.camera.projectionMatrix = mCamera->GetProjection(); // glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
 
 			float zoom = -8;
 			glm::mat4 viewMatrix = mCamera->GetView(); //camera->GetViewMatrix();// glm::mat4();
 
-			mUniformData.matrices.viewMatrix = mCamera->GetView();
-			mUniformData.matrices.projectionMatrix = mCamera->GetProjection();
-			mUniformData.matrices.eyePos = mCamera->GetPosition();
+			mUniformData.camera.viewMatrix = mCamera->GetView();
+			mUniformData.camera.projectionMatrix = mCamera->GetProjection();
+			mUniformData.camera.eyePos = mCamera->GetPosition();
 
 			/*uniformData.modelMatrix = glm::mat4();
 			uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, modelPos);
@@ -598,8 +615,8 @@ namespace VulkanLib
 
 			// Map uniform buffer and update it
 			uint8_t *data;
-			VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, 0, sizeof(mUniformData.matrices), 0, (void **)&data));
-			memcpy(data, &mUniformData, sizeof(mUniformData.matrices));
+			VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, 0, sizeof(mUniformData.camera), 0, (void **)&data));
+			memcpy(data, &mUniformData, sizeof(mUniformData.camera));
 			vkUnmapMemory(mDevice, mUniformBuffer.memory);
 		}
 	}

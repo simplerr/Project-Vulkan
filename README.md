@@ -13,3 +13,10 @@
 - Render text
 - Optimize Object::GetWorldMatrix()
 - Optimize vkDeviceWaitIdle in VulkanApp::Render()
+
+- Multiple lights
+- Frustum culling
+- Billboards
+- Particle system
+- Shadow mapping
+- Game and World class
