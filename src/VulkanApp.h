@@ -30,10 +30,15 @@ namespace VulkanLib
 	};
 
 	struct UniformData {
-		mat4 projectionMatrix;
-		mat4 viewMatrix;
-		vec4 lightDir = vec4(1.0f, -1.0f, 1.0f, 1.0f);
-		vec3 eyePos;
+		struct {
+			mat4 projectionMatrix;
+			mat4 viewMatrix;
+			vec4 lightDir = vec4(1.0f, -1.0f, 1.0f, 1.0f);
+			vec3 eyePos;
+		} matrices;
+
+		// Array of world matrixes for the instances
+		mat4* instanceWorld;
 	};	// Stored in uniformBuffer.memory in device memory
 
 	struct Pipelines {
@@ -75,6 +80,7 @@ namespace VulkanLib
 
 		void SetupMultithreading();			// Custom
 
+		void BuildInstancingCommandBuffer(VkFramebuffer frameBuffer);
 		void RecordRenderingCommandBuffer(VkFramebuffer frameBuffer);
 		void ThreadRecordCommandBuffer(int threadId, VkCommandBufferInheritanceInfo inheritanceInfo);
 

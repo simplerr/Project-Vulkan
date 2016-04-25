@@ -19,6 +19,8 @@
 #define OBJECT_ID_TERRAIN 2
 #define OBJECT_ID_PROP 3
 
+#define NUM_OBJECTS 10 // 64 * 4 * 4 * 2
+
 namespace VulkanLib
 {
 	VulkanApp::VulkanApp() : VulkanBase(VULKAN_ENABLE_VALIDATION)
@@ -94,12 +96,6 @@ namespace VulkanLib
 
 	void VulkanApp::PrepareCommandBuffers()
 	{
-		/*VkCommandBufferAllocateInfo allocateInfo = {};
-		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocateInfo.commandPool = mCommandPool;
-		allocateInfo.commandBufferCount = 1;
-		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;*/
-
 		VkCommandBufferAllocateInfo allocateInfo = CreateInfo::CommandBuffer(mCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
 		// Create the primary command buffer
@@ -275,7 +271,7 @@ namespace VulkanLib
 					object->SetModel(mModelLoader.LoadModel(this, "data/models/Crate.obj"));
 					object->SetScale(vec3(15, 15, 15));
 					object->SetRotation(glm::vec3(180, 0, 0));
-					object->SetPipeline(mPipelines.colored);
+					object->SetPipeline(mPipelines.textured);
 
 					mThreadData[t].threadObjects.push_back(object);
 				}
@@ -285,6 +281,8 @@ namespace VulkanLib
 
 	void VulkanApp::PrepareUniformBuffers()
 	{
+		mUniformData.instanceWorld = new mat4[NUM_OBJECTS];
+
 		// Create the uniform buffer
 		// It's the same process as creating any buffer, except that the VkBufferCreateInfo.usage bit is different (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
 		VkBufferCreateInfo createInfo = {};
@@ -296,7 +294,8 @@ namespace VulkanLib
 		allocInfo.memoryTypeIndex = 0;
 
 		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		createInfo.size = sizeof(mUniformData);						// 3x glm::mat4 NOTE: Not any more!!
+		int size = sizeof(mUniformData.matrices) + NUM_OBJECTS * sizeof(mat4);
+		createInfo.size = size;// sizeof(mUniformData);						// 3x glm::mat4 NOTE: Not any more!!
 		createInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
 		VulkanDebug::ErrorCheck(vkCreateBuffer(mDevice, &createInfo, nullptr, &mUniformBuffer.buffer));
@@ -310,7 +309,21 @@ namespace VulkanLib
 		// so here we need to point uniformBuffer.descriptor.buffer to uniformBuffer.buffer
 		mUniformBuffer.descriptor.buffer = mUniformBuffer.buffer;
 		mUniformBuffer.descriptor.offset = 0;
-		mUniformBuffer.descriptor.range = sizeof(mUniformData);		// 3x glm::mat4
+		mUniformBuffer.descriptor.range = size;
+
+		// Set the instancing data
+		for (int i = 0; i < NUM_OBJECTS; i++)
+		{
+			mUniformData.instanceWorld[i] = glm::translate(glm::mat4(), glm::vec3(i * 150, -150, 0));
+		}
+
+		// Update instanced part of the uniform buffer
+		uint8_t *pData;
+		uint32_t dataOffset = sizeof(mUniformData.matrices);
+		uint32_t dataSize = NUM_OBJECTS * sizeof(mat4);
+		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&pData));
+		memcpy(pData, mUniformData.instanceWorld, dataSize);
+		vkUnmapMemory(mDevice, mUniformBuffer.memory);
 
 		// This is where the data gets transfered to device memory w/ vkMapMemory/vkUnmapMemory and memcpy
 		UpdateUniformBuffers();
@@ -567,14 +580,14 @@ namespace VulkanLib
 	{
 		if (mCamera != nullptr)
 		{
-			mUniformData.projectionMatrix = mCamera->GetProjection(); // glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
+			mUniformData.matrices.projectionMatrix = mCamera->GetProjection(); // glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
 
 			float zoom = -8;
 			glm::mat4 viewMatrix = mCamera->GetView(); //camera->GetViewMatrix();// glm::mat4();
 
-			mUniformData.viewMatrix = mCamera->GetView();
-			mUniformData.projectionMatrix = mCamera->GetProjection();
-			mUniformData.eyePos = mCamera->GetPosition();
+			mUniformData.matrices.viewMatrix = mCamera->GetView();
+			mUniformData.matrices.projectionMatrix = mCamera->GetProjection();
+			mUniformData.matrices.eyePos = mCamera->GetPosition();
 
 			/*uniformData.modelMatrix = glm::mat4();
 			uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, modelPos);
@@ -585,8 +598,8 @@ namespace VulkanLib
 
 			// Map uniform buffer and update it
 			uint8_t *data;
-			VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, 0, sizeof(mUniformData), 0, (void **)&data));
-			memcpy(data, &mUniformData, sizeof(mUniformData));
+			VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, 0, sizeof(mUniformData.matrices), 0, (void **)&data));
+			memcpy(data, &mUniformData, sizeof(mUniformData.matrices));
 			vkUnmapMemory(mDevice, mUniformBuffer.memory);
 		}
 	}
@@ -649,6 +662,69 @@ namespace VulkanLib
 		mVertexDescriptions.inputState.pVertexBindingDescriptions = mVertexDescriptions.bindingDescriptions.data();
 		mVertexDescriptions.inputState.vertexAttributeDescriptionCount = mVertexDescriptions.attributeDescriptions.size();
 		mVertexDescriptions.inputState.pVertexAttributeDescriptions = mVertexDescriptions.attributeDescriptions.data();
+	}
+
+	void VulkanApp::BuildInstancingCommandBuffer(VkFramebuffer frameBuffer)
+	{
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		VkClearValue clearValues[2];
+		clearValues[0].color = { 1.0f, 0.8f, 0.4f, 0.0f };
+		clearValues[1].depthStencil = { 1.0f, 0 };
+
+		VkRenderPassBeginInfo renderPassBeginInfo = {};
+		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassBeginInfo.renderPass = mRenderPass;
+		renderPassBeginInfo.renderArea.extent.width = GetWindowWidth();
+		renderPassBeginInfo.renderArea.extent.height = GetWindowHeight();
+		renderPassBeginInfo.clearValueCount = 2;
+		renderPassBeginInfo.pClearValues = clearValues;
+		renderPassBeginInfo.framebuffer = frameBuffer;
+
+		// Begin command buffer recording & the render pass
+		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mPrimaryCommandBuffer, &beginInfo));
+		vkCmdBeginRenderPass(mPrimaryCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		// Update dynamic viewport state
+		VkViewport viewport = {};
+		viewport.width = (float)GetWindowWidth();
+		viewport.height = (float)GetWindowHeight();
+		viewport.minDepth = (float) 0.0f;
+		viewport.maxDepth = (float) 1.0f;
+		vkCmdSetViewport(mPrimaryCommandBuffer, 0, 1, &viewport);
+
+		// Update dynamic scissor state
+		VkRect2D scissor = {};
+		scissor.extent.width = GetWindowWidth();
+		scissor.extent.height = GetWindowHeight();
+		scissor.offset.x = 0;
+		scissor.offset.y = 0;
+		vkCmdSetScissor(mPrimaryCommandBuffer, 0, 1, &scissor);
+
+		// Bind the rendering pipeline (including the shaders)
+		vkCmdBindPipeline(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelines.textured);
+
+		// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
+		vkCmdBindDescriptorSets(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet, 0, NULL);
+
+		// Push the world matrix constant
+		//mPushConstants.world = glm::mat4();// ->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+		mPushConstants.color = vec3(1, 0, 1);
+		vkCmdPushConstants(mPrimaryCommandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &mPushConstants);
+
+		// Bind triangle vertices
+		VkDeviceSize offsets[1] = { 0 };
+		vkCmdBindVertexBuffers(mPrimaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &mObjects[0]->GetModel()->vertices.buffer, offsets);		// [NOTE][TODO] mObjects[0] extremely bad!!
+		vkCmdBindIndexBuffer(mPrimaryCommandBuffer, mObjects[0]->GetModel()->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+		// Draw indexed triangle	
+		vkCmdSetLineWidth(mPrimaryCommandBuffer, 1.0f);
+		vkCmdDrawIndexed(mPrimaryCommandBuffer, mObjects[0]->GetModel()->GetNumIndices(), NUM_OBJECTS, 0, 0, 0);
+
+		// End command buffer recording & the render pass
+		vkCmdEndRenderPass(mPrimaryCommandBuffer);
+		VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPrimaryCommandBuffer));
 	}
 
 	void VulkanApp::RecordRenderingCommandBuffer(VkFramebuffer frameBuffer)
@@ -829,6 +905,7 @@ namespace VulkanLib
 		SubmitPrePresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
 
 		// NOTE: Testing
+		//BuildInstancingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
 		RecordRenderingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
 
 		//
