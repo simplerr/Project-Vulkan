@@ -50,8 +50,12 @@ layout (std140, binding = 0) uniform UBO
 	vec4 lightDir;
 	vec3 eyePos;
 
+	float t;
+	
+	Light light[2];
 
-	Light lights;//[10];	// Max 10 lights
+	//vec4 test;
+	//Light lights;//[10];	// Max 10 lights
 } per_frame;
 
 layout(push_constant) uniform PushConsts {
@@ -70,7 +74,7 @@ layout (location = 4) out vec3 OutLightDirW;
 //
 void main() 
 {
-	OutColor = per_frame.lights.dir;//pushConsts.color; //InColor;
+	OutColor = per_frame.light[1].att;//pushConsts.color; //InColor;
 	OutTex = InTex;
 
 	mat4 world = pushConsts.world;
@@ -79,7 +83,7 @@ void main()
 	
     vec4 PosW = pushConsts.world  * vec4(InPosL, 1.0);
     OutNormalW = mat3(pushConsts.world ) * InNormalL;
-    OutLightDirW = per_frame.lights.dir; //per_frame.lightDir.xyz;
+  //  OutLightDirW = per_frame.lights.dir; //per_frame.lightDir.xyz;
     OutEyeDirW = per_frame.eyePos - PosW.xyz;		
 }
 //

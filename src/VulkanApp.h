@@ -35,10 +35,21 @@ namespace VulkanLib
 			mat4 projectionMatrix;
 			mat4 viewMatrix;
 			vec4 lightDir = vec4(1.0f, -1.0f, 1.0f, 1.0f);
-			vec3 eyePos;			
+			vec3 eyePos;	
+			float t;
+
+			
 		} camera;
 
-		std::vector<Light*> lights;
+		
+		//vec4* test;
+		
+		std::vector<Light> lights;
+		
+
+		//std::vector<Light*> lights;
+
+	
 
 		// Array of world matrixes for the instances
 		//mat4* instanceWorld;

@@ -35,4 +35,6 @@ void main()
 	color += specular;	
 
 	OutFragColor = vec4(color, 1.0f);
+
+	OutFragColor = vec4(InColor, 1.0f);
 }

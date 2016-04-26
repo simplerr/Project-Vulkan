@@ -283,14 +283,20 @@ namespace VulkanLib
 	void VulkanApp::PrepareUniformBuffers()
 	{
 		// Light
-		Light* light = new Light();
-		light->SetPosition(0, -150, 0);
-		light->SetDirection(0, 1, 0);
-		light->SetAtt(1, 0, 0);
-		light->SetIntensity(0, 0, 1);
+		Light light;
+		light.SetPosition(150, -150, 150);
+		light.SetDirection(0, 1, 0);
+		light.SetAtt(1, 1, 0);
+		light.SetIntensity(0, 0, 1);
 		mUniformData.lights.push_back(light);
 
-		//mUniformData.instanceWorld = new mat4[NUM_OBJECTS];
+		// Light
+		Light light2;
+		light2.SetPosition(150, -150, 150);
+		light2.SetDirection(1, 0, 0);
+		light2.SetAtt(1, 1, 0);
+		light2.SetIntensity(0, 0, 1);
+		mUniformData.lights.push_back(light2);
 
 		// Create the uniform buffer
 		// It's the same process as creating any buffer, except that the VkBufferCreateInfo.usage bit is different (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
@@ -319,28 +325,6 @@ namespace VulkanLib
 		mUniformBuffer.descriptor.buffer = mUniformBuffer.buffer;
 		mUniformBuffer.descriptor.offset = 0;
 		mUniformBuffer.descriptor.range = size;
-
-		// Update instanced part of the uniform buffer
-		uint8_t *pData;
-		uint32_t dataOffset = sizeof(mUniformData.camera);
-		uint32_t dataSize = mUniformData.lights.size() * sizeof(Light);
-		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&pData));
-		memcpy(pData, mUniformData.lights.data(), dataSize);
-		vkUnmapMemory(mDevice, mUniformBuffer.memory); 
-
-		// Set the instancing data
-		/*for (int i = 0; i < NUM_OBJECTS; i++)
-		{
-			mUniformData.instanceWorld[i] = glm::translate(glm::mat4(), glm::vec3(i * 150, -150, 0));
-		}
-
-		// Update instanced part of the uniform buffer
-		uint8_t *pData;
-		uint32_t dataOffset = sizeof(mUniformData.matrices);
-		uint32_t dataSize = NUM_OBJECTS * sizeof(mat4);
-		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&pData));
-		memcpy(pData, mUniformData.instanceWorld, dataSize);
-		vkUnmapMemory(mDevice, mUniformBuffer.memory);*/
 
 		// This is where the data gets transfered to device memory w/ vkMapMemory/vkUnmapMemory and memcpy
 		UpdateUniformBuffers();
@@ -606,19 +590,20 @@ namespace VulkanLib
 			mUniformData.camera.projectionMatrix = mCamera->GetProjection();
 			mUniformData.camera.eyePos = mCamera->GetPosition();
 
-			/*uniformData.modelMatrix = glm::mat4();
-			uniformData.modelMatrix = viewMatrix * glm::translate(uniformData.modelMatrix, modelPos);
-			uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-			uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-			uniformData.modelMatrix = glm::rotate(uniformData.modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));*/
-
-
 			// Map uniform buffer and update it
 			uint8_t *data;
 			VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, 0, sizeof(mUniformData.camera), 0, (void **)&data));
-			memcpy(data, &mUniformData, sizeof(mUniformData.camera));
+			memcpy(data, &mUniformData.camera, sizeof(mUniformData.camera));
 			vkUnmapMemory(mDevice, mUniformBuffer.memory);
 		}
+
+		// Map and update the light data
+		uint8_t *pData;
+		uint32_t dataOffset = sizeof(mUniformData.camera);
+		uint32_t dataSize = mUniformData.lights.size() * sizeof(Light);
+		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&pData));
+		memcpy(pData, mUniformData.lights.data(), dataSize);
+		vkUnmapMemory(mDevice, mUniformBuffer.memory);
 	}
 
 	void VulkanApp::SetupVertexDescriptions()
