@@ -1,8 +1,10 @@
 #include "OpenGLRenderer.h"
 #include "Window.h"
 #include <GL/glew.h>
-#include <GL/glut.h>
+#include <gl/glu.h>
 #include <glm/glm.hpp>
+
+#pragma comment(lib, "glu32.lib")
 
 namespace VulkanLib
 {
