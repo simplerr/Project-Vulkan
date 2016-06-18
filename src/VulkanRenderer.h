@@ -21,7 +21,7 @@ namespace VulkanLib
 		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
-		VulkanApp mVulkanApp;
+		VulkanApp* mVulkanApp;
 	};
 
 	

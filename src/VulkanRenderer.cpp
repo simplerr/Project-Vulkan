@@ -6,8 +6,10 @@ namespace VulkanLib
 
 	VulkanRenderer::VulkanRenderer(Window* window)
 	{
-		mVulkanApp.InitSwapchain(window);
-		mVulkanApp.Prepare();
+		mVulkanApp = new VulkanApp();
+
+		mVulkanApp->InitSwapchain(window);
+		mVulkanApp->Prepare();
 		//mVulkanApp.RenderLoop();
 	}
 
@@ -23,12 +25,12 @@ namespace VulkanLib
 
 	void VulkanRenderer::Render()
 	{
-		mVulkanApp.Draw();
+		mVulkanApp->Render();
 	}
 
 	void VulkanRenderer::Update()
 	{
-		mVulkanApp.Update();
+		mVulkanApp->Update();
 	}
 
 	void VulkanRenderer::AddModel(StaticModel* model)
@@ -38,6 +40,6 @@ namespace VulkanLib
 
 	void VulkanRenderer::HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
-		mVulkanApp.HandleMessages(hWnd, uMsg, wParam, lParam);
+		mVulkanApp->HandleMessages(hWnd, uMsg, wParam, lParam);
 	}
 }
