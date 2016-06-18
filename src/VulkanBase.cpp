@@ -528,8 +528,9 @@ namespace VulkanLib
 #if defined(_WIN32)
 	void VulkanBase::RenderLoop()
 	{
-		MSG msg;
-
+		int a = 1;
+		/*MSG msg;
+		<<
 		while (true)
 		{
 			// Frame begin
@@ -560,7 +561,7 @@ namespace VulkanLib
 				std::string windowTitle = "Project Vulkan: " + std::to_string(fps) + " fps";
 				SetWindowText(mWindow->GetHwnd(), windowTitle.c_str());
 			}
-		}
+		}*/
 	}
 #endif
 

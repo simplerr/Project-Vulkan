@@ -77,6 +77,8 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\</OutDir>
     <IntDir>$(SolutionDir)\bin\intermediate\$(ProjectName)\$(ConfigurationName)</IntDir>
+    <IncludePath>D:\vs_dev_lib\glew-1.13.0\include;D:\vs_dev_lib\freeglut\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>D:\vs_dev_lib\glew-1.13.0\lib\Release;D:\vs_dev_lib\freeglut\lib\x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -112,7 +114,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libs\vulkan\vulkan-1.lib;libs\assimp\assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenGL32.lib;freeglut.lib;glew32.lib;libs\vulkan\vulkan-1.lib;libs\assimp\assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -156,6 +158,7 @@
   <ItemGroup>
     <ClCompile Include="src\base\vulkantools.cpp" />
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\Game.cpp" />
     <ClCompile Include="src\Light.cpp" />
     <ClCompile Include="src\LoadTGA.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -184,6 +187,7 @@
     <ClInclude Include="src\OpenGLRenderer.h" />
     <ClInclude Include="src\Platform.h" />
     <ClInclude Include="src\Renderer.h" />
+    <ClInclude Include="src\Game.h" />
     <ClInclude Include="src\StaticModel.h" />
     <ClInclude Include="src\TestCase.h" />
     <ClInclude Include="src\ThreadPool.h" />

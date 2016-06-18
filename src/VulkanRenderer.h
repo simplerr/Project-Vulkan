@@ -9,7 +9,9 @@ namespace VulkanLib
 	class VulkanRenderer : public Renderer
 	{
 	public:
-		virtual void Init(Window* window);
+		VulkanRenderer(Window* window);
+
+		virtual void Cleanup();
 		virtual void SetNumThreads();
 		virtual void Render();
 		virtual void Update();

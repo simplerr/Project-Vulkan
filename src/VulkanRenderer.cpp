@@ -3,11 +3,17 @@
 
 namespace VulkanLib
 {
-	void VulkanRenderer::Init(Window* window)
+
+	VulkanRenderer::VulkanRenderer(Window* window)
 	{
 		mVulkanApp.InitSwapchain(window);
 		mVulkanApp.Prepare();
-		mVulkanApp.RenderLoop();
+		//mVulkanApp.RenderLoop();
+	}
+
+	void VulkanRenderer::Cleanup()
+	{
+
 	}
 
 	void VulkanRenderer::SetNumThreads()
@@ -17,12 +23,12 @@ namespace VulkanLib
 
 	void VulkanRenderer::Render()
 	{
-
+		mVulkanApp.Draw();
 	}
 
 	void VulkanRenderer::Update()
 	{
-
+		mVulkanApp.Update();
 	}
 
 	void VulkanRenderer::AddModel(StaticModel* model)

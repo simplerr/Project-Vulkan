@@ -12,7 +12,7 @@ namespace VulkanLib
 		Renderer();
 		~Renderer();
 		
-		virtual void Init(Window* window) = 0;
+		virtual void Cleanup() = 0;
 		virtual void SetNumThreads() = 0;
 		virtual void Render() = 0;
 		virtual void Update() = 0;

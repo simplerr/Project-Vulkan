@@ -25,7 +25,7 @@ namespace VulkanLib
 		mWindowInstance = hInstance;
 
 		WNDCLASS wc;
-		wc.style = CS_HREDRAW | CS_VREDRAW;
+		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 		wc.lpfnWndProc = WndProc;
 		wc.cbClsExtra = 0;
 		wc.cbWndExtra = 0;

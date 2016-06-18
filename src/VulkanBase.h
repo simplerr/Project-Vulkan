@@ -142,9 +142,6 @@ namespace VulkanLib
 		// Simple texture loader
 		vkTools::VulkanTextureLoader*	mTextureLoader = nullptr;
 
-		// Wrapper class for the fps counter
-		Timer							mTimer;
-
 		// Wrapper class for the platform dependet window code
 		Window*							mWindow;
 	};
