@@ -84,7 +84,7 @@ namespace VulkanLib
 				float dy = mLastY - y;		// Other way around
 
 				mYaw += dx * mSensitivity;
-				mPitch += dy * mSensitivity;
+				mPitch += (dy * mSensitivity) * hack;
 
 				CapAngles();
 

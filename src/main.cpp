@@ -54,8 +54,8 @@ int main(const int argc, const char *argv[])
 #endif
 
 	// Create the renderer	
-	VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
-	//VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
+	//VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
+	VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
 
 	// Create the game
 	gGame = new VulkanLib::Game(renderer, &window);

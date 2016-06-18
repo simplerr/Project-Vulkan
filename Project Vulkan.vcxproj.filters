@@ -28,6 +28,12 @@
     <Filter Include="Source Files\model">
       <UniqueIdentifier>{f41c60e4-90a9-4631-a507-823e88b4c058}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\opengl">
+      <UniqueIdentifier>{e21c6801-0014-4a2d-bef1-869d41fc842a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\opengl">
+      <UniqueIdentifier>{fd2e83d3-401d-4a49-a253-efa9d48fde45}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -83,6 +89,12 @@
     </ClCompile>
     <ClCompile Include="src\Game.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\opengl\GL_utilities.c">
+      <Filter>Source Files\opengl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\opengl\loadobj.c">
+      <Filter>Source Files\opengl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -152,6 +164,12 @@
     <ClInclude Include="src\Game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\opengl\GL_utilities.h">
+      <Filter>Header Files\opengl</Filter>
+    </ClInclude>
+    <ClInclude Include="src\opengl\loadobj.h">
+      <Filter>Header Files\opengl</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md">
@@ -177,6 +195,12 @@
     </None>
     <None Include="data\shaders\basic\basic.frag">
       <Filter>Source Files\data</Filter>
+    </None>
+    <None Include="data\shaders\opengl\color.frag">
+      <Filter>Header Files\opengl</Filter>
+    </None>
+    <None Include="data\shaders\opengl\color.vert">
+      <Filter>Header Files\opengl</Filter>
     </None>
   </ItemGroup>
 </Project>

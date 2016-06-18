@@ -31,6 +31,8 @@ namespace VulkanLib
 		void LookAt(vec3 target);
 		void CapAngles();
 
+		// [NOTE][HACK] Vulkan & OpenGL have different pitch movement
+		int hack = 1;
 	private:
 		vec3 mPosition;
 		float mPitch;	// Vertical angle

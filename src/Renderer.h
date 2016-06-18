@@ -21,5 +21,6 @@ namespace VulkanLib
 		virtual void AddModel(StaticModel* model) = 0;
 
 	private:
+		
 	};
 }
