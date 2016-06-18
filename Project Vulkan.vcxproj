@@ -161,12 +161,15 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ModelLoader.cpp" />
     <ClCompile Include="src\Object.cpp" />
+    <ClCompile Include="src\OpenGLRenderer.cpp" />
+    <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\StaticModel.cpp" />
     <ClCompile Include="src\Timer.cpp" />
     <ClCompile Include="src\VulkanApp.cpp" />
     <ClCompile Include="src\VulkanBase.cpp" />
     <ClCompile Include="src\VulkanDebug.cpp" />
     <ClCompile Include="src\VulkanHelpers.cpp" />
+    <ClCompile Include="src\VulkanRenderer.cpp" />
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -178,17 +181,23 @@
     <ClInclude Include="src\LoadTGA.h" />
     <ClInclude Include="src\ModelLoader.h" />
     <ClInclude Include="src\Object.h" />
+    <ClInclude Include="src\OpenGLRenderer.h" />
     <ClInclude Include="src\Platform.h" />
+    <ClInclude Include="src\Renderer.h" />
     <ClInclude Include="src\StaticModel.h" />
+    <ClInclude Include="src\TestCase.h" />
     <ClInclude Include="src\ThreadPool.h" />
     <ClInclude Include="src\Timer.h" />
     <ClInclude Include="src\VulkanApp.h" />
     <ClInclude Include="src\VulkanBase.h" />
     <ClInclude Include="src\VulkanDebug.h" />
     <ClInclude Include="src\VulkanHelpers.h" />
+    <ClInclude Include="src\VulkanRenderer.h" />
     <ClInclude Include="src\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="data\shaders\basic\basic.frag" />
+    <None Include="data\shaders\basic\basic.vert" />
     <None Include="data\shaders\colored\colored.frag" />
     <None Include="data\shaders\starsphere\starsphere.frag" />
     <None Include="data\shaders\starsphere\starsphere.vert" />

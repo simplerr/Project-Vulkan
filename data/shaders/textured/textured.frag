@@ -32,8 +32,7 @@ void main()
 	// Specular
 	shade = pow(max(dot(R, V), 0.0), 512.0);
 	vec3 specular = shade * Color;
-	//color += specular;	
+	color += specular;	
 
 	OutFragColor = texture(samplerColorMap, InTex) * vec4(color, 1.0f);
-	//OutFragColor = vec4(color, 1.0f);
 }

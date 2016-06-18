@@ -41,10 +41,12 @@ namespace VulkanLib
 			
 		} camera;
 
-		
-		//vec4* test;
-		
 		std::vector<Light> lights;
+
+		struct {
+			float numLights;
+			vec3 garbage;
+		} constants;
 		
 
 		//std::vector<Light*> lights;
@@ -144,6 +146,7 @@ namespace VulkanLib
 		ModelLoader						mModelLoader;
 		std::vector<Object*>			mObjects;
 
+		// Threads
 		std::vector<ThreadData>			mThreadData;
 		int								mNumThreads;
 		int								mNumObjects;

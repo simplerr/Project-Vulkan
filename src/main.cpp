@@ -8,14 +8,19 @@
 
 #include "VulkanApp.h"
 #include "Window.h"
+#include "Renderer.h"
+#include "VulkanRenderer.h"
 
 // The Vulkan application
-VulkanLib::VulkanApp vulkanApp;
+//VulkanLib::VulkanApp vulkanApp;
+
+VulkanLib::Renderer* renderer = nullptr;
 
 #if defined(_WIN32)
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	vulkanApp.HandleMessages(hwnd, msg, wParam, lParam);
+	if(renderer != nullptr)
+		renderer->HandleMessages(hwnd, msg, wParam, lParam);
 
 	// Call default window procedure
 	return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -43,9 +48,15 @@ int main(const int argc, const char *argv[])
 	window.SetupWindow();
 #endif
 
-	vulkanApp.InitSwapchain(&window);
-	vulkanApp.Prepare();
-	vulkanApp.RenderLoop();
+	renderer = new VulkanLib::VulkanRenderer();
+
+	renderer->Init(&window);
+
+// 	vulkanApp.InitSwapchain(&window);
+// 	vulkanApp.Prepare();
+// 	vulkanApp.RenderLoop();
+
+	delete renderer;
 
 	return 0;
 }

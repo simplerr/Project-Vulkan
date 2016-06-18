@@ -272,7 +272,7 @@ namespace VulkanLib
 					object->SetModel(mModelLoader.LoadModel(this, "data/models/Crate.obj"));
 					object->SetScale(vec3(15, 15, 15));
 					object->SetRotation(glm::vec3(180, 0, 0));
-					object->SetPipeline(mPipelines.colored);
+					object->SetPipeline(mPipelines.textured);
 
 					mThreadData[t].threadObjects.push_back(object);
 				}
@@ -284,8 +284,8 @@ namespace VulkanLib
 	{
 		// Light
 		Light light;
-		light.SetPosition(150, -150, 150);
-		light.SetDirection(0, 1, 0);
+		light.SetPosition(150, 150, 150);
+		light.SetDirection(1, -1, 0);
 		light.SetAtt(1, 1, 0);
 		light.SetIntensity(0, 0, 1);
 		mUniformData.lights.push_back(light);
@@ -296,7 +296,10 @@ namespace VulkanLib
 		light2.SetDirection(1, 0, 0);
 		light2.SetAtt(1, 1, 0);
 		light2.SetIntensity(0, 0, 1);
-		mUniformData.lights.push_back(light2);
+	/*	mUniformData.lights.push_back(light2);
+		mUniformData.lights.push_back(light2);*/
+
+		mUniformData.constants.numLights = mUniformData.lights.size();	// [NOTE]
 
 		// Create the uniform buffer
 		// It's the same process as creating any buffer, except that the VkBufferCreateInfo.usage bit is different (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
@@ -309,7 +312,7 @@ namespace VulkanLib
 		allocInfo.memoryTypeIndex = 0;
 
 		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		int size = sizeof(mUniformData.camera) + mUniformData.lights.size() * sizeof(Light);
+		int size = sizeof(mUniformData.camera) + mUniformData.lights.size() * sizeof(Light) + sizeof(mUniformData.constants);
 		createInfo.size = size;					// 3x glm::mat4 NOTE: Not any more!!
 		createInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
@@ -604,6 +607,15 @@ namespace VulkanLib
 		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&pData));
 		memcpy(pData, mUniformData.lights.data(), dataSize);
 		vkUnmapMemory(mDevice, mUniformBuffer.memory);
+
+		// Map and update number of lights
+		dataOffset += sizeof(mUniformData.camera) + dataSize;
+		dataSize = sizeof(mUniformData.constants);
+		uint8_t *data;
+		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&data));
+		memcpy(data, &mUniformData.constants.numLights, dataSize);
+		vkUnmapMemory(mDevice, mUniformBuffer.memory);
+
 	}
 
 	void VulkanApp::SetupVertexDescriptions()
@@ -980,7 +992,7 @@ namespace VulkanLib
 		for (auto& object : mObjects)
 		{
 			// [NOTE] Just for testing
-			float speed = 50.0f;
+			float speed = 5.0f;
 			if(object->GetId() == OBJECT_ID_PROP)
 				object->AddRotation(glm::radians(speed), glm::radians(speed), glm::radians(speed));
 		}

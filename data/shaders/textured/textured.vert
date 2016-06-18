@@ -46,13 +46,14 @@ layout (std140, binding = 0) uniform UBO
 	mat4 projection;
 	mat4 view;
 	
-
 	vec4 lightDir;
 	vec3 eyePos;
 
 	float t;
 	
-	Light light[2];
+	Light light[1];
+	float numLights;
+	vec3 garbage;
 
 	//vec4 test;
 	//Light lights;//[10];	// Max 10 lights
@@ -74,7 +75,7 @@ layout (location = 4) out vec3 OutLightDirW;
 //
 void main() 
 {
-	OutColor = per_frame.light[1].att;//pushConsts.color; //InColor;
+	OutColor = pushConsts.color; //InColor;
 	OutTex = InTex;
 
 	mat4 world = pushConsts.world;
@@ -83,8 +84,8 @@ void main()
 	
     vec4 PosW = pushConsts.world  * vec4(InPosL, 1.0);
     OutNormalW = mat3(pushConsts.world ) * InNormalL;
-  //  OutLightDirW = per_frame.lights.dir; //per_frame.lightDir.xyz;
-    OutEyeDirW = per_frame.eyePos - PosW.xyz;		
+	OutLightDirW = per_frame.light[0].dir; //per_frame.lightDir.xyz;
+    OutEyeDirW = per_frame.eyePos - PosW.xyz;	
 }
 //
 // w/o Instancing
