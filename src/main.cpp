@@ -12,6 +12,7 @@
 #include "VulkanRenderer.h"
 #include "OpenGLRenderer.h"
 #include "Game.h"
+#include "Camera.h"
 
 // The Vulkan application
 //VulkanLib::VulkanApp vulkanApp;
@@ -54,10 +55,16 @@ int main(const int argc, const char *argv[])
 #endif
 
 	// Create the renderer	
-	VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
-	//VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
+	//VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
+	VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
 
 	//renderer->AddModel(new VulkanLib::StaticModel());
+
+	// Create the camera
+	VulkanLib::Camera* camera = new VulkanLib::Camera(glm::vec3(500, 1300, 500), 60.0f, (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 25600.0f);
+	camera->LookAt(glm::vec3(0, 0, 0));
+
+	renderer->SetCamera(camera);
 
 	// Create the game
 	gGame = new VulkanLib::Game(renderer, &window);

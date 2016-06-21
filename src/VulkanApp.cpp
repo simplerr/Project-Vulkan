@@ -27,6 +27,7 @@ namespace VulkanLib
 	VulkanApp::VulkanApp() : VulkanBase(VULKAN_ENABLE_VALIDATION)
 	{
 		srand(time(NULL));
+		mCamera = nullptr;
 	}
 
 	VulkanApp::~VulkanApp()
@@ -116,11 +117,16 @@ namespace VulkanLib
 		//system("cls");
 	}
 
+	void VulkanApp::SetCamera(Camera * camera)
+	{
+		mCamera = camera;
+	}
+
 	void VulkanApp::LoadModels()
 	{
 		// Create the camera
-		mCamera = new Camera(glm::vec3(500, 1300, 500), 60.0f, (float)GetWindowWidth() / (float)GetWindowHeight(), 0.1f, 25600.0f);
-		mCamera->LookAt(glm::vec3(0, 0, 0));
+		/*mCamera = new Camera(glm::vec3(500, 1300, 500), 60.0f, (float)GetWindowWidth() / (float)GetWindowHeight(), 0.1f, 25600.0f);
+		mCamera->LookAt(glm::vec3(0, 0, 0));*/
 
 		// Load the starsphere
 		Object* sphere = new Object(glm::vec3(0, 0, 0));

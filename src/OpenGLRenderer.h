@@ -22,6 +22,8 @@ namespace VulkanLib
 
 		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); 
 
+		virtual void SetCamera(Camera* camera);
+
 		GLuint LoadShaders(std::string vertex, std::string fragment);
 
 		void InitOpenGLContext();

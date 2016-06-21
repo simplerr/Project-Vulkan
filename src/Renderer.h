@@ -5,6 +5,7 @@ namespace VulkanLib
 {
 	class StaticModel;
 	class Window;
+	class Camera;
 
 	class Renderer
 	{
@@ -19,6 +20,7 @@ namespace VulkanLib
 		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
 
 		virtual void AddModel(StaticModel* model) = 0;
+		virtual void SetCamera(Camera* camera) = 0;
 
 	private:
 		

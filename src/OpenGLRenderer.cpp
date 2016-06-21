@@ -18,15 +18,16 @@ namespace VulkanLib
 	OpenGLRenderer::OpenGLRenderer(Window* window)
 	{
 		mWindow = window;
+		mCamera = nullptr;
 
 		InitOpenGLContext();
 
 		glewInit();
 
 		// Create the camera
-		mCamera = new Camera(glm::vec3(-11, -13, 7), 60.0f, (float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 0.1f, 25600.0f);
+		/*mCamera = new Camera(glm::vec3(-11, -13, 7), 60.0f, (float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 0.1f, 25600.0f);
 		mCamera->LookAt(glm::vec3(0, 1, 0));
-		mCamera->hack = -1;
+		mCamera->hack = -1;*/
 
 		// vertex buffer object, used for uploading the geometry
 		unsigned int vertexBufferObjID;
@@ -131,6 +132,12 @@ namespace VulkanLib
 	void OpenGLRenderer::HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		mCamera->HandleMessages(hWnd, uMsg, wParam, lParam);
+	}
+
+	void OpenGLRenderer::SetCamera(Camera * camera)
+	{
+		mCamera = camera;
+		mCamera->hack = -1;
 	}
 
 	GLuint OpenGLRenderer::LoadShaders(std::string vertex, std::string fragment)

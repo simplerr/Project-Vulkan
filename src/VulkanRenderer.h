@@ -20,8 +20,12 @@ namespace VulkanLib
 
 		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+		virtual void SetCamera(Camera* camera);
+
 	private:
 		VulkanApp* mVulkanApp;
+		Camera* mCamera;
+
 	};
 
 	

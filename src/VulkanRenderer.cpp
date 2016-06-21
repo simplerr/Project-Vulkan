@@ -42,4 +42,9 @@ namespace VulkanLib
 	{
 		mVulkanApp->HandleMessages(hWnd, uMsg, wParam, lParam);
 	}
+	void VulkanRenderer::SetCamera(Camera * camera)
+	{
+		mCamera = camera;
+		mVulkanApp->SetCamera(mCamera);
+	}
 }

@@ -51,8 +51,6 @@ namespace VulkanLib
 
 		//std::vector<Light*> lights;
 
-	
-
 		// Array of world matrixes for the instances
 		//mat4* instanceWorld;
 	};	// Stored in uniformBuffer.memory in device memory
@@ -112,6 +110,7 @@ namespace VulkanLib
 		void LoadModels();
 		void SetupTerrainDescriptorSet();
 		void CompileShaders();
+		void SetCamera(Camera* camera);
 
 
 		// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
