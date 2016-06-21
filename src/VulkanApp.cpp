@@ -187,12 +187,12 @@ namespace VulkanLib
 		// Get # of available threads
 		mNumThreads = std::thread::hardware_concurrency();
 
-		mNumThreads = 4;
+		mNumThreads = 1;
 
 		mThreadData.resize(mNumThreads);
 		mThreadPool.setThreadCount(mNumThreads);
 
-		mNumObjects = 2048; // [NOTE][TODO] * 2 more crashes the computer!!
+		mNumObjects = 10000; // [NOTE][TODO] * 2 more crashes the computer!!
 
 		// Prepare each thread data
 		for (int t = 0; t < mNumThreads; t++)
