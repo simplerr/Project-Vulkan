@@ -6,6 +6,7 @@ namespace VulkanLib
 	class StaticModel;
 	class Window;
 	class Camera;
+	class Object;
 
 	class Renderer
 	{
@@ -22,6 +23,7 @@ namespace VulkanLib
 		virtual void AddModel(StaticModel* model) = 0;
 		virtual void SetCamera(Camera* camera) = 0;
 
+		virtual void AddObject(Object* object) = 0;
 	private:
 		
 	};

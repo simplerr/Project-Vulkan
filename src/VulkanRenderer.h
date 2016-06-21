@@ -1,6 +1,7 @@
 #pragma once
 #include "Renderer.h"
 #include "VulkanApp.h"
+#include <vector>
 
 namespace VulkanLib
 {
@@ -22,9 +23,15 @@ namespace VulkanLib
 
 		virtual void SetCamera(Camera* camera);
 
+		virtual void AddObject(Object* object);
+
 	private:
 		VulkanApp* mVulkanApp;
 		Camera* mCamera;
+		ModelLoader	mModelLoader;
+
+		std::vector<Object*> mObjects;
+		std::map<std::string, StaticModel*> mModelMap;
 
 	};
 

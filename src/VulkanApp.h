@@ -75,6 +75,14 @@ namespace VulkanLib
 		std::vector<Object*> threadObjects;
 	};
 
+	struct VulkanModel
+	{
+		Object* object;
+		StaticModel* mesh;
+		VkPipeline pipeline;
+
+	};
+
 	class VulkanApp : public VulkanBase
 	{
 	public:
@@ -112,6 +120,8 @@ namespace VulkanLib
 		void CompileShaders();
 		void SetCamera(Camera* camera);
 
+		void AddModel(VulkanModel model);
+
 
 		// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
 		// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
@@ -142,13 +152,15 @@ namespace VulkanLib
 		bool							mPrepared = false;
 
 		Camera*							mCamera;
-		ModelLoader						mModelLoader;
-		std::vector<Object*>			mObjects;
+		//ModelLoader						mModelLoader;
+	//	std::vector<Object*>			mObjects;
 
 		// Threads
 		std::vector<ThreadData>			mThreadData;
 		int								mNumThreads;
 		int								mNumObjects;
 		ThreadPool						mThreadPool;
+
+		std::vector<VulkanModel>		mModels;
 	};
 }	// VulkanLib namespace

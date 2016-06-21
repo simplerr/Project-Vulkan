@@ -27,6 +27,8 @@ namespace VulkanLib
 		GLuint LoadShaders(std::string vertex, std::string fragment);
 
 		void InitOpenGLContext();
+
+		virtual void AddObject(Object* object);
 	private:
 		Camera* mCamera;
 		Window* mWindow;

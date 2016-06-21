@@ -13,6 +13,9 @@
 #include "OpenGLRenderer.h"
 #include "Game.h"
 #include "Camera.h"
+#include "Object.h"
+
+using namespace VulkanLib;
 
 // The Vulkan application
 //VulkanLib::VulkanApp vulkanApp;
@@ -55,16 +58,62 @@ int main(const int argc, const char *argv[])
 #endif
 
 	// Create the renderer	
-	//VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
-	VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
+	VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
+	//VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
+
 
 	//renderer->AddModel(new VulkanLib::StaticModel());
 
 	// Create the camera
 	VulkanLib::Camera* camera = new VulkanLib::Camera(glm::vec3(500, 1300, 500), 60.0f, (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 25600.0f);
 	camera->LookAt(glm::vec3(0, 0, 0));
-
 	renderer->SetCamera(camera);
+
+	// Add starsphere object
+	Object* sphere = new Object(glm::vec3(0, 0, 0));
+	sphere->SetModel("data/models/sphere.obj");
+	sphere->SetScale(glm::vec3(100));
+	sphere->SetPipeline(PipelineEnum::STARSPHERE);
+	sphere->SetId(OBJECT_ID_SKY);
+	renderer->AddObject(sphere);
+
+	/*Object* terrain = new Object(glm::vec3(-1000, 0, -1000));
+	terrain->SetModel("data/textures/fft-terrain.tga");
+	terrain->SetPipeline(PipelineEnum::COLORED);
+	terrain->SetScale(glm::vec3(10, 10, 10));
+	terrain->SetColor(glm::vec3(0.0, 0.9, 0.0));
+	terrain->SetId(OBJECT_ID_TERRAIN);
+	renderer->AddObject(terrain);*/
+
+
+	// Generate some positions
+	int size = 6;
+	for (int x = 0; x < size; x++)
+	{
+		for (int y = 0; y < size; y++)
+		{
+			for (int z = 0; z < size; z++)
+			{
+				Object* object = new Object(glm::vec3(x * 150, -100 - y * 150, z * 150));
+				object->SetScale(glm::vec3((rand() % 20) / 10.0f));
+				object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
+				object->SetId(OBJECT_ID_PROP);
+
+				if (rand() % 2 == 0) {
+					object->SetModel("data/models/teapot.3ds");
+					object->SetRotation(glm::vec3(180, 0, 0));
+					object->SetPipeline(PipelineEnum::COLORED);
+				}
+				else {
+					object->SetModel("data/models/box.obj");
+					object->SetPipeline(PipelineEnum::TEXTURED);
+					object->SetScale(glm::vec3(4.0f));
+				}
+
+				renderer->AddObject(object);
+			}
+		}
+	}
 
 	// Create the game
 	gGame = new VulkanLib::Game(renderer, &window);

@@ -212,4 +212,8 @@ namespace VulkanLib
 
 		wglMakeCurrent(hdc, hglrc);
 	}
+	void OpenGLRenderer::AddObject(Object * object)
+	{
+
+	}
 }

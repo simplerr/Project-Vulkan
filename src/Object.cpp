@@ -10,8 +10,8 @@ namespace VulkanLib
 		SetRotation(vec3(0, 0, 0));
 		SetScale(vec3(1.0f, 1.0f, 1.0f));
 		SetColor(vec3(1.0f, 1.0f, 1.0f));
-		SetModel(nullptr);
-		SetPipeline(VK_NULL_HANDLE);		// Must be assigned later
+		//SetModel(nullptr);
+		SetPipeline(PipelineEnum::TEXTURED);		// Must be assigned later
 		SetId(0);
 	}
 
@@ -19,9 +19,9 @@ namespace VulkanLib
 	{
 	}
 
-	void Object::SetModel(StaticModel * model)
+	void Object::SetModel(std::string modelSource)
 	{
-		mModel = model;
+		mModelSource = modelSource;
 	}
 
 	void Object::SetPosition(vec3 position)
@@ -58,14 +58,14 @@ namespace VulkanLib
 		RebuildWorldMatrix();
 	}
 
-	void Object::SetPipeline(VkPipeline pipeline)
+	void Object::SetPipeline(PipelineEnum pipeline)
 	{
 		mPipeline = pipeline;
 	}
 
-	StaticModel * Object::GetModel()
+	std::string Object::GetModel()
 	{
-		return mModel;
+		return mModelSource;
 	}
 
 	vec3 Object::GetPosition()
@@ -98,7 +98,7 @@ namespace VulkanLib
 		return mId;
 	}
 
-	VkPipeline Object::GetPipeline()
+	PipelineEnum Object::GetPipeline()
 	{
 		return mPipeline;
 	}
