@@ -11,6 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "../external/glm/glm/gtc/matrix_transform.hpp"
 #include "Object.h"
+#include "LoadTGA.h"
 
 #pragma comment(lib, "glu32.lib")
 
@@ -47,32 +48,7 @@ namespace VulkanLib
 
 		program = LoadShaders("data/shaders/opengl/color.vert", "data/shaders/opengl/color.frag");
 
-		// Upload geometry to the GPU:	
-		// Allocate and activate Vertex Array Object
-		/*glGenVertexArrays(1, &vertexArrayObjID);
-		glBindVertexArray(vertexArrayObjID);
-
-		// Allocate Vertex Buffer Objects
-		glGenBuffers(1, &vertexBufferObjID);	// position
-		glGenBuffers(1, &colorBufferObjID);		// color
-		glGenBuffers(1, &bunnyIndexBufferObjID);		// color
-		glGenBuffers(1, &bunnyNormalBufferObjID);		// color
-
-		// VBO for vertex data
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjID);
-		glBufferData(GL_ARRAY_BUFFER, model->numVertices * 3 * sizeof(GLfloat), model->vertexArray, GL_STATIC_DRAW);
-		glVertexAttribPointer(glGetAttribLocation(program, "InPosL"), 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(glGetAttribLocation(program, "InPosL"));
-
-		// VBO for normal data
-		glBindBuffer(GL_ARRAY_BUFFER, bunnyNormalBufferObjID);
-		glBufferData(GL_ARRAY_BUFFER, model->numVertices * 3 * sizeof(GLfloat), model->normalArray, GL_STATIC_DRAW);
-		glVertexAttribPointer(glGetAttribLocation(program, "InNormalL"), 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(glGetAttribLocation(program, "InNormalL"));
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bunnyIndexBufferObjID);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->numIndices*sizeof(GLuint), model->indexArray, GL_STATIC_DRAW);*/
-
+		LoadTGATextureSimple("data/textures/grass.tga", &mTestTexture);
 	}
 
 	void OpenGLRenderer::Cleanup()
@@ -104,6 +80,8 @@ namespace VulkanLib
 		glUniform3fv(glGetUniformLocation(program, "gEyePos"), 1, glm::value_ptr(mCamera->GetPosition())); 							// Eye pos
 		glUniform3fv(glGetUniformLocation(program, "gLightDir"), 1, glm::value_ptr(glm::vec3(1, 1, 1)));							// Light dir
 
+		glBindTexture(GL_TEXTURE_2D, mTestTexture);
+
 		for (int i = 0; i < mModels.size(); i++)
 		{
 			glBindVertexArray(mModels[i].mesh->vao);	// Select VAO
@@ -118,6 +96,16 @@ namespace VulkanLib
 	void OpenGLRenderer::Update()
 	{
 		mCamera->Update();
+
+		// Rotate the objects
+// 		for (auto& object : mModels)
+// 		{
+// 			// [NOTE] Just for testing
+// 			float speed = 5.0f;
+// 			if (object.object->GetId() == OBJECT_ID_PROP)
+// 				object.object->AddRotation(glm::radians(speed), glm::radians(speed), glm::radians(speed));
+// 		}
+
 	}
 
 	void OpenGLRenderer::AddModel(StaticModel* model)
@@ -233,6 +221,7 @@ namespace VulkanLib
 		glGenBuffers(1, &model->vb);
 		glGenBuffers(1, &model->ib);
 		glGenBuffers(1, &model->nb);
+
 		if (model->texCoordArray != NULL)
 			glGenBuffers(1, &model->tb);
 
@@ -249,6 +238,12 @@ namespace VulkanLib
 		glBufferData(GL_ARRAY_BUFFER, model->numVertices * 3 * sizeof(GLfloat), model->normalArray, GL_STATIC_DRAW);
 		glVertexAttribPointer(glGetAttribLocation(program, "InNormalL"), 3, GL_FLOAT, GL_FALSE, 0, 0);
 		glEnableVertexAttribArray(glGetAttribLocation(program, "InNormalL"));
+
+		// VBO for vertex data
+		glBindBuffer(GL_ARRAY_BUFFER, model->tb);
+		glBufferData(GL_ARRAY_BUFFER, model->numVertices * 2 * sizeof(GLfloat), model->texCoordArray, GL_STATIC_DRAW);
+		glVertexAttribPointer(glGetAttribLocation(program, "InTex"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(glGetAttribLocation(program, "InTex"));
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->ib);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->numIndices*sizeof(GLuint), model->indexArray, GL_STATIC_DRAW);

@@ -65,7 +65,7 @@ int main(const int argc, const char *argv[])
 	//renderer->AddModel(new VulkanLib::StaticModel());
 
 	// Create the camera
-	VulkanLib::Camera* camera = new VulkanLib::Camera(glm::vec3(500, 1300, 500), 60.0f, (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 25600.0f);
+	VulkanLib::Camera* camera = new VulkanLib::Camera(glm::vec3(500, -1300, 500), 60.0f, (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 25600.0f);
 	camera->LookAt(glm::vec3(0, 0, 0));
 	renderer->SetCamera(camera);
 

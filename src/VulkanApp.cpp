@@ -998,13 +998,13 @@ namespace VulkanLib
 	void VulkanApp::Update()
 	{
 		// Rotate the objects
-		for (auto& object : mModels)
-		{
-			// [NOTE] Just for testing
-			float speed = 5.0f;
-			if(object.object->GetId() == OBJECT_ID_PROP)
-				object.object->AddRotation(glm::radians(speed), glm::radians(speed), glm::radians(speed));
-		}
+// 		for (auto& object : mModels)
+// 		{
+// 			// [NOTE] Just for testing
+// 			float speed = 5.0f;
+// 			if(object.object->GetId() == OBJECT_ID_PROP)
+// 				object.object->AddRotation(glm::radians(speed), glm::radians(speed), glm::radians(speed));
+// 		}
 	}
 
 	void VulkanApp::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)

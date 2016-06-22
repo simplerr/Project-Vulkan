@@ -3,13 +3,13 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 
-//layout (binding = 1) uniform sampler2D samplerColorMap;
+uniform sampler2D TexUnit;
 
 layout (location = 0) in vec3 InNormalW;
 layout (location = 1) in vec3 InColor;
-//layout (location = 2) in vec2 InTex;
-layout (location = 2) in vec3 InEyeDirW;
-layout (location = 3) in vec3 InLightDirW;
+layout (location = 2) in vec2 InTex;
+layout (location = 3) in vec3 InEyeDirW;
+layout (location = 4) in vec3 InLightDirW;
 
 layout (location = 0) out vec4 OutFragColor;
 
@@ -35,4 +35,5 @@ void main()
 	color += specular;	
 
 	OutFragColor = vec4(color, 1.0f);
+	OutFragColor = texture(TexUnit, InTex);
 }

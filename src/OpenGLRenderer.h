@@ -49,11 +49,9 @@ namespace VulkanLib
 
 		float speedx = 0.02f, speedy = 0.02f;
 
-		// vertex array object
-		unsigned int vertexArrayObjID;
-		GLuint colorArrayObjID;
-
 		std::vector<OpenGLModel> mModels;
 		std::map<std::string, Model*> mModelMap;
+
+		GLuint mTestTexture;
 	};
 }
