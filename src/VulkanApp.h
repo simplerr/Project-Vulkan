@@ -152,7 +152,7 @@ namespace VulkanLib
 		bool							mPrepared = false;
 
 		Camera*							mCamera;
-		//ModelLoader						mModelLoader;
+		//ModelLoader					mModelLoader;
 	//	std::vector<Object*>			mObjects;
 
 		// Threads

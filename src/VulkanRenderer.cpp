@@ -53,7 +53,11 @@ namespace VulkanLib
 	{
 		VulkanModel model;
 		model.object = object;
-		model.mesh = mModelLoader.LoadModel(mVulkanApp, object->GetModel());
+
+		if(object->GetId() == OBJECT_ID_TERRAIN)
+			model.mesh = mModelLoader.GenerateTerrain(mVulkanApp, object->GetModel());
+		else
+			model.mesh = mModelLoader.LoadModel(mVulkanApp, object->GetModel());
 
 		if (object->GetPipeline() == PipelineEnum::COLORED)
 			model.pipeline = mVulkanApp->mPipelines.colored;		// [NOTE][HACK] mPipelines should be private!

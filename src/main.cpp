@@ -58,8 +58,8 @@ int main(const int argc, const char *argv[])
 #endif
 
 	// Create the renderer	
-	VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
-	//VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
+	//VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
+	VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
 
 
 	//renderer->AddModel(new VulkanLib::StaticModel());
@@ -77,14 +77,13 @@ int main(const int argc, const char *argv[])
 	sphere->SetId(OBJECT_ID_SKY);
 	renderer->AddObject(sphere);
 
-	/*Object* terrain = new Object(glm::vec3(-1000, 0, -1000));
-	terrain->SetModel("data/textures/fft-terrain.tga");
-	terrain->SetPipeline(PipelineEnum::COLORED);
-	terrain->SetScale(glm::vec3(10, 10, 10));
-	terrain->SetColor(glm::vec3(0.0, 0.9, 0.0));
-	terrain->SetId(OBJECT_ID_TERRAIN);
-	renderer->AddObject(terrain);*/
-
+// 	Object* terrain = new Object(glm::vec3(-1000, 0, -1000));
+// 	terrain->SetModel("data/textures/fft-terrain.tga");
+// 	terrain->SetPipeline(PipelineEnum::COLORED);
+// 	terrain->SetScale(glm::vec3(10, 10, 10));
+// 	terrain->SetColor(glm::vec3(0.0, 0.9, 0.0));
+// 	terrain->SetId(OBJECT_ID_TERRAIN);
+// 	renderer->AddObject(terrain);
 
 	// Generate some positions
 	int size = 6;
@@ -100,12 +99,13 @@ int main(const int argc, const char *argv[])
 				object->SetId(OBJECT_ID_PROP);
 
 				if (rand() % 2 == 0) {
-					object->SetModel("data/models/teapot.3ds");
+					object->SetModel("data/models/torus.obj");
 					object->SetRotation(glm::vec3(180, 0, 0));
 					object->SetPipeline(PipelineEnum::COLORED);
+					//object->SetScale(glm::vec3(500));
 				}
 				else {
-					object->SetModel("data/models/box.obj");
+					object->SetModel("data/models/Crate.obj");
 					object->SetPipeline(PipelineEnum::TEXTURED);
 					object->SetScale(glm::vec3(4.0f));
 				}

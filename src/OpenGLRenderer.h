@@ -2,12 +2,20 @@
 #include <GL/glew.h>
 #include <gl/glu.h>
 #include <string>
+#include <vector>
+#include <map>
 #include "Renderer.h"
 #include "opengl/loadobj.h"
 
 namespace VulkanLib
 {
 	class Camera;
+	
+	struct OpenGLModel
+	{
+		Object* object;
+		Model* mesh;
+	};
 	
 	class OpenGLRenderer : public Renderer
 	{
@@ -29,6 +37,8 @@ namespace VulkanLib
 		void InitOpenGLContext();
 
 		virtual void AddObject(Object* object);
+
+		Model* LoadCachedModel(std::string filename);
 	private:
 		Camera* mCamera;
 		Window* mWindow;
@@ -43,6 +53,7 @@ namespace VulkanLib
 		unsigned int vertexArrayObjID;
 		GLuint colorArrayObjID;
 
-		Model *model;
+		std::vector<OpenGLModel> mModels;
+		std::map<std::string, Model*> mModelMap;
 	};
 }
