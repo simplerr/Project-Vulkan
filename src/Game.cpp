@@ -14,7 +14,7 @@ namespace VulkanLib
 
 	Game::~Game()
 	{
-
+		mTimer.PrintLog("benchmark.txt");
 	}
 
 #if defined(_WIN32)

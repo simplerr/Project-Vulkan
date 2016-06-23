@@ -1,29 +1,48 @@
-#pragma once
+#ifndef __TGA_LOADER__
+#define __TGA_LOADER__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#else
+#include "opengl/GL_utilities.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/*
-	TGA loader by Ingemar Ragnemalm
-*/
+#ifndef __cplusplus
+#ifndef true
+#define true 1
+#endif
 
-namespace VulkanLib
-{
-	typedef struct TextureData			// Create A Structure for .tga loading.
+#ifndef false
+#define false 0
+#endif
+
+#ifndef bool
+#define bool char
+#endif
+#endif
+
+	class TextureData		// Create A Structure for .tga loading.
 	{
-		unsigned char	*imageData;		// Image Data (Up To 32 Bits)
-		int		bpp;					// Image Color Depth In Bits Per Pixel.
-		int		width;					// Image Width
-		int		height;					// Image Height
-		int		w;						// Image Width "raw"
-		int		h;						// Image Height "raw"
-		int		texID;					// Texture ID Used To Select A Texture
-		float	texWidth, texHeight;
-	} TextureData, *TextureDataPtr;					// Structure Name
+	public:
+		GLubyte	*imageData;			// Image Data (Up To 32 Bits)
+		GLuint	bpp;				// Image Color Depth In Bits Per Pixel.
+		GLuint	width;				// Image Width
+		GLuint	height;				// Image Height
+		GLuint	w;				// Image Width "raw"
+		GLuint	h;				// Image Height "raw"
+		GLuint	texID;				// Texture ID Used To Select A Texture
+		GLfloat	texWidth, texHeight;
+	};
 
-	//bool LoadTGATexture(char *filename, TextureData *texture);
-	//void LoadTGATextureSimple(char *filename, int *tex);
+	bool LoadTGATexture(char *filename, TextureData *texture);
+	void LoadTGATextureSimple(char *filename, GLuint *tex);
 	void LoadTGASetMipmapping(bool active);
 	bool LoadTGATextureData(char *filename, TextureData *texture);
 
@@ -35,12 +54,18 @@ namespace VulkanLib
 #define TGA_ERROR_COMPRESSED_FILE		-1
 #define TGA_OK							 0
 
-// Save functions
+	// Save functions
 	int SaveDataToTGA(char			*filename,
 		short int		width,
 		short int		height,
 		unsigned char	pixelDepth,
 		unsigned char	*imageData);
 	void SaveTGA(TextureData *tex, char *filename);
-	void SaveFramebufferToTGA(char *filename, int x, int y, int w, int h);
-}	// VulkanLib namespace
+	void SaveFramebufferToTGA(char *filename, GLint x, GLint y, GLint w, GLint h);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+

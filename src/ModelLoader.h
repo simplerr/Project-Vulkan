@@ -8,7 +8,6 @@ namespace VulkanLib
 {
 	class StaticModel;
 	class VulkanBase;
-	class TextureData;
 
 	// TODO: This will later work like a factory, where the same model only gets loaded once
 	class ModelLoader

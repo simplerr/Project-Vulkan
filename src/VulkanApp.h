@@ -51,8 +51,6 @@ namespace VulkanLib
 
 		//std::vector<Light*> lights;
 
-	
-
 		// Array of world matrixes for the instances
 		//mat4* instanceWorld;
 	};	// Stored in uniformBuffer.memory in device memory
@@ -68,13 +66,21 @@ namespace VulkanLib
 		vec3 color;
 	};
 
+	struct VulkanModel
+	{
+		Object* object;
+		StaticModel* mesh;
+		VkPipeline pipeline;
+
+	};
+
 	struct ThreadData {
 		PushConstantBlock pushConstants;
 		VkCommandBuffer commandBuffer;
 		VkCommandPool commandPool;
 		VkDescriptorSet descriptorSet;			// Testing
 		VkDescriptorPool descriptorPool;
-		std::vector<Object*> threadObjects;
+		std::vector<VulkanModel> threadObjects;
 	};
 
 	class VulkanApp : public VulkanBase
@@ -94,7 +100,7 @@ namespace VulkanLib
 		void PrepareCommandBuffers();		// Custom
 		void SetupVertexDescriptions();
 
-		void SetupMultithreading();			// Custom
+		void SetupMultithreading(int numThreads);			// Custom
 
 		void BuildInstancingCommandBuffer(VkFramebuffer frameBuffer);
 		void RecordRenderingCommandBuffer(VkFramebuffer frameBuffer);
@@ -112,6 +118,9 @@ namespace VulkanLib
 		void LoadModels();
 		void SetupTerrainDescriptorSet();
 		void CompileShaders();
+		void SetCamera(Camera* camera);
+
+		void AddModel(VulkanModel model);
 
 
 		// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
@@ -143,13 +152,17 @@ namespace VulkanLib
 		bool							mPrepared = false;
 
 		Camera*							mCamera;
-		ModelLoader						mModelLoader;
-		std::vector<Object*>			mObjects;
+		//ModelLoader					mModelLoader;
+	//	std::vector<Object*>			mObjects;
 
 		// Threads
 		std::vector<ThreadData>			mThreadData;
 		int								mNumThreads;
 		int								mNumObjects;
 		ThreadPool						mThreadPool;
+
+		std::vector<VulkanModel>		mModels;
+
+		int								mNextThreadId = 0;	// The thread to add new objects to
 	};
 }	// VulkanLib namespace

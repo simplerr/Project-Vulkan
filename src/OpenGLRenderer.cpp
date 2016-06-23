@@ -10,6 +10,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "../external/glm/glm/gtc/matrix_transform.hpp"
+#include "Object.h"
+#include "LoadTGA.h"
 
 #pragma comment(lib, "glu32.lib")
 
@@ -18,24 +20,11 @@ namespace VulkanLib
 	OpenGLRenderer::OpenGLRenderer(Window* window)
 	{
 		mWindow = window;
+		mCamera = nullptr;
 
 		InitOpenGLContext();
 
 		glewInit();
-
-		// Create the camera
-		// Create the camera
-		mCamera = new Camera(glm::vec3(-11, -13, 7), 60.0f, (float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 0.1f, 25600.0f);
-		mCamera->LookAt(glm::vec3(0, 1, 0));
-		mCamera->hack = -1;
-
-		// vertex buffer object, used for uploading the geometry
-		unsigned int vertexBufferObjID;
-		unsigned int bunnyIndexBufferObjID;
-		unsigned int bunnyNormalBufferObjID;
-		GLuint colorBufferObjID;
-
-		model = LoadModel("data/models/Crate.obj");
 
 		// GL inits
 		//glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
@@ -45,33 +34,9 @@ namespace VulkanLib
 		glEnable(GL_CULL_FACE);
 
 		program = LoadShaders("data/shaders/opengl/color.vert", "data/shaders/opengl/color.frag");
-
-		// Upload geometry to the GPU:	
-		// Allocate and activate Vertex Array Object
-		glGenVertexArrays(1, &vertexArrayObjID);
-		glBindVertexArray(vertexArrayObjID);
-
-		// Allocate Vertex Buffer Objects
-		glGenBuffers(1, &vertexBufferObjID);	// position
-		glGenBuffers(1, &colorBufferObjID);		// color
-		glGenBuffers(1, &bunnyIndexBufferObjID);		// color
-		glGenBuffers(1, &bunnyNormalBufferObjID);		// color
-
 														// VBO for vertex data
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjID);
-		glBufferData(GL_ARRAY_BUFFER, model->numVertices * 3 * sizeof(GLfloat), model->vertexArray, GL_STATIC_DRAW);
-		glVertexAttribPointer(glGetAttribLocation(program, "InPosL"), 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(glGetAttribLocation(program, "InPosL"));
-
-		// VBO for normal data
-		glBindBuffer(GL_ARRAY_BUFFER, bunnyNormalBufferObjID);
-		glBufferData(GL_ARRAY_BUFFER, model->numVertices * 3 * sizeof(GLfloat), model->normalArray, GL_STATIC_DRAW);
-		glVertexAttribPointer(glGetAttribLocation(program, "InNormalL"), 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(glGetAttribLocation(program, "InNormalL"));
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bunnyIndexBufferObjID);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->numIndices*sizeof(GLuint), model->indexArray, GL_STATIC_DRAW);
-
+		
+		LoadTGATextureSimple("data/textures/crate_2.tga", &mTestTexture);
 	}
 
 	void OpenGLRenderer::Cleanup()
@@ -86,7 +51,7 @@ namespace VulkanLib
 		delete mCamera;
 	}
 
-	void OpenGLRenderer::SetNumThreads()
+	void OpenGLRenderer::SetupMultithreading(int numThreads)
 	{
 
 	}
@@ -97,23 +62,20 @@ namespace VulkanLib
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glm::mat4 world = glm::mat4();
-		glUniformMatrix4fv(glGetUniformLocation(program, "gWorld"), 1, GL_FALSE, glm::value_ptr(world));						// World
+		glUniformMatrix4fv(glGetUniformLocation(program, "gWorld"), 1, GL_FALSE, glm::value_ptr(world));							// World
 		glUniformMatrix4fv(glGetUniformLocation(program, "gView"), 1, GL_FALSE, glm::value_ptr(mCamera->GetView()));				// View
 		glUniformMatrix4fv(glGetUniformLocation(program, "gProjection"), 1, GL_FALSE, glm::value_ptr(mCamera->GetProjection()));	// Projection
-		glUniform3fv(glGetUniformLocation(program, "gEyePos"), 1, glm::value_ptr(mCamera->GetPosition())); 						// Eye pos
-		glUniform3fv(glGetUniformLocation(program, "gLightDir"), 1, glm::value_ptr(glm::vec3(1, 1, 1)));						// Light dir
+		glUniform3fv(glGetUniformLocation(program, "gEyePos"), 1, glm::value_ptr(mCamera->GetPosition())); 							// Eye pos
+		glUniform3fv(glGetUniformLocation(program, "gLightDir"), 1, glm::value_ptr(glm::vec3(1, 1, 1)));							// Light dir
 
-		glBindVertexArray(vertexArrayObjID);	// Select VAO
+		glBindTexture(GL_TEXTURE_2D, mTestTexture);
 
-		int size = 100;
-		for (int x = 0; x < size; x++)
+		for (int i = 0; i < mModels.size(); i++)
 		{
-			for (int z = 0; z < size; z++)
-			{
-				glUniformMatrix4fv(glGetUniformLocation(program, "gWorld"), 1, GL_FALSE, glm::value_ptr(glm::translate(glm::mat4(), glm::vec3(x * 10, 0, z * 10))));						// World
+			glBindVertexArray(mModels[i].mesh->vao);	// Select VAO
 
-				glDrawElements(GL_TRIANGLES, model->numIndices, GL_UNSIGNED_INT, 0L);
-			}
+			glUniformMatrix4fv(glGetUniformLocation(program, "gWorld"), 1, GL_FALSE, glm::value_ptr((mModels[i].object->GetWorldMatrix())));						
+			glDrawElements(GL_TRIANGLES, mModels[i].mesh->numIndices, GL_UNSIGNED_INT, 0L);
 		}
 
 		SwapBuffers(hdc);
@@ -122,6 +84,16 @@ namespace VulkanLib
 	void OpenGLRenderer::Update()
 	{
 		mCamera->Update();
+
+		// Rotate the objects
+// 		for (auto& object : mModels)
+// 		{
+// 			// [NOTE] Just for testing
+// 			float speed = 5.0f;
+// 			if (object.object->GetId() == OBJECT_ID_PROP)
+// 				object.object->AddRotation(glm::radians(speed), glm::radians(speed), glm::radians(speed));
+// 		}
+
 	}
 
 	void OpenGLRenderer::AddModel(StaticModel* model)
@@ -132,6 +104,12 @@ namespace VulkanLib
 	void OpenGLRenderer::HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		mCamera->HandleMessages(hWnd, uMsg, wParam, lParam);
+	}
+
+	void OpenGLRenderer::SetCamera(Camera * camera)
+	{
+		mCamera = camera;
+		mCamera->hack = -1;
 	}
 
 	GLuint OpenGLRenderer::LoadShaders(std::string vertex, std::string fragment)
@@ -205,5 +183,61 @@ namespace VulkanLib
 		hglrc = wglCreateContext(hdc);
 
 		wglMakeCurrent(hdc, hglrc);
+	}
+
+	void OpenGLRenderer::AddObject(Object * object)
+	{
+		OpenGLModel model;
+		model.object = object;
+
+		if (object->GetId() != OBJECT_ID_TERRAIN)
+		{
+			model.mesh = LoadCachedModel(object->GetModel());
+		}
+
+		mModels.push_back(model);
+	}
+	Model * OpenGLRenderer::LoadCachedModel(std::string filename)
+	{
+		// Check if the model already is loaded
+		if (mModelMap.find(filename) != mModelMap.end())
+			return mModelMap[filename];
+
+		Model* model = LoadModel((char*)filename.c_str());
+
+		glGenVertexArrays(1, &model->vao);
+		glGenBuffers(1, &model->vb);
+		glGenBuffers(1, &model->ib);
+		glGenBuffers(1, &model->nb);
+
+		if (model->texCoordArray != NULL)
+			glGenBuffers(1, &model->tb);
+
+		glBindVertexArray(model->vao);
+
+		// VBO for vertex data
+		glBindBuffer(GL_ARRAY_BUFFER, model->vb);
+		glBufferData(GL_ARRAY_BUFFER, model->numVertices * 3 * sizeof(GLfloat), model->vertexArray, GL_STATIC_DRAW);
+		glVertexAttribPointer(glGetAttribLocation(program, "InPosL"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(glGetAttribLocation(program, "InPosL"));
+
+		// VBO for normal data
+		glBindBuffer(GL_ARRAY_BUFFER, model->nb);
+		glBufferData(GL_ARRAY_BUFFER, model->numVertices * 3 * sizeof(GLfloat), model->normalArray, GL_STATIC_DRAW);
+		glVertexAttribPointer(glGetAttribLocation(program, "InNormalL"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(glGetAttribLocation(program, "InNormalL"));
+
+		// VBO for vertex data
+		glBindBuffer(GL_ARRAY_BUFFER, model->tb);
+		glBufferData(GL_ARRAY_BUFFER, model->numVertices * 2 * sizeof(GLfloat), model->texCoordArray, GL_STATIC_DRAW);
+		glVertexAttribPointer(glGetAttribLocation(program, "InTex"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(glGetAttribLocation(program, "InTex"));
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->ib);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->numIndices*sizeof(GLuint), model->indexArray, GL_STATIC_DRAW);
+
+		mModelMap[filename] = model;
+
+		return model;
 	}
 }

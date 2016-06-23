@@ -1,4 +1,5 @@
 #include "Timer.h"
+#include <fstream>
 
 namespace VulkanLib
 {
@@ -20,7 +21,9 @@ namespace VulkanLib
 		{
 			mTimer -= 1.0f;
 		}
+
 		mFpsTimer += (float)tDiff;
+		mLifetimeTimer += (float)tDiff;
 
 		// Increment frameCounter for 1 second, then update the FPS
 		if (mFpsTimer > 1000.0f)
@@ -28,6 +31,9 @@ namespace VulkanLib
 			mFramesPerSecond = mFrameCounter;
 			mFpsTimer = 0.0f;
 			mFrameCounter = 0;
+
+			// Add FPS to the log
+			mFpsLog.push_back(mFramesPerSecond);
 
 			return mFramesPerSecond;
 		}
@@ -43,5 +49,22 @@ namespace VulkanLib
 	float Timer::GetElapsedTime()
 	{
 		return mFpsTimer;
+	}
+	void Timer::PrintLog(std::string filename)
+	{
+		std::ofstream fout(filename);
+
+		fout << "Capture time: " << mLifetimeTimer / 1000.0f << " seconds" << std::endl;
+
+		float sum = 0.0f;
+		for (int i = 0; i < mFpsLog.size(); i++)
+		{
+			fout << mFpsLog[i] << std::endl;
+			sum += mFpsLog[i];
+		}
+
+		fout << "Average FPS: " << sum / mFpsLog.size() << std::endl;
+
+		fout.close();
 	}
 }	// VulkanLib namespace

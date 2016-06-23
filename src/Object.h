@@ -1,8 +1,18 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
+#include <string>
 
 using namespace glm;
+
+// Temporary defines to not rotate the sky sphere and terrain
+#define OBJECT_ID_SKY 1
+#define OBJECT_ID_TERRAIN 2
+#define OBJECT_ID_PROP 3
+
+enum PipelineEnum {
+	TEXTURED, COLORED, STARSPHERE
+};
 
 namespace VulkanLib
 {
@@ -14,7 +24,7 @@ namespace VulkanLib
 		Object(vec3 position);
 		~Object();
 
-		void SetModel(StaticModel* model);
+		void SetModel(std::string modelSource);
 		void SetPosition(vec3 position);
 		void SetRotation(vec3 rotation);
 		void SetScale(vec3 scale);
@@ -23,10 +33,10 @@ namespace VulkanLib
 	
 		void AddRotation(float x, float y, float z);
 
-		void SetPipeline(VkPipeline pipeline);
+		void SetPipeline(PipelineEnum pipeline);
 
 
-		StaticModel* GetModel();
+		std::string GetModel();
 		vec3 GetPosition();
 		vec3 GetRotation();
 		vec3 GetScale();
@@ -34,11 +44,12 @@ namespace VulkanLib
 		mat4 GetWorldMatrix();
 		int GetId();
 
-		VkPipeline GetPipeline();
+		PipelineEnum GetPipeline();
 	private:
 		void RebuildWorldMatrix();
 
-		StaticModel* mModel;
+	//	StaticModel* mModel;
+		std::string mModelSource;
 		mat4 mWorld;
 		vec3 mPosition;
 		vec3 mRotation;
@@ -46,6 +57,6 @@ namespace VulkanLib
 		vec3 mColor;
 		int mId; 
 
-		VkPipeline mPipeline;		// Points to a pipeline object stored somewhere else
+		PipelineEnum mPipeline;		
 	};
 }	// VulkanLib namespace

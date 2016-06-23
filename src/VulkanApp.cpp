@@ -15,11 +15,6 @@
 #define VERTEX_BUFFER_BIND_ID 0
 #define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
 
-// Temporary defines to not rotate the sky sphere and terrain
-#define OBJECT_ID_SKY 1
-#define OBJECT_ID_TERRAIN 2
-#define OBJECT_ID_PROP 3
-
 #define NUM_OBJECTS 10 // 64 * 4 * 4 * 2
 
 namespace VulkanLib
@@ -27,6 +22,7 @@ namespace VulkanLib
 	VulkanApp::VulkanApp() : VulkanBase(VULKAN_ENABLE_VALIDATION)
 	{
 		srand(time(NULL));
+		mCamera = nullptr;
 	}
 
 	VulkanApp::~VulkanApp()
@@ -44,14 +40,14 @@ namespace VulkanLib
 		vkDestroyPipeline(mDevice, mPipelines.starsphere, nullptr);
 
 		// The model loader is responsible for cleaning up the model data
-		mModelLoader.CleanupModels(mDevice);
+		//mModelLoader.CleanupModels(mDevice);
 
 		// Free the testing texture
 		mTextureLoader->destroyTexture(mTestTexture);
 		mTextureLoader->destroyTexture(mTerrainTexture);
 
-		for (int i = 0; i < mObjects.size(); i++) {
-			delete mObjects[i];
+		for (int i = 0; i < mModels.size(); i++) {
+			delete mModels[i].object;
 		}
 
 		// Cleanup the multithreading memory
@@ -63,7 +59,7 @@ namespace VulkanLib
 
 			for (int i = 0; i < mThreadData[t].threadObjects.size(); i++)
 			{
-				delete mThreadData[t].threadObjects[i];
+				delete mThreadData[t].threadObjects[i].object;
 			}
 		}
 	}
@@ -80,7 +76,7 @@ namespace VulkanLib
 		PrepareUniformBuffers();
 		SetupDescriptorPool();
 		
-		SetupMultithreading();				// Custom
+		//SetupMultithreading();				// Custom
 
 
 		SetupDescriptorSet();
@@ -116,83 +112,41 @@ namespace VulkanLib
 		//system("cls");
 	}
 
+	void VulkanApp::SetCamera(Camera * camera)
+	{
+		mCamera = camera;
+	}
+
+	void VulkanApp::AddModel(VulkanModel model)
+	{
+		//mModels.push_back(model);
+
+		mThreadData[mNextThreadId].threadObjects.push_back(model);
+
+		mNextThreadId++;
+
+		if (mNextThreadId >= mNumThreads)
+			mNextThreadId = 0;
+	}
+
 	void VulkanApp::LoadModels()
 	{
-		// Create the camera
-		mCamera = new Camera(glm::vec3(500, 1300, 500), 60.0f, (float)GetWindowWidth() / (float)GetWindowHeight(), 0.1f, 25600.0f);
-		mCamera->LookAt(glm::vec3(0, 0, 0));
-
-		// Load the starsphere
-		Object* sphere = new Object(glm::vec3(0, 0, 0));
-		sphere->SetModel(mModelLoader.LoadModel(this, "data/models/sphere.obj"));
-		sphere->SetScale(glm::vec3(100));
-		sphere->SetPipeline(mPipelines.starsphere);
-		sphere->SetId(OBJECT_ID_SKY);
-		mObjects.push_back(sphere);
-
 		// Load a random testing texture
 		mTextureLoader->loadTexture("data/textures/crate_bc3.dds", VK_FORMAT_BC3_UNORM_BLOCK, &mTestTexture);
 		mTextureLoader->loadTexture("data/textures/bricks.dds", VK_FORMAT_BC3_UNORM_BLOCK, &mTerrainTexture);
-
-		Object* terrain = new Object(glm::vec3(-1000, 0, -1000));
-		terrain->SetModel(mModelLoader.GenerateTerrain(this, "data/textures/fft-terrain.tga"));
-		terrain->SetPipeline(mPipelines.colored);
-		terrain->SetScale(glm::vec3(10, 10, 10));
-		terrain->SetColor(glm::vec3(0.0, 0.9, 0.0));
-		terrain->SetId(OBJECT_ID_TERRAIN);
-		mObjects.push_back(terrain);
-
-		//
-		// Single threaded
-		//
-
-		// Generate some positions
-		/*int size = 6;
-		for (int x = 0; x < size; x++)
-		{
-			for (int y = 0; y < size; y++)
-			{
-				for (int z = 0; z < size; z++)
-				{
-					Object* object = new Object(glm::vec3(x * 150, -100 - y * 150, z * 150));
-					object->SetScale(glm::vec3((rand() % 20) / 10.0f));
-					object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
-					object->SetId(OBJECT_ID_PROP);
-
-					if (rand() % 2 == 0) {
-						object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
-						object->SetRotation(glm::vec3(180, 0, 0));
-						object->SetPipeline(mPipelines.colored);
-					}
-					else {
-						object->SetModel(mModelLoader.LoadModel(this, "data/models/box.obj"));
-						object->SetPipeline(mPipelines.textured);
-						object->SetScale(glm::vec3(4.0f));
-					}
-
-					mObjects.push_back(object);
-				}
-			}
-		}*/
-
-		// 
-		// Multi threaded
-		//
-
-		// TODO: Needs setup the binding descriptions
 	}
 
-	void VulkanApp::SetupMultithreading()
+	void VulkanApp::SetupMultithreading(int numThreads)
 	{
 		// Get # of available threads
 		mNumThreads = std::thread::hardware_concurrency();
 
-		mNumThreads = 1;
+		mNumThreads = numThreads;
 
 		mThreadData.resize(mNumThreads);
 		mThreadPool.setThreadCount(mNumThreads);
 
-		mNumObjects = 10000; // [NOTE][TODO] * 2 more crashes the computer!!
+		mNumObjects = 2048; // [NOTE][TODO] * 2 more crashes the computer!!
 
 		// Prepare each thread data
 		for (int t = 0; t < mNumThreads; t++)
@@ -257,7 +211,7 @@ namespace VulkanLib
 			{
 				for (int z = 0; z < sqrt(objectsPerThread); z++)
 				{
-					Object* object = new Object(glm::vec3(x * 150, -250 - t * 150, z * 150));
+					Object* object = new Object(glm::vec3(x * 150, 250 - t * 150, z * 150));
 
 					if(t == 0)
 						object->SetColor(glm::vec3(1.0f, 1.0f, 1.0f));
@@ -268,14 +222,14 @@ namespace VulkanLib
 					else if (t == 3)
 						object->SetColor(glm::vec3(0.0f, 0.0f, 1.0f));
 
-					object->SetId(OBJECT_ID_PROP);
+				/*	object->SetId(OBJECT_ID_PROP);
 					//object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
 					object->SetModel(mModelLoader.LoadModel(this, "data/models/Crate.obj"));
 					object->SetScale(vec3(15, 15, 15));
 					object->SetRotation(glm::vec3(180, 0, 0));
 					object->SetPipeline(mPipelines.textured);
 
-					mThreadData[t].threadObjects.push_back(object);
+					mThreadData[t].threadObjects.push_back(object);*/
 				}
 			}
 		}
@@ -730,12 +684,12 @@ namespace VulkanLib
 
 		// Bind triangle vertices
 		VkDeviceSize offsets[1] = { 0 };
-		vkCmdBindVertexBuffers(mPrimaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &mObjects[0]->GetModel()->vertices.buffer, offsets);		// [NOTE][TODO] mObjects[0] extremely bad!!
-		vkCmdBindIndexBuffer(mPrimaryCommandBuffer, mObjects[0]->GetModel()->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindVertexBuffers(mPrimaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &mModels[0].mesh->vertices.buffer, offsets);		// [NOTE][TODO] mObjects[0] extremely bad!!
+		vkCmdBindIndexBuffer(mPrimaryCommandBuffer, mModels[0].mesh->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 		// Draw indexed triangle	
 		vkCmdSetLineWidth(mPrimaryCommandBuffer, 1.0f);
-		vkCmdDrawIndexed(mPrimaryCommandBuffer, mObjects[0]->GetModel()->GetNumIndices(), NUM_OBJECTS, 0, 0, 0);
+		vkCmdDrawIndexed(mPrimaryCommandBuffer, mModels[0].mesh->GetNumIndices(), NUM_OBJECTS, 0, 0, 0);
 
 		// End command buffer recording & the render pass
 		vkCmdEndRenderPass(mPrimaryCommandBuffer);
@@ -799,27 +753,27 @@ namespace VulkanLib
 		//
 		// Testing push constant rendering with different matrices
 		//
-		for (auto& object : mObjects)
+		for (auto& object : mModels)
 		{
 			// Bind the rendering pipeline (including the shaders)
-			vkCmdBindPipeline(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object->GetPipeline());
+			vkCmdBindPipeline(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object.pipeline);
 
 			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
 			vkCmdBindDescriptorSets(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet, 0, NULL);
 
 			// Push the world matrix constant
-			mPushConstants.world = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
-			mPushConstants.color = object->GetColor();
+			mPushConstants.world = object.object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+			mPushConstants.color = object.object->GetColor();
 			vkCmdPushConstants(mSecondaryCommandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &mPushConstants);
 		
 			// Bind triangle vertices
 			VkDeviceSize offsets[1] = { 0 };
-			vkCmdBindVertexBuffers(mSecondaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &object->GetModel()->vertices.buffer, offsets);		// [TODO] The renderer should group the same object models together
-			vkCmdBindIndexBuffer(mSecondaryCommandBuffer, object->GetModel()->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindVertexBuffers(mSecondaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &object.mesh->vertices.buffer, offsets);		// [TODO] The renderer should group the same object models together
+			vkCmdBindIndexBuffer(mSecondaryCommandBuffer, object.mesh->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 			// Draw indexed triangle	
 			vkCmdSetLineWidth(mSecondaryCommandBuffer, 1.0f);
-			vkCmdDrawIndexed(mSecondaryCommandBuffer, object->GetModel()->GetNumIndices(), 1, 0, 0, 0);
+			vkCmdDrawIndexed(mSecondaryCommandBuffer, object.mesh->GetNumIndices(), 1, 0, 0, 0);
 		}
 
 		// End secondary command buffer
@@ -879,25 +833,25 @@ namespace VulkanLib
 		for (auto& object : objects)
 		{
 			// Bind the rendering pipeline (including the shaders)
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object->GetPipeline());
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object.pipeline);
 
 			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &thread->descriptorSet, 0, NULL);
 
 			// Push the world matrix constant
-			thread->pushConstants.world = object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
-			thread->pushConstants.color = object->GetColor();
+			thread->pushConstants.world = object.object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+			thread->pushConstants.color = object.object->GetColor();
 			vkCmdPushConstants(commandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &thread->pushConstants);
 
 			// Bind triangle vertices
 			VkDeviceSize offsets[1] = { 0 };
-			VkBuffer buffer = object->GetModel()->vertices.buffer;
+			VkBuffer buffer = object.mesh->vertices.buffer;
 			vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &buffer, offsets);		// [TODO] The renderer should group the same object models together
-			vkCmdBindIndexBuffer(commandBuffer, object->GetModel()->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, object.mesh->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 			// Draw indexed triangle	
 			vkCmdSetLineWidth(commandBuffer, 1.0f);
-			vkCmdDrawIndexed(commandBuffer, object->GetModel()->GetNumIndices(), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, object.mesh->GetNumIndices(), 1, 0, 0, 0);
 		}
 
 		// End secondary command buffer
@@ -990,13 +944,13 @@ namespace VulkanLib
 	void VulkanApp::Update()
 	{
 		// Rotate the objects
-		for (auto& object : mObjects)
-		{
-			// [NOTE] Just for testing
-			float speed = 5.0f;
-			if(object->GetId() == OBJECT_ID_PROP)
-				object->AddRotation(glm::radians(speed), glm::radians(speed), glm::radians(speed));
-		}
+// 		for (auto& object : mModels)
+// 		{
+// 			// [NOTE] Just for testing
+// 			float speed = 5.0f;
+// 			if(object.object->GetId() == OBJECT_ID_PROP)
+// 				object.object->AddRotation(glm::radians(speed), glm::radians(speed), glm::radians(speed));
+// 		}
 	}
 
 	void VulkanApp::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
