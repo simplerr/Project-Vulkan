@@ -61,11 +61,12 @@ int main(const int argc, const char *argv[])
 	VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
 	//VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
 
+	renderer->SetupMultithreading(1);
 
 	//renderer->AddModel(new VulkanLib::StaticModel());
 
 	// Create the camera
-	VulkanLib::Camera* camera = new VulkanLib::Camera(glm::vec3(500, -1300, 500), 60.0f, (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 25600.0f);
+	VulkanLib::Camera* camera = new VulkanLib::Camera(glm::vec3(500, 1300, 500), 60.0f, (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 25600.0f);
 	camera->LookAt(glm::vec3(0, 0, 0));
 	renderer->SetCamera(camera);
 
@@ -77,13 +78,13 @@ int main(const int argc, const char *argv[])
 	sphere->SetId(OBJECT_ID_SKY);
 	renderer->AddObject(sphere);
 
-// 	Object* terrain = new Object(glm::vec3(-1000, 0, -1000));
-// 	terrain->SetModel("data/textures/fft-terrain.tga");
-// 	terrain->SetPipeline(PipelineEnum::COLORED);
-// 	terrain->SetScale(glm::vec3(10, 10, 10));
-// 	terrain->SetColor(glm::vec3(0.0, 0.9, 0.0));
-// 	terrain->SetId(OBJECT_ID_TERRAIN);
-// 	renderer->AddObject(terrain);
+ 	Object* terrain = new Object(glm::vec3(-1000, 0, -1000));
+ 	terrain->SetModel("data/textures/fft-terrain.tga");
+ 	terrain->SetPipeline(PipelineEnum::COLORED);
+ 	terrain->SetScale(glm::vec3(10, 10, 10));
+ 	terrain->SetColor(glm::vec3(0.0, 0.9, 0.0));
+ 	terrain->SetId(OBJECT_ID_TERRAIN);
+ 	renderer->AddObject(terrain);
 
 	// Generate some positions
 	int size = 6;

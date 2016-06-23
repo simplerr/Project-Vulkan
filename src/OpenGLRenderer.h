@@ -22,7 +22,7 @@ namespace VulkanLib
 	public:
 		OpenGLRenderer(Window* window);
 		virtual void Cleanup();
-		virtual void SetNumThreads();
+		virtual void SetupMultithreading(int numThreads);
 		virtual void Render();
 		virtual void Update();
 

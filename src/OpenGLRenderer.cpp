@@ -63,7 +63,7 @@ namespace VulkanLib
 		delete mCamera;
 	}
 
-	void OpenGLRenderer::SetNumThreads()
+	void OpenGLRenderer::SetupMultithreading(int numThreads)
 	{
 
 	}

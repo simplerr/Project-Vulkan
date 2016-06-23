@@ -35,5 +35,5 @@ void main()
 	color += specular;	
 
 	OutFragColor = vec4(color, 1.0f);
-	OutFragColor = texture(TexUnit, InTex);
+	//OutFragColor = texture(TexUnit, InTex);
 }

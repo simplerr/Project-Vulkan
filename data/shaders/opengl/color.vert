@@ -18,8 +18,8 @@ uniform vec3 gLightDir;
 layout (location = 0) out vec3 OutNormalW;		// Normal in world coordinate system
 layout (location = 1) out vec3 OutColor;
 layout (location = 2) out vec2 OutTex;
-layout (location = 2) out vec3 OutEyeDirW;		// Direction to the eye in world coordinate system
-layout (location = 3) out vec3 OutLightDirW;
+layout (location = 3) out vec3 OutEyeDirW;		// Direction to the eye in world coordinate system
+layout (location = 4) out vec3 OutLightDirW;
 
 // Push constants
 void main() 

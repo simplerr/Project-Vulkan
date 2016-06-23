@@ -11,6 +11,7 @@ namespace VulkanLib
 
 		mVulkanApp->InitSwapchain(window);
 		mVulkanApp->Prepare();
+		
 		//mVulkanApp.RenderLoop();
 	}
 
@@ -20,9 +21,9 @@ namespace VulkanLib
 		mModelLoader.CleanupModels(mVulkanApp->GetDevice());
 	}
 
-	void VulkanRenderer::SetNumThreads()
+	void VulkanRenderer::SetupMultithreading(int numThreads)
 	{
-
+		mVulkanApp->SetupMultithreading(numThreads);
 	}
 
 	void VulkanRenderer::Render()

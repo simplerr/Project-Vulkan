@@ -66,21 +66,21 @@ namespace VulkanLib
 		vec3 color;
 	};
 
-	struct ThreadData {
-		PushConstantBlock pushConstants;
-		VkCommandBuffer commandBuffer;
-		VkCommandPool commandPool;
-		VkDescriptorSet descriptorSet;			// Testing
-		VkDescriptorPool descriptorPool;
-		std::vector<Object*> threadObjects;
-	};
-
 	struct VulkanModel
 	{
 		Object* object;
 		StaticModel* mesh;
 		VkPipeline pipeline;
 
+	};
+
+	struct ThreadData {
+		PushConstantBlock pushConstants;
+		VkCommandBuffer commandBuffer;
+		VkCommandPool commandPool;
+		VkDescriptorSet descriptorSet;			// Testing
+		VkDescriptorPool descriptorPool;
+		std::vector<VulkanModel> threadObjects;
 	};
 
 	class VulkanApp : public VulkanBase
@@ -100,7 +100,7 @@ namespace VulkanLib
 		void PrepareCommandBuffers();		// Custom
 		void SetupVertexDescriptions();
 
-		void SetupMultithreading();			// Custom
+		void SetupMultithreading(int numThreads);			// Custom
 
 		void BuildInstancingCommandBuffer(VkFramebuffer frameBuffer);
 		void RecordRenderingCommandBuffer(VkFramebuffer frameBuffer);
@@ -162,5 +162,7 @@ namespace VulkanLib
 		ThreadPool						mThreadPool;
 
 		std::vector<VulkanModel>		mModels;
+
+		int								mNextThreadId = 0;	// The thread to add new objects to
 	};
 }	// VulkanLib namespace
