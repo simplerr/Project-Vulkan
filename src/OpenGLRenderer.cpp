@@ -24,6 +24,7 @@ namespace VulkanLib
 		glewInit();
 
 		// Create the camera
+		// Create the camera
 		mCamera = new Camera(glm::vec3(-11, -13, 7), 60.0f, (float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 0.1f, 25600.0f);
 		mCamera->LookAt(glm::vec3(0, 1, 0));
 		mCamera->hack = -1;
@@ -56,7 +57,7 @@ namespace VulkanLib
 		glGenBuffers(1, &bunnyIndexBufferObjID);		// color
 		glGenBuffers(1, &bunnyNormalBufferObjID);		// color
 
-		// VBO for vertex data
+														// VBO for vertex data
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjID);
 		glBufferData(GL_ARRAY_BUFFER, model->numVertices * 3 * sizeof(GLfloat), model->vertexArray, GL_STATIC_DRAW);
 		glVertexAttribPointer(glGetAttribLocation(program, "InPosL"), 3, GL_FLOAT, GL_FALSE, 0, 0);
