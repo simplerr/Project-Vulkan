@@ -1,6 +1,7 @@
 #pragma once
 #include <chrono>
 #include <cstdint>
+#include <vector>
 
 namespace VulkanLib
 {
@@ -12,6 +13,8 @@ namespace VulkanLib
 
 		uint32_t	GetFPS();
 		float		GetElapsedTime();
+
+		void		PrintLog(std::string filename);
 	private:
 		std::chrono::high_resolution_clock::time_point mFrameBegin;
 
@@ -20,6 +23,9 @@ namespace VulkanLib
 		float		mTimer = 0.0f;			// Defines a frame rate independent timer value clamped from -1.0...1.0
 		float		mTimerSpeed = 0.25f;	// Multiplier for speeding up (or slowing down) the global timer
 		float		mFpsTimer = 0.0f;		// FPS timer (one second interval)
+		float		mLifetimeTimer = 0.0f;
 		uint32_t	mFramesPerSecond;
+
+		std::vector<float> mFpsLog;
 	};
 }	// VulkanLib namespace

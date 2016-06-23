@@ -48,7 +48,7 @@ namespace VulkanLib
 
 		program = LoadShaders("data/shaders/opengl/color.vert", "data/shaders/opengl/color.frag");
 
-		LoadTGATextureSimple("data/textures/grass.tga", &mTestTexture);
+		LoadTGATextureSimple("data/textures/crate_2.tga", &mTestTexture);
 	}
 
 	void OpenGLRenderer::Cleanup()

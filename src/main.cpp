@@ -58,8 +58,8 @@ int main(const int argc, const char *argv[])
 #endif
 
 	// Create the renderer	
-	//VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
-	VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
+	VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
+	//VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
 
 
 	//renderer->AddModel(new VulkanLib::StaticModel());
@@ -107,7 +107,7 @@ int main(const int argc, const char *argv[])
 				else {
 					object->SetModel("data/models/Crate.obj");
 					object->SetPipeline(PipelineEnum::TEXTURED);
-					object->SetScale(glm::vec3(4.0f));
+					object->SetScale(glm::vec3(15.0f));
 				}
 
 				renderer->AddObject(object);
