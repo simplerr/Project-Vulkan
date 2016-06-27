@@ -14,7 +14,7 @@ namespace VulkanLib
 		uint32_t	GetFPS();
 		float		GetElapsedTime();
 
-		void		PrintLog(std::string filename);
+		void		PrintLog(std::ofstream& fout);
 	private:
 		std::chrono::high_resolution_clock::time_point mFrameBegin;
 

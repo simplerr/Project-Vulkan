@@ -3,6 +3,7 @@
 #include "Window.h"
 #include <string>
 #include <sstream>
+#include <fstream>
 
 namespace VulkanLib
 {
@@ -15,7 +16,19 @@ namespace VulkanLib
 
 	Game::~Game()
 	{
-		mTimer.PrintLog("benchmark.txt");
+		std::ofstream fout;
+		fout.open("benchmark.txt", std::fstream::out | std::ofstream::app);
+
+		// Print scene information
+		fout << mRenderer->GetName() << "[" << mRenderer->GetNumVertices() << " vertices] [" << mRenderer->GetNumTriangles() << " triangles] [" << mRenderer->GetNumObjects() << " objects]" << std::endl;
+		fout << "Threads: " << mRenderer->GetNumThreads() << std::endl;
+
+		// Print benchmark to file
+		mTimer.PrintLog(fout);
+
+		fout << "-----------------------------------------------" << std::endl << std::endl;
+
+		fout.close();
 	}
 
 #if defined(_WIN32)
@@ -51,8 +64,9 @@ namespace VulkanLib
 			if (fps != -1)
 			{
 				std::stringstream ss;
-				ss << "Project Vulkan [" << fps << "] fps [" << mRenderer->GetNumVertices() << " vertices] [" << mRenderer->GetNumTriangles() << " triangles] [" << mRenderer->GetNumObjects() << " objects]";
-				std::string windowTitle = ss.str();//"Project Vulkan: " + std::to_string(fps) + " fps [" + mRenderer->GetNumVertices() + " vertices] [" + mRenderer->GetNumTriangles() + " triangles] [" + mRenderer->GetNumObjects() + " objects]";
+				ss << "Project Vulkan: " << mRenderer->GetName() << " [" << fps << " fps] [" << mRenderer->GetNumVertices() << " vertices] [" << mRenderer->GetNumTriangles() << " triangles] [" << mRenderer->GetNumObjects() << " objects]";
+				ss << " [" << mRenderer->GetNumThreads() << " threads]";
+				std::string windowTitle = ss.str();
 				SetWindowText(mWindow->GetHwnd(), windowTitle.c_str());
 			}
 		}

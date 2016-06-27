@@ -259,4 +259,14 @@ namespace VulkanLib
 		//return mObjects.size();
 		return mModels.size();
 	}
+
+	std::string OpenGLRenderer::GetName()
+	{
+		return "OpenGL renderer 1.0";
+	}
+
+	int OpenGLRenderer::GetNumThreads()
+	{
+		return 1; // OpenGL allways one thread
+	}
 }

@@ -28,6 +28,8 @@ namespace VulkanLib
 		int GetNumVertices();
 		int GetNumTriangles();
 		int GetNumObjects();
+		std::string GetName();
+		int GetNumThreads();
 
 	private:
 		VulkanApp* mVulkanApp;

@@ -71,12 +71,12 @@ int main(const int argc, const char *argv[])
 	renderer->SetCamera(camera);
 
 	// Add starsphere object
-	Object* sphere = new Object(glm::vec3(0, 0, 0));
+	/*Object* sphere = new Object(glm::vec3(0, 0, 0));
 	sphere->SetModel("data/models/sphere.obj");
 	sphere->SetScale(glm::vec3(100));
 	sphere->SetPipeline(PipelineEnum::STARSPHERE);
 	sphere->SetId(OBJECT_ID_SKY);
-	renderer->AddObject(sphere);
+	renderer->AddObject(sphere);*/
 
  	/*Object* terrain = new Object(glm::vec3(-1000, 0, -1000));
  	terrain->SetModel("data/textures/fft-terrain.tga");
@@ -100,13 +100,13 @@ int main(const int argc, const char *argv[])
 				object->SetId(OBJECT_ID_PROP);
 
 				if (rand() % 2 == 0) {
-					object->SetModel("data/models/Torus.obj");
+					object->SetModel("data/models/Cube.obj");
 					object->SetRotation(glm::vec3(180, 0, 0));
 					object->SetPipeline(PipelineEnum::COLORED);
 					//object->SetScale(glm::vec3(500));
 				}
 				else {
-					object->SetModel("data/models/Torus.obj");
+					object->SetModel("data/models/Cube.obj");
 					object->SetPipeline(PipelineEnum::COLORED);
 					object->SetScale(glm::vec3(5.0f));
 				}
@@ -122,8 +122,8 @@ int main(const int argc, const char *argv[])
 	// Game loop
 	gGame->RenderLoop();
 
-	delete renderer;
 	delete gGame;
+	delete renderer;
 
 	return 0;
 }

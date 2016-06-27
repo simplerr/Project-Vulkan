@@ -89,4 +89,14 @@ namespace VulkanLib
 	{
 		return mNumObjects;
 	}
+
+	std::string VulkanRenderer::GetName()
+	{
+		return "Vulkan renderer 1.0";
+	}
+
+	int VulkanRenderer::GetNumThreads()
+	{
+		return mVulkanApp->mNumThreads; // OpenGL allways one thread
+	}
 }

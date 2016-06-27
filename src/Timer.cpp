@@ -50,21 +50,17 @@ namespace VulkanLib
 	{
 		return mFpsTimer;
 	}
-	void Timer::PrintLog(std::string filename)
+	void Timer::PrintLog(std::ofstream& fout)
 	{
-		std::ofstream fout(filename);
-
 		fout << "Capture time: " << mLifetimeTimer / 1000.0f << " seconds" << std::endl;
 
 		float sum = 0.0f;
 		for (int i = 0; i < mFpsLog.size(); i++)
 		{
-			fout << mFpsLog[i] << std::endl;
+			//fout << mFpsLog[i] << std::endl;
 			sum += mFpsLog[i];
 		}
 
 		fout << "Average FPS: " << sum / mFpsLog.size() << std::endl;
-
-		fout.close();
 	}
 }	// VulkanLib namespace

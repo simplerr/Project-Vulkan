@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include "Platform.h"
 
 namespace VulkanLib
@@ -28,6 +29,8 @@ namespace VulkanLib
 		virtual int GetNumVertices() = 0;
 		virtual int GetNumTriangles() = 0;
 		virtual int GetNumObjects() = 0;
+		virtual std::string GetName() = 0;
+		virtual int GetNumThreads() = 0;
 	private:
 		
 	};
