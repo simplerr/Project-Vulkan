@@ -63,4 +63,10 @@ namespace VulkanLib
 
 		fout << "Average FPS: " << sum / mFpsLog.size() << std::endl;
 	}
+
+	void Timer::ResetLifetimeCounter()
+	{
+		mLifetimeTimer = 0;
+		mFpsLog.clear();
+	}
 }	// VulkanLib namespace

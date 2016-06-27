@@ -51,7 +51,7 @@ namespace VulkanLib
 		mRenderer->SetCamera(mCamera);
 
 		// Add objects
-		int size = 10;
+		int size = 12;
 		for (int x = 0; x < size; x++)
 		{
 			for (int y = 0; y < size; y++)
@@ -117,6 +117,7 @@ namespace VulkanLib
 			if (mRenderer != nullptr && QueryRenderInitKeys())
 			{
 				PrintBenchmark();
+				mTimer.ResetLifetimeCounter();
 				delete mRenderer;
 			}
 

@@ -15,6 +15,7 @@ namespace VulkanLib
 		float		GetElapsedTime();
 
 		void		PrintLog(std::ofstream& fout);
+		void		ResetLifetimeCounter();
 	private:
 		std::chrono::high_resolution_clock::time_point mFrameBegin;
 
