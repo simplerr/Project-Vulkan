@@ -22,8 +22,11 @@ namespace VulkanLib
 		void RenderLoop();
 
 		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+		void PrintBenchmark();
 	private:
 		void InitScene();	// Gets called when the Renderer is created
+		bool QueryRenderInitKeys();
 
 		Renderer* mRenderer;
 		Window* mWindow;

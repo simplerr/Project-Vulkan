@@ -26,6 +26,13 @@ namespace VulkanLib
 
 	Game::~Game()
 	{
+		PrintBenchmark();
+
+		delete mRenderer;
+	}
+
+	void Game::PrintBenchmark()
+	{
 		std::ofstream fout;
 		fout.open("benchmark.txt", std::fstream::out | std::ofstream::app);
 
@@ -39,8 +46,6 @@ namespace VulkanLib
 		fout << "-----------------------------------------------" << std::endl << std::endl;
 
 		fout.close();
-
-		delete mRenderer;
 	}
 
 	void Game::InitScene()
@@ -122,24 +127,34 @@ namespace VulkanLib
 					SetWindowText(mWindow->GetHwnd(), windowTitle.c_str());
 				}
 			}
-			else if (mRenderer == nullptr)
-			{
-				// Let the user choose the renderer and # threads
-				if (GetAsyncKeyState('1'))
-					mRenderer = new VulkanLib::VulkanRenderer(mWindow, 1);
-				else if (GetAsyncKeyState('2'))
-					mRenderer = new VulkanLib::VulkanRenderer(mWindow, 2);
-				else if (GetAsyncKeyState('3'))
-					mRenderer = new VulkanLib::VulkanRenderer(mWindow, 3);
-				else if (GetAsyncKeyState('4'))
-					mRenderer = new VulkanLib::VulkanRenderer(mWindow, 4);
-				else if (GetAsyncKeyState('5'))
-					mRenderer = new VulkanLib::OpenGLRenderer(mWindow);
 
-				// Init the scene [NOTE][HACK] 
-				if (mRenderer != nullptr)
-					InitScene();
+			if (mRenderer != nullptr && QueryRenderInitKeys())
+			{
+				PrintBenchmark();
+				delete mRenderer;
 			}
+
+			// Let the user choose the renderer and # threads
+			if (GetAsyncKeyState('1')) {
+				mRenderer = new VulkanLib::VulkanRenderer(mWindow, 1);
+				InitScene();
+			}
+			else if (GetAsyncKeyState('2')) {
+				mRenderer = new VulkanLib::VulkanRenderer(mWindow, 2);
+				InitScene();
+			}
+			else if (GetAsyncKeyState('3')) {
+				mRenderer = new VulkanLib::VulkanRenderer(mWindow, 3);
+				InitScene();
+			}
+			else if (GetAsyncKeyState('4')) {
+				mRenderer = new VulkanLib::VulkanRenderer(mWindow, 4);
+				InitScene();
+			}
+			else if (GetAsyncKeyState('5')) {
+				mRenderer = new VulkanLib::OpenGLRenderer(mWindow);
+				InitScene();
+			}	
 		}
 	}
 #endif
@@ -156,5 +171,10 @@ namespace VulkanLib
 			PostQuitMessage(0);
 			break;
 		}
+	}
+
+	bool Game::QueryRenderInitKeys()
+	{
+		return GetAsyncKeyState('1') || GetAsyncKeyState('2') || GetAsyncKeyState('3') || GetAsyncKeyState('4') || GetAsyncKeyState('5');
 	}
 }
