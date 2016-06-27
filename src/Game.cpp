@@ -59,21 +59,12 @@ namespace VulkanLib
 				for (int z = 0; z < size; z++)
 				{
 					Object* object = new Object(glm::vec3(x * 150, -100 - y * 150, z * 150));
-					object->SetScale(glm::vec3((rand() % 20) / 10.0f));
+					object->SetModel("data/models/Crate.obj");
 					object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
 					object->SetId(OBJECT_ID_PROP);
-
-					if (rand() % 2 == 0) {
-						object->SetModel("data/models/Cube.obj");
-						object->SetRotation(glm::vec3(180, 0, 0));
-						object->SetPipeline(PipelineEnum::COLORED);
-						//object->SetScale(glm::vec3(500));
-					}
-					else {
-						object->SetModel("data/models/Cube.obj");
-						object->SetPipeline(PipelineEnum::COLORED);
-						object->SetScale(glm::vec3(5.0f));
-					}
+					object->SetRotation(glm::vec3(180, 0, 0));
+					object->SetPipeline(PipelineEnum::TEXTURED);
+					object->SetScale(glm::vec3(40.0f));
 
 					mRenderer->AddObject(object);
 				}
