@@ -17,8 +17,10 @@ namespace VulkanLib
 		mWindow = window;
 
 		// Create the camera
-		mCamera = new VulkanLib::Camera(glm::vec3(500, 1300, 500), 60.0f, (float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 0.1f, 25600.0f);
-		mCamera->LookAt(glm::vec3(0, 0, 0));
+		mCamera = new VulkanLib::Camera(glm::vec3(500, 4700, 500), 60.0f, (float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 0.1f, 25600.0f);
+		mCamera->LookAt(glm::vec3(0, 1, 0));
+
+		mPipeline = PipelineEnum::TEXTURED;
 	}
 
 	Game::~Game()
@@ -35,8 +37,9 @@ namespace VulkanLib
 		fout.open("benchmark.txt", std::fstream::out | std::ofstream::app);
 
 		// Print scene information
-		fout << mRenderer->GetName() << "[" << mRenderer->GetNumVertices() << " vertices] [" << mRenderer->GetNumTriangles() << " triangles] [" << mRenderer->GetNumObjects() << " objects]" << std::endl;
+		fout << mRenderer->GetName() << "\n[" << mRenderer->GetNumVertices() << " vertices] [" << mRenderer->GetNumTriangles() << " triangles] [" << mRenderer->GetNumObjects() << " objects]" << std::endl;
 		fout << "Threads: " << mRenderer->GetNumThreads() << std::endl;
+		fout << "Pipeline: " << GetPipelineStr() << std::endl;
 
 		// Print benchmark to file
 		mTimer.PrintLog(fout);
@@ -50,8 +53,18 @@ namespace VulkanLib
 	{
 		mRenderer->SetCamera(mCamera);
 
+		Object* object = new Object(glm::vec3(0, 0, 0));
+		object->SetModel("data/models/Crate.obj");
+		object->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
+		object->SetId(OBJECT_ID_PROP);
+		object->SetRotation(glm::vec3(180, 0, 0));
+		object->SetPipeline(mPipeline);
+		object->SetScale(glm::vec3(100.0f));
+
+		mRenderer->AddObject(object);
+
 		// Add objects
-		int size = 12;
+		int size = 13;
 		for (int x = 0; x < size; x++)
 		{
 			for (int y = 0; y < size; y++)
@@ -63,7 +76,7 @@ namespace VulkanLib
 					object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
 					object->SetId(OBJECT_ID_PROP);
 					object->SetRotation(glm::vec3(180, 0, 0));
-					object->SetPipeline(PipelineEnum::TEXTURED);
+					object->SetPipeline(mPipeline);
 					object->SetScale(glm::vec3(40.0f));
 
 					mRenderer->AddObject(object);
@@ -160,8 +173,21 @@ namespace VulkanLib
 		}
 	}
 
+	// 
+	//	Helper functions
+	//
 	bool Game::QueryRenderInitKeys()
 	{
 		return GetAsyncKeyState('1') || GetAsyncKeyState('2') || GetAsyncKeyState('3') || GetAsyncKeyState('4') || GetAsyncKeyState('5');
+	}
+
+	std::string Game::GetPipelineStr()
+	{
+		std::string pipeline = "COLORED";
+
+		if (mPipeline == PipelineEnum::TEXTURED)
+			pipeline = "TEXTURED";
+
+		return pipeline;
 	}
 }

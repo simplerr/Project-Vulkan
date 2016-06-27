@@ -80,7 +80,7 @@ void main()
 
 	//mat4 world = pushConsts.world;
 	//mat4 world = ubo.instance[gl_InstanceIndex].world;
-	gl_Position = per_frame.projection * per_frame.view * world * vec4(InPosL.xyz, 1.0);
+	gl_Position = per_frame.projection * per_frame.view * pushConsts.world * vec4(InPosL.xyz, 1.0);
 	
     vec4 PosW = pushConsts.world  * vec4(InPosL, 1.0);
     OutNormalW = mat3(pushConsts.world ) * InNormalL;

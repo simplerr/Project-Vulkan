@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform.h"
 #include "Timer.h"
+#include "Object.h"
 
 namespace VulkanLib
 {
@@ -27,6 +28,7 @@ namespace VulkanLib
 	private:
 		void InitScene();	// Gets called when the Renderer is created
 		bool QueryRenderInitKeys();
+		std::string GetPipelineStr();
 
 		Renderer* mRenderer;
 		Window* mWindow;
@@ -34,5 +36,7 @@ namespace VulkanLib
 
 		// Wrapper class for the fps counter
 		Timer mTimer;
+
+		PipelineEnum mPipeline;
 	};
 }

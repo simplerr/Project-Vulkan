@@ -66,7 +66,7 @@ namespace VulkanLib
 		glUniformMatrix4fv(glGetUniformLocation(program, "gView"), 1, GL_FALSE, glm::value_ptr(mCamera->GetView()));				// View
 		glUniformMatrix4fv(glGetUniformLocation(program, "gProjection"), 1, GL_FALSE, glm::value_ptr(mCamera->GetProjection()));	// Projection
 		glUniform3fv(glGetUniformLocation(program, "gEyePos"), 1, glm::value_ptr(mCamera->GetPosition())); 							// Eye pos
-		glUniform3fv(glGetUniformLocation(program, "gLightDir"), 1, glm::value_ptr(glm::vec3(1, 1, 0)));							// Light dir
+		glUniform3fv(glGetUniformLocation(program, "gLightDir"), 1, glm::value_ptr(glm::vec3(1, -1, 0)));							// Light dir
 
 		glBindTexture(GL_TEXTURE_2D, mTestTexture);
 
@@ -109,6 +109,7 @@ namespace VulkanLib
 	void OpenGLRenderer::SetCamera(Camera * camera)
 	{
 		mCamera = camera;
+		//mCamera->mPosition.y *= -1;
 		mCamera->hack = -1;
 	}
 

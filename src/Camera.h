@@ -36,8 +36,10 @@ namespace VulkanLib
 
 		// [NOTE][HACK] Vulkan & OpenGL have different pitch movement
 		int hack = 1;
-	private:
+
 		vec3 mPosition;
+	private:
+		
 		float mPitch;	// Vertical angle
 		float mYaw;		// Horizontal angle
 		float mFov;
