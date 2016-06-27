@@ -2,6 +2,7 @@
 #include "Renderer.h"
 #include "Window.h"
 #include <string>
+#include <sstream>
 
 namespace VulkanLib
 {
@@ -49,7 +50,9 @@ namespace VulkanLib
 			// Only display fps when 1.0s have passed
 			if (fps != -1)
 			{
-				std::string windowTitle = "Project Vulkan: " + std::to_string(fps) + " fps";
+				std::stringstream ss;
+				ss << "Project Vulkan [" << fps << "] fps [" << mRenderer->GetNumVertices() << " vertices] [" << mRenderer->GetNumTriangles() << " triangles] [" << mRenderer->GetNumObjects() << " objects]";
+				std::string windowTitle = ss.str();//"Project Vulkan: " + std::to_string(fps) + " fps [" + mRenderer->GetNumVertices() + " vertices] [" + mRenderer->GetNumTriangles() + " triangles] [" + mRenderer->GetNumObjects() + " objects]";
 				SetWindowText(mWindow->GetHwnd(), windowTitle.c_str());
 			}
 		}

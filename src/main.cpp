@@ -58,8 +58,8 @@ int main(const int argc, const char *argv[])
 #endif
 
 	// Create the renderer	
-	VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
-	//VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
+	//VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
+	VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
 
 	renderer->SetupMultithreading(1);
 
@@ -100,15 +100,15 @@ int main(const int argc, const char *argv[])
 				object->SetId(OBJECT_ID_PROP);
 
 				if (rand() % 2 == 0) {
-					object->SetModel("data/models/Crate.obj");
+					object->SetModel("data/models/Torus.obj");
 					object->SetRotation(glm::vec3(180, 0, 0));
 					object->SetPipeline(PipelineEnum::COLORED);
 					//object->SetScale(glm::vec3(500));
 				}
 				else {
-					object->SetModel("data/models/Crate.obj");
-					object->SetPipeline(PipelineEnum::TEXTURED);
-					object->SetScale(glm::vec3(15.0f));
+					object->SetModel("data/models/Torus.obj");
+					object->SetPipeline(PipelineEnum::COLORED);
+					object->SetScale(glm::vec3(5.0f));
 				}
 
 				renderer->AddObject(object);

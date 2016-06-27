@@ -24,6 +24,7 @@ layout (location = 4) out vec3 OutLightDirW;
 // Push constants
 void main() 
 {
+	OutColor = vec3(1, 0, 0);
 	OutTex = InTex;
 	gl_Position = gProjection * gView * gWorld * vec4(InPosL.xyz, 1.0);
 	
@@ -32,5 +33,5 @@ void main()
     OutLightDirW = gLightDir.xyz;
     OutEyeDirW = gEyePos - PosW.xyz;
 
-	OutColor = vec3(1, 0, 0);
+	
 }

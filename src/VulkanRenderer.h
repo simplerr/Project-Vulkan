@@ -25,14 +25,18 @@ namespace VulkanLib
 
 		virtual void AddObject(Object* object);
 
+		int GetNumVertices();
+		int GetNumTriangles();
+		int GetNumObjects();
+
 	private:
 		VulkanApp* mVulkanApp;
 		Camera* mCamera;
 		ModelLoader	mModelLoader;
 
-		std::vector<Object*> mObjects;
-		std::map<std::string, StaticModel*> mModelMap;
-
+		int mNumVertices = 0;
+		int mNumTriangles = 0;
+		int mNumObjects = 0;
 	};
 
 	

@@ -1,6 +1,7 @@
 #include "VulkanRenderer.h"
 #include "VulkanApp.h"
 #include "Object.h"
+#include "StaticModel.h"
 
 namespace VulkanLib
 {
@@ -68,5 +69,24 @@ namespace VulkanLib
 			model.pipeline = mVulkanApp->mPipelines.starsphere;
 
 		mVulkanApp->AddModel(model);
+
+		mNumVertices += model.mesh->GetNumVertics();
+		mNumTriangles += model.mesh->GetNumIndices();
+		mNumObjects++;
+	}
+
+	int VulkanRenderer::GetNumVertices()
+	{
+		return mNumVertices;
+	}
+
+	int VulkanRenderer::GetNumTriangles()
+	{
+		return mNumVertices / 3;
+	}
+
+	int VulkanRenderer::GetNumObjects()
+	{
+		return mNumObjects;
 	}
 }

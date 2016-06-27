@@ -56,11 +56,13 @@ namespace VulkanLib
 		} indices;
 
 		int GetNumIndices();
+		int GetNumVertics();
 
 		vkTools::VulkanTexture* texture;
 
 	private:
 		std::vector<Mesh> mMeshes;
 		uint32_t mIndicesCount;
+		uint32_t mVerticesCount;
 	};
 }	// VulkanLib namespace

@@ -40,6 +40,7 @@ namespace VulkanLib
 		uint32_t indexBufferSize = indexVector.size() * sizeof(uint32_t);
 
 		mIndicesCount = indexVector.size();	// NOTE maybe not smart
+		mVerticesCount = vertexVector.size();
 
 		VkMemoryRequirements memoryRequirments;
 		VkMemoryAllocateInfo memoryAllocation = {};
@@ -91,5 +92,10 @@ namespace VulkanLib
 	int StaticModel::GetNumIndices()
 	{
 		return mIndicesCount;
+	}
+
+	int StaticModel::GetNumVertics()
+	{
+		return mVerticesCount;
 	}
 }	// VulkanLib namespace

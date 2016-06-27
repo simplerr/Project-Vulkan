@@ -24,6 +24,10 @@ namespace VulkanLib
 		virtual void SetCamera(Camera* camera) = 0;
 
 		virtual void AddObject(Object* object) = 0;
+
+		virtual int GetNumVertices() = 0;
+		virtual int GetNumTriangles() = 0;
+		virtual int GetNumObjects() = 0;
 	private:
 		
 	};

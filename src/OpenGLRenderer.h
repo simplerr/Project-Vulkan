@@ -39,6 +39,10 @@ namespace VulkanLib
 		virtual void AddObject(Object* object);
 
 		Model* LoadCachedModel(std::string filename);
+
+		int GetNumVertices();
+		int GetNumTriangles();
+		int GetNumObjects();
 	private:
 		Camera* mCamera;
 		Window* mWindow;
@@ -53,5 +57,8 @@ namespace VulkanLib
 		std::map<std::string, Model*> mModelMap;
 
 		GLuint mTestTexture;
+
+		int mNumVertices = 0;
+		int mNumTriangles = 0;
 	};
 }

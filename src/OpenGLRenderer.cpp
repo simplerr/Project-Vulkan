@@ -66,7 +66,7 @@ namespace VulkanLib
 		glUniformMatrix4fv(glGetUniformLocation(program, "gView"), 1, GL_FALSE, glm::value_ptr(mCamera->GetView()));				// View
 		glUniformMatrix4fv(glGetUniformLocation(program, "gProjection"), 1, GL_FALSE, glm::value_ptr(mCamera->GetProjection()));	// Projection
 		glUniform3fv(glGetUniformLocation(program, "gEyePos"), 1, glm::value_ptr(mCamera->GetPosition())); 							// Eye pos
-		glUniform3fv(glGetUniformLocation(program, "gLightDir"), 1, glm::value_ptr(glm::vec3(1, 1, 1)));							// Light dir
+		glUniform3fv(glGetUniformLocation(program, "gLightDir"), 1, glm::value_ptr(glm::vec3(1, 1, 0)));							// Light dir
 
 		glBindTexture(GL_TEXTURE_2D, mTestTexture);
 
@@ -196,6 +196,9 @@ namespace VulkanLib
 		}
 
 		mModels.push_back(model);
+
+		mNumVertices += model.mesh->numVertices;
+		mNumTriangles += model.mesh->numVertices;
 	}
 	Model * OpenGLRenderer::LoadCachedModel(std::string filename)
 	{
@@ -239,5 +242,21 @@ namespace VulkanLib
 		mModelMap[filename] = model;
 
 		return model;
+	}
+
+	int OpenGLRenderer::GetNumVertices()
+	{
+		return mNumVertices;
+	}
+
+	int OpenGLRenderer::GetNumTriangles()
+	{
+		return mNumVertices / 3;
+	}
+
+	int OpenGLRenderer::GetNumObjects()
+	{
+		//return mObjects.size();
+		return mModels.size();
 	}
 }
