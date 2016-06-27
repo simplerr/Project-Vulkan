@@ -16,12 +16,15 @@ namespace VulkanLib
 	{
 	public:
 		Game(Renderer* renderer, Window* window);
+		Game(Window* window);
 		~Game();
-
+		
 		void RenderLoop();
 
 		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	private:
+		void InitScene();	// Gets called when the Renderer is created
+
 		Renderer* mRenderer;
 		Window* mWindow;
 

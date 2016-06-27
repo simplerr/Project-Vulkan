@@ -11,6 +11,7 @@ namespace VulkanLib
 	{
 	public:
 		VulkanRenderer(Window* window);
+		VulkanRenderer(Window* window, int numThreads);
 
 		virtual void Cleanup();
 		virtual void SetupMultithreading(int numThreads);

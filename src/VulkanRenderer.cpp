@@ -16,6 +16,15 @@ namespace VulkanLib
 		//mVulkanApp.RenderLoop();
 	}
 
+	VulkanRenderer::VulkanRenderer(Window* window, int numThreads)
+	{
+		mVulkanApp = new VulkanApp();
+
+		mVulkanApp->InitSwapchain(window);
+		mVulkanApp->Prepare();
+		mVulkanApp->SetupMultithreading(numThreads);
+	}
+
 	void VulkanRenderer::Cleanup()
 	{
 		// The model loader is responsible for cleaning up the model data

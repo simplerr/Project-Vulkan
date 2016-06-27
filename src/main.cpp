@@ -57,19 +57,6 @@ int main(const int argc, const char *argv[])
 	window.SetupWindow();
 #endif
 
-	// Create the renderer	
-	//VulkanLib::Renderer* renderer = new VulkanLib::VulkanRenderer(&window);
-	VulkanLib::Renderer* renderer = new VulkanLib::OpenGLRenderer(&window);		//
-
-	renderer->SetupMultithreading(1);
-
-	//renderer->AddModel(new VulkanLib::StaticModel());
-
-	// Create the camera
-	VulkanLib::Camera* camera = new VulkanLib::Camera(glm::vec3(500, 1300, 500), 60.0f, (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 25600.0f);
-	camera->LookAt(glm::vec3(0, 0, 0));
-	renderer->SetCamera(camera);
-
 	// Add starsphere object
 	/*Object* sphere = new Object(glm::vec3(0, 0, 0));
 	sphere->SetModel("data/models/sphere.obj");
@@ -86,44 +73,15 @@ int main(const int argc, const char *argv[])
  	terrain->SetId(OBJECT_ID_TERRAIN);
  	renderer->AddObject(terrain);*/
 
-	// Generate some positions
-	int size = 10;
-	for (int x = 0; x < size; x++)
-	{
-		for (int y = 0; y < size; y++)
-		{
-			for (int z = 0; z < size; z++)
-			{
-				Object* object = new Object(glm::vec3(x * 150, -100 - y * 150, z * 150));
-				object->SetScale(glm::vec3((rand() % 20) / 10.0f));
-				object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
-				object->SetId(OBJECT_ID_PROP);
-
-				if (rand() % 2 == 0) {
-					object->SetModel("data/models/Cube.obj");
-					object->SetRotation(glm::vec3(180, 0, 0));
-					object->SetPipeline(PipelineEnum::COLORED);
-					//object->SetScale(glm::vec3(500));
-				}
-				else {
-					object->SetModel("data/models/Cube.obj");
-					object->SetPipeline(PipelineEnum::COLORED);
-					object->SetScale(glm::vec3(5.0f));
-				}
-
-				renderer->AddObject(object);
-			}
-		}
-	}
-
 	// Create the game
-	gGame = new VulkanLib::Game(renderer, &window);
+	//gGame = new VulkanLib::Game(renderer, &window);
+	gGame = new VulkanLib::Game(&window);
 
 	// Game loop
 	gGame->RenderLoop();
 
 	delete gGame;
-	delete renderer;
+	//delete renderer;
 
 	return 0;
 }
