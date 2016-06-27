@@ -144,6 +144,13 @@ namespace VulkanLib
 		CapAngles();
 	}
 
+	void Camera::SetOrientation(float yaw, float pitch)
+	{
+		this->mYaw = yaw;
+		this->mPitch = pitch;
+		CapAngles();
+	}
+
 	mat4 Camera::GetView()
 	{
 		return GetOrientation() * glm::translate(mat4(), mPosition);
@@ -177,5 +184,15 @@ namespace VulkanLib
 			mPitch = 85.0;
 		else if (mPitch < -85.0)
 			mPitch = -85.0;
+	}
+
+	float Camera::GetPitch()
+	{
+		return mPitch;
+	}
+
+	float Camera::GetYaw()
+	{
+		return mYaw;
 	}
 }	// VulkanLib namespace

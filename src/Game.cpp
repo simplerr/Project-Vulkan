@@ -11,17 +11,14 @@
 
 namespace VulkanLib
 {
-
-	Game::Game(Renderer* renderer, Window* window)
-	{
-		mRenderer = renderer;
-		mWindow = window;
-	}
-
 	Game::Game(Window* window)
 	{
 		mRenderer = nullptr;
 		mWindow = window;
+
+		// Create the camera
+		mCamera = new VulkanLib::Camera(glm::vec3(500, 1300, 500), 60.0f, (float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 0.1f, 25600.0f);
+		mCamera->LookAt(glm::vec3(0, 0, 0));
 	}
 
 	Game::~Game()
@@ -29,6 +26,7 @@ namespace VulkanLib
 		PrintBenchmark();
 
 		delete mRenderer;
+		delete mCamera;
 	}
 
 	void Game::PrintBenchmark()
@@ -50,10 +48,7 @@ namespace VulkanLib
 
 	void Game::InitScene()
 	{
-		// Create the camera
-		VulkanLib::Camera* camera = new VulkanLib::Camera(glm::vec3(500, 1300, 500), 60.0f, (float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 0.1f, 25600.0f);
-		camera->LookAt(glm::vec3(0, 0, 0));
-		mRenderer->SetCamera(camera);
+		mRenderer->SetCamera(mCamera);
 
 		// Add objects
 		int size = 10;

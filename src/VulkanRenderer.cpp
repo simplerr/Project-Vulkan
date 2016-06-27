@@ -108,4 +108,9 @@ namespace VulkanLib
 	{
 		return mVulkanApp->mNumThreads; // OpenGL allways one thread
 	}
+
+	Camera* VulkanRenderer::GetCamera()
+	{
+		return mCamera;
+	}
 }

@@ -6,6 +6,7 @@ namespace VulkanLib
 {
 	class Renderer;
 	class Window;
+	class Camera;
 
 	/*
 		The starting point of the application
@@ -15,7 +16,6 @@ namespace VulkanLib
 	class Game
 	{
 	public:
-		Game(Renderer* renderer, Window* window);
 		Game(Window* window);
 		~Game();
 		
@@ -30,6 +30,7 @@ namespace VulkanLib
 
 		Renderer* mRenderer;
 		Window* mWindow;
+		Camera* mCamera;
 
 		// Wrapper class for the fps counter
 		Timer mTimer;

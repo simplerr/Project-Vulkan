@@ -269,4 +269,9 @@ namespace VulkanLib
 	{
 		return 1; // OpenGL allways one thread
 	}
+
+	Camera* OpenGLRenderer::GetCamera()
+	{
+		return mCamera;
+	}
 }

@@ -31,6 +31,7 @@ namespace VulkanLib
 		virtual int GetNumObjects() = 0;
 		virtual std::string GetName() = 0;
 		virtual int GetNumThreads() = 0;
+		virtual Camera* GetCamera() = 0;
 	private:
 		
 	};

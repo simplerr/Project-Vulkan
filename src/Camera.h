@@ -27,7 +27,10 @@ namespace VulkanLib
 		mat4 GetMatrix();
 		vec3 GetRight();
 		vec3 GetPosition();
+		float GetPitch();
+		float GetYaw();
 		void AddOrientation(float yaw, float pitch);
+		void SetOrientation(float yaw, float pitch);
 		void LookAt(vec3 target);
 		void CapAngles();
 

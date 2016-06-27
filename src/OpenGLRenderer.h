@@ -45,6 +45,8 @@ namespace VulkanLib
 		int GetNumObjects();
 		std::string GetName();
 		int GetNumThreads();
+
+		Camera* GetCamera();
 	private:
 		Camera* mCamera;
 		Window* mWindow;
