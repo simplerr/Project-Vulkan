@@ -139,6 +139,8 @@ namespace VulkanLib
 		VkCommandBuffer					mPrimaryCommandBuffer;
 		VkCommandBuffer					mSecondaryCommandBuffer;
 
+		VkFence							mRenderFence = {};
+
 		// 
 		//	High level code
 		//

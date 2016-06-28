@@ -54,7 +54,6 @@ namespace VulkanLib
 
 		delete mTextureLoader;
 
-
 		vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 
 		// Cleanup depth stencil data
@@ -74,8 +73,6 @@ namespace VulkanLib
 			vkDestroyShaderModule(mDevice, shaderModule, nullptr);
 		}
 
-
-
 		vkDestroyDevice(mDevice, nullptr);
 
 		VulkanDebug::CleanupDebugging(mInstance);
@@ -91,6 +88,7 @@ namespace VulkanLib
 		SetupSwapchain();				// Setup the swap chain with the helper class
 		CreateSemaphores();
 		CreateCommandBuffers();			// Create the command buffers used for drawing and the image format transitions
+		BuildPresentCommandBuffers();
 		SetupDepthStencil();			// Setup the depth stencil buffer
 		SetupRenderPass();				// Setup the render pass
 		SetupFrameBuffer();				// Setup the frame buffer, it uses the depth stencil buffer, render pass and swap chain
@@ -246,14 +244,22 @@ namespace VulkanLib
 		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
 		// Allocate the command buffers that the image memory barriers will use to change the swap chain image format
-		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mPrePresentCmdBuffer));
-		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mPostPresentCmdBuffer));
+		//VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mPrePresentCmdBuffer));
+		//VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mPostPresentCmdBuffer));
 
 		// Allocate a command buffer for each swap chain image
 		mRenderingCommandBuffers.resize(mSwapChain.imageCount);
+		mPrePresentCmdBuffers.resize(mSwapChain.imageCount);
+		mPostPresentCmdBuffers.resize(mSwapChain.imageCount);
+
 		allocateInfo.commandBufferCount = mRenderingCommandBuffers.size();
 
 		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, mRenderingCommandBuffers.data()));
+
+		// Command buffers for submitting present barriers
+		// One pre and post present buffer per swap chain image
+		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, mPrePresentCmdBuffers.data()));
+		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, mPostPresentCmdBuffers.data()));
 	}
 
 	void VulkanBase::CreateSemaphores()
@@ -427,74 +433,165 @@ namespace VulkanLib
 		mSetupCmdBuffer = VK_NULL_HANDLE;
 	}
 
+	void VulkanBase::PrepareFrame()
+	{
+		// Acquire the next image from the swap chaing
+		VulkanDebug::ErrorCheck(mSwapChain.acquireNextImage(mPresentComplete, &mCurrentBuffer));
+
+		// Submit post present image barrier to transform the image back to a color attachment that our render pass can write to
+		VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &mPostPresentCmdBuffers[mCurrentBuffer];
+		VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE));
+	}
+
+	void VulkanBase::SubmitFrame()
+	{
+		// Submit pre present image barrier to transform the image from color attachment to present(khr) for presenting to the swap chain
+		VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &mPrePresentCmdBuffers[mCurrentBuffer];
+		VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE));
+
+		VulkanDebug::ErrorCheck(mSwapChain.queuePresent(mQueue, mCurrentBuffer, mRenderComplete));
+
+		VulkanDebug::ErrorCheck(vkQueueWaitIdle(mQueue));
+	}
+
 	void VulkanBase::SubmitPrePresentMemoryBarrier(VkImage image)
 	{
 		// Copy & paste, I think this can be done smarter (TODO)
-		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
+		//VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
 
-		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mPrePresentCmdBuffer, &cmdBufInfo));
+		//VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mPrePresentCmdBuffer, &cmdBufInfo));
 
-		VkImageMemoryBarrier prePresentBarrier = vkTools::initializers::imageMemoryBarrier();
-		prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-		prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;						// New layout for presenting
-		prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		prePresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-		prePresentBarrier.image = image;
+		//VkImageMemoryBarrier prePresentBarrier = vkTools::initializers::imageMemoryBarrier();
+		//prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		//prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		//prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		//prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;						// New layout for presenting
+		//prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		//prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		//prePresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		//prePresentBarrier.image = image;
 
-		vkCmdPipelineBarrier(
-			mPrePresentCmdBuffer,
-			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			VK_FLAGS_NONE,
-			0, nullptr, // No memory barriers,
-			0, nullptr, // No buffer barriers,
-			1, &prePresentBarrier);
+		//vkCmdPipelineBarrier(
+		//	mPrePresentCmdBuffer,
+		//	VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		//	VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		//	VK_FLAGS_NONE,
+		//	0, nullptr, // No memory barriers,
+		//	0, nullptr, // No buffer barriers,
+		//	1, &prePresentBarrier);
 
-		VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPrePresentCmdBuffer));
+		//VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPrePresentCmdBuffer));
 
-		VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &mPrePresentCmdBuffer;
+		//VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
+		//submitInfo.commandBufferCount = 1;
+		//submitInfo.pCommandBuffers = &mPrePresentCmdBuffer;
 
-		VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE));
+		//VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE));
 	}
 
 	void VulkanBase::SubmitPostPresentMemoryBarrier(VkImage image)
 	{
 		// Copy & paste, I think this can be done smarter (TODO)
+		//VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
+
+		//VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mPostPresentCmdBuffer, &cmdBufInfo));
+
+		//VkImageMemoryBarrier postPresentBarrier = vkTools::initializers::imageMemoryBarrier();	// TODO: Remove VkTools code
+		//postPresentBarrier.srcAccessMask = 0;
+		//postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		//postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		//postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;				// New layout for rendering
+		//postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		//postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		//postPresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		//postPresentBarrier.image = image;
+
+		//vkCmdPipelineBarrier(
+		//	mPostPresentCmdBuffer,
+		//	VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		//	VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		//	0,
+		//	0, nullptr, // No memory barriers,
+		//	0, nullptr, // No buffer barriers,
+		//	1, &postPresentBarrier);
+
+		//VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPostPresentCmdBuffer));
+
+		//VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
+		//submitInfo.commandBufferCount = 1;
+		//submitInfo.pCommandBuffers = &mPostPresentCmdBuffer;
+
+		//VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE));
+	}
+
+	void VulkanBase::BuildPresentCommandBuffers()
+	{
 		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
 
-		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mPostPresentCmdBuffer, &cmdBufInfo));
+		for (uint32_t i = 0; i < mSwapChain.imageCount; i++)
+		{
+			// Command buffer for post present barrier
 
-		VkImageMemoryBarrier postPresentBarrier = vkTools::initializers::imageMemoryBarrier();	// TODO: Remove VkTools code
-		postPresentBarrier.srcAccessMask = 0;
-		postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;				// New layout for rendering
-		postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		postPresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-		postPresentBarrier.image = image;
+			// Insert a post present image barrier to transform the image back to a
+			// color attachment that our render pass can write to
+			// We always use undefined image layout as the source as it doesn't actually matter
+			// what is done with the previous image contents
 
-		vkCmdPipelineBarrier(
-			mPostPresentCmdBuffer,
-			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			0,
-			0, nullptr, // No memory barriers,
-			0, nullptr, // No buffer barriers,
-			1, &postPresentBarrier);
+			VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mPostPresentCmdBuffers[i], &cmdBufInfo));
 
-		VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPostPresentCmdBuffer));
+			VkImageMemoryBarrier postPresentBarrier = vkTools::initializers::imageMemoryBarrier();
+			postPresentBarrier.srcAccessMask = 0;
+			postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+			postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			postPresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+			postPresentBarrier.image = mSwapChain.buffers[i].image;
 
-		VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &mPostPresentCmdBuffer;
+			vkCmdPipelineBarrier(
+				mPostPresentCmdBuffers[i],
+				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+				VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+				0,
+				0, nullptr,
+				0, nullptr,
+				1, &postPresentBarrier);
 
-		VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE));
+			VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPostPresentCmdBuffers[i]));
+
+			// Command buffers for pre present barrier
+
+			// Submit a pre present image barrier to the queue
+			// Transforms the (framebuffer) image layout from color attachment to present(khr) for presenting to the swap chain
+
+			VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mPrePresentCmdBuffers[i], &cmdBufInfo));
+
+			VkImageMemoryBarrier prePresentBarrier = vkTools::initializers::imageMemoryBarrier();
+			prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+			prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+			prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			prePresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+			prePresentBarrier.image = mSwapChain.buffers[i].image;
+
+			vkCmdPipelineBarrier(
+				mPrePresentCmdBuffers[i],
+				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+				VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+				VK_FLAGS_NONE,
+				0, nullptr, // No memory barriers,
+				0, nullptr, // No buffer barriers,
+				1, &prePresentBarrier);
+
+			VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPrePresentCmdBuffers[i]));
+		}
 	}
 
 	void VulkanBase::InitSwapchain(Window* window)

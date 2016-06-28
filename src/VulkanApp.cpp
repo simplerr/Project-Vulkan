@@ -13,7 +13,7 @@
 #include "Light.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
-#define VULKAN_ENABLE_VALIDATION true		// Debug validation layers toggle (affects performance a lot)
+#define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
 
 #define NUM_OBJECTS 10 // 64 * 4 * 4 * 2
 
@@ -62,12 +62,17 @@ namespace VulkanLib
 				delete mThreadData[t].threadObjects[i].object;
 			}
 		}
+
+		vkDestroyFence(mDevice, mRenderFence, nullptr);
 	}
 
 	void VulkanApp::Prepare()
 	{
 		VulkanBase::Prepare();
 
+		// Create a fence for synchronization
+		VkFenceCreateInfo fenceCreateInfo = vkTools::initializers::fenceCreateInfo(VK_FLAGS_NONE);
+		vkCreateFence(mDevice, &fenceCreateInfo, NULL, &mRenderFence);
 
 		SetupVertexDescriptions();			// Custom
 		SetupDescriptorSetLayout();
@@ -76,7 +81,7 @@ namespace VulkanLib
 		PrepareUniformBuffers();
 		SetupDescriptorPool();
 		
-		//SetupMultithreading();				// Custom
+		//SetupMultithreading();			// Custom
 
 
 		SetupDescriptorSet();
@@ -716,7 +721,7 @@ namespace VulkanLib
 
 		// Begin command buffer recording & the render pass
 		VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mPrimaryCommandBuffer, &beginInfo));
-		vkCmdBeginRenderPass(mPrimaryCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(mPrimaryCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);	// VK_SUBPASS_CONTENTS_INLINE
 
 		//
 		// Secondary command buffer
@@ -804,7 +809,6 @@ namespace VulkanLib
 		// End command buffer recording & the render pass
 		vkCmdEndRenderPass(mPrimaryCommandBuffer);
 		VulkanDebug::ErrorCheck(vkEndCommandBuffer(mPrimaryCommandBuffer));
-
 	}
 
 	void VulkanApp::ThreadRecordCommandBuffer(int threadId, VkCommandBufferInheritanceInfo inheritanceInfo)
@@ -867,20 +871,22 @@ namespace VulkanLib
 
 	void VulkanApp::Draw()
 	{
+		VulkanBase::PrepareFrame();
+
 		// When presenting (vkQueuePresentKHR) the swapchain image has to be in the VK_IMAGE_LAYOUT_PRESENT_SRC_KHR format
 		// When rendering to the swapchain image has to be in the VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		// The transition between these to formats is performed by using image memory barriers (VkImageMemoryBarrier)
 		// VkImageMemoryBarrier have oldLayout and newLayout fields that are used 
 
 		// Acquire the next image in the swap chain
-		VulkanDebug::ErrorCheck(mSwapChain.acquireNextImage(mPresentComplete, &mCurrentBuffer));
+		//VulkanDebug::ErrorCheck(mSwapChain.acquireNextImage(mPresentComplete, &mCurrentBuffer));
 
 
 		//
 		// Transition image format to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 		//
 
-		SubmitPostPresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
+		//SubmitPostPresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
 
 		// NOTE: Testing
 		//BuildInstancingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
@@ -902,34 +908,31 @@ namespace VulkanLib
 		VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		submitInfo.pWaitDstStageMask = &stageFlags;
 
-		VkFence renderFence = {};
-		VkFenceCreateInfo fenceCreateInfo = {};
-		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		fenceCreateInfo.flags = VK_FLAGS_NONE;
-		vkCreateFence(mDevice, &fenceCreateInfo, NULL, &renderFence);
-
-		VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, renderFence));
+		VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, mRenderFence));
 
 		// Wait for fence to signal that all command buffers are ready
 		VkResult fenceRes;
 		do
 		{
-			fenceRes = vkWaitForFences(mDevice, 1, &renderFence, VK_TRUE, 100000000);
+			fenceRes = vkWaitForFences(mDevice, 1, &mRenderFence, VK_TRUE, 100000000);
 		} while (fenceRes == VK_TIMEOUT);
-		vkTools::checkResult(fenceRes);
+
+		VulkanDebug::ErrorCheck(fenceRes);
+		vkResetFences(mDevice, 1, &mRenderFence);
 
 
 		//
 		// Transition image format to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		//
-		SubmitPrePresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
+		//SubmitPrePresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
 
 		// Present the image
-		VulkanDebug::ErrorCheck(mSwapChain.queuePresent(mQueue, mCurrentBuffer, mRenderComplete));
+		//VulkanDebug::ErrorCheck(mSwapChain.queuePresent(mQueue, mCurrentBuffer, mRenderComplete));
 
-		vkDestroyFence(mDevice, renderFence, nullptr);
 
-		vkTools::checkResult(vkQueueWaitIdle(mQueue));
+		//vkTools::checkResult(vkQueueWaitIdle(mQueue));
+
+		VulkanBase::SubmitFrame();
 	}
 
 	void VulkanApp::Render()

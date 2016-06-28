@@ -61,6 +61,7 @@ namespace VulkanLib
 		void SetupDepthStencil();
 		void SetupRenderPass();
 		void SetupFrameBuffer();
+		void BuildPresentCommandBuffers();
 		// Don't need pipeline cache
 
 		void InitSwapchain(Window* window);
@@ -73,6 +74,9 @@ namespace VulkanLib
 		// To transition the swap chain image layout
 		void SubmitPrePresentMemoryBarrier(VkImage image);
 		void SubmitPostPresentMemoryBarrier(VkImage image);
+
+		void PrepareFrame();
+		void SubmitFrame();
 
 		VkBool32 GetMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex);
 
@@ -103,8 +107,8 @@ namespace VulkanLib
 		VkCommandBuffer					mSetupCmdBuffer				= VK_NULL_HANDLE;
 
 		// Command buffers used to change the swapchains image format
-		VkCommandBuffer					mPostPresentCmdBuffer		= VK_NULL_HANDLE;
-		VkCommandBuffer					mPrePresentCmdBuffer		= VK_NULL_HANDLE;
+		//VkCommandBuffer					mPostPresentCmdBuffer		= VK_NULL_HANDLE;
+		//VkCommandBuffer					mPrePresentCmdBuffer		= VK_NULL_HANDLE;
 
 		// Swap chain magic by Sascha Willems (https://github.com/SaschaWillems/Vulkan)
 		VulkanSwapChain					mSwapChain;
@@ -144,5 +148,10 @@ namespace VulkanLib
 
 		// Wrapper class for the platform dependet window code
 		Window*							mWindow;
+
+		// Command buffer for submitting a post present image barrier
+		std::vector<VkCommandBuffer>	mPostPresentCmdBuffers		= { VK_NULL_HANDLE };
+		// Command buffers for submitting a pre present image barrier
+		std::vector<VkCommandBuffer>	mPrePresentCmdBuffers		= { VK_NULL_HANDLE };
 	};
 }	// VulkanLib namespace
