@@ -436,7 +436,7 @@ namespace VulkanLib
 
 		VkImageMemoryBarrier prePresentBarrier = vkTools::initializers::imageMemoryBarrier();
 		prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		prePresentBarrier.dstAccessMask = 0;
+		prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 		prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;						// New layout for presenting
 		prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -472,7 +472,7 @@ namespace VulkanLib
 		VkImageMemoryBarrier postPresentBarrier = vkTools::initializers::imageMemoryBarrier();	// TODO: Remove VkTools code
 		postPresentBarrier.srcAccessMask = 0;
 		postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;				// New layout for rendering
 		postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;

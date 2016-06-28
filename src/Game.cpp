@@ -64,7 +64,7 @@ namespace VulkanLib
 		mRenderer->AddObject(object);
 
 		// Add objects
-		int size = 10;
+		int size = 20;
 		for (int x = 0; x < size; x++)
 		{
 			for (int y = 0; y < size; y++)

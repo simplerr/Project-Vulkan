@@ -786,10 +786,17 @@ namespace VulkanLib
 		for (int t = 0; t < mThreadData.size(); t++)
 		{
 			mThreadPool.threads[t]->addJob([=] {ThreadRecordCommandBuffer(t, inheritanceInfo); });
-			commandBuffers.push_back(mThreadData[t].commandBuffer);
+			//commandBuffers.push_back(mThreadData[t].commandBuffer);
 		}
 
+		// [NOOOOOOOOOOOTE] Is this placement important?????
 		mThreadPool.wait();
+
+		for (int t = 0; t < mThreadData.size(); t++)
+		{
+			//mThreadPool.threads[t]->addJob([=] {ThreadRecordCommandBuffer(t, inheritanceInfo); });
+			commandBuffers.push_back(mThreadData[t].commandBuffer);
+		}
 
 		// Execute render commands from the secondary command buffer
 		vkCmdExecuteCommands(mPrimaryCommandBuffer, commandBuffers.size(), commandBuffers.data());
@@ -868,10 +875,12 @@ namespace VulkanLib
 		// Acquire the next image in the swap chain
 		VulkanDebug::ErrorCheck(mSwapChain.acquireNextImage(mPresentComplete, &mCurrentBuffer));
 
+
 		//
-		// Transition image format to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		// Transition image format to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 		//
-		SubmitPrePresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
+
+		SubmitPostPresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
 
 		// NOTE: Testing
 		//BuildInstancingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
@@ -909,11 +918,11 @@ namespace VulkanLib
 		} while (fenceRes == VK_TIMEOUT);
 		vkTools::checkResult(fenceRes);
 
-		//
-		// Transition image format to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-		//
 
-		SubmitPostPresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
+		//
+		// Transition image format to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		//
+		SubmitPrePresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
 
 		// Present the image
 		VulkanDebug::ErrorCheck(mSwapChain.queuePresent(mQueue, mCurrentBuffer, mRenderComplete));
@@ -933,10 +942,10 @@ namespace VulkanLib
 		mCamera->Update();
 
 		// NOTE: TODO: TESTING
-		if (mPrepared)
+		if (mPrepared) {
 			UpdateUniformBuffers();
-
-		Draw();
+			Draw();
+		}
 
 		vkDeviceWaitIdle(mDevice);		// [NOTE] Is this really needed? - Yes, the validation layer complains otherwise!
 	}
