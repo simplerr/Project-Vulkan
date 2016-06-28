@@ -2,6 +2,7 @@
 #include "VulkanBase.h"
 #include "ModelLoader.h"
 #include "ThreadPool.h"
+#include "StaticModel.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -81,6 +82,8 @@ namespace VulkanLib
 		VkDescriptorSet descriptorSet;			// Testing
 		VkDescriptorPool descriptorPool;
 		std::vector<VulkanModel> threadObjects;
+
+		StaticModel model;
 	};
 
 	class VulkanApp : public VulkanBase
@@ -166,5 +169,8 @@ namespace VulkanLib
 		std::vector<VulkanModel>		mModels;
 
 		int								mNextThreadId = 0;	// The thread to add new objects to
+
+	public:
+		StaticModel*					mTestModel;
 	};
 }	// VulkanLib namespace

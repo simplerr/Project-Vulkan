@@ -153,6 +153,8 @@ namespace VulkanLib
 
 		mNumObjects = 2048; // [NOTE][TODO] * 2 more crashes the computer!!
 
+		CreateSetupCommandBuffer();
+
 		// Prepare each thread data
 		for (int t = 0; t < mNumThreads; t++)
 		{
@@ -176,7 +178,7 @@ namespace VulkanLib
 			typeCounts[1].descriptorCount = 1;
 
 			VkDescriptorPoolCreateInfo createInfo2 = {};
-			createInfo2 = CreateInfo::DescriptorPool(2, typeCounts, 2);
+			createInfo2 = CreateInfo::DescriptorPool(2, typeCounts, 2);		
 			VulkanDebug::ErrorCheck(vkCreateDescriptorPool(mDevice, &createInfo2, nullptr, &mThreadData[t].descriptorPool));
 
 			// Setup thread descriptor set
@@ -208,7 +210,16 @@ namespace VulkanLib
 			writeDescriptorSet[1].dstBinding = 1;				// Binds the image sampler to binding point 1
 
 			vkUpdateDescriptorSets(mDevice, writeDescriptorSet.size(), writeDescriptorSet.data(), 0, NULL);
+			
+			//
+			// Let every thread have unique vertex and index buffers
+			//
+
+			mThreadData[t].model.mMeshes = mTestModel->mMeshes;
+			mThreadData[t].model.BuildBuffers(this);	
 		}
+
+		ExecuteSetupCommandBuffer();
 	}
 
 	void VulkanApp::PrepareUniformBuffers()
@@ -826,14 +837,23 @@ namespace VulkanLib
 			vkCmdPushConstants(commandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &thread->pushConstants);
 
 			// Bind triangle vertices
+			//VkDeviceSize offsets[1] = { 0 };
+			//VkBuffer buffer = object.mesh->vertices.buffer;
+			//vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &buffer, offsets);		// [TODO] The renderer should group the same object models together
+			//vkCmdBindIndexBuffer(commandBuffer, object.mesh->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+			//// Draw indexed triangle	
+			////vkCmdSetLineWidth(commandBuffer, 1.0f);
+			//vkCmdDrawIndexed(commandBuffer, object.mesh->GetNumIndices(), 1, 0, 0, 0);
+
 			VkDeviceSize offsets[1] = { 0 };
-			VkBuffer buffer = object.mesh->vertices.buffer;
+			VkBuffer buffer = mThreadData[threadId].model.vertices.buffer;
 			vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &buffer, offsets);		// [TODO] The renderer should group the same object models together
-			vkCmdBindIndexBuffer(commandBuffer, object.mesh->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, mThreadData[threadId].model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 			// Draw indexed triangle	
-			vkCmdSetLineWidth(commandBuffer, 1.0f);
-			vkCmdDrawIndexed(commandBuffer, object.mesh->GetNumIndices(), 1, 0, 0, 0);
+			//vkCmdSetLineWidth(commandBuffer, 1.0f);
+			vkCmdDrawIndexed(commandBuffer, mThreadData[threadId].model.GetNumIndices(), 1, 0, 0, 0);
 		}
 
 		// End secondary command buffer

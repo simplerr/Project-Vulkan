@@ -60,8 +60,9 @@ namespace VulkanLib
 
 		vkTools::VulkanTexture* texture;
 
-	private:
 		std::vector<Mesh> mMeshes;
+	private:
+		
 		uint32_t mIndicesCount;
 		uint32_t mVerticesCount;
 	};

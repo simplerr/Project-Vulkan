@@ -22,6 +22,9 @@ namespace VulkanLib
 
 		mVulkanApp->InitSwapchain(window);
 		mVulkanApp->Prepare();
+		
+		mVulkanApp->mTestModel = mModelLoader.LoadModel(mVulkanApp, "data/models/Crate.obj");
+
 		mVulkanApp->SetupMultithreading(numThreads);
 	}
 
