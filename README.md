@@ -20,3 +20,5 @@
 - Particle system
 - Shadow mapping
 - Game and World class
+
+SubmitPostPresentMemoryBarrier causes device lost when more than 2k objects

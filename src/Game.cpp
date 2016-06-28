@@ -20,7 +20,7 @@ namespace VulkanLib
 		mCamera = new VulkanLib::Camera(glm::vec3(500, 4700, 500), 60.0f, (float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 0.1f, 25600.0f);
 		mCamera->LookAt(glm::vec3(0, 1, 0));
 
-		mPipeline = PipelineEnum::TEXTURED;
+		mPipeline = PipelineEnum::COLORED;
 	}
 
 	Game::~Game()

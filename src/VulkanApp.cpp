@@ -13,7 +13,7 @@
 #include "Light.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
-#define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
+#define VULKAN_ENABLE_VALIDATION true		// Debug validation layers toggle (affects performance a lot)
 
 #define NUM_OBJECTS 10 // 64 * 4 * 4 * 2
 
@@ -564,7 +564,7 @@ namespace VulkanLib
 		vkUnmapMemory(mDevice, mUniformBuffer.memory);
 
 		// Map and update number of lights
-		dataOffset += sizeof(mUniformData.camera) + dataSize;
+		dataOffset += dataSize; // sizeof(mUniformData.camera) + 
 		dataSize = sizeof(mUniformData.constants);
 		uint8_t *data;
 		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&data));
