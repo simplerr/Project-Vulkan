@@ -13,7 +13,7 @@
 #include "Light.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
-#define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
+#define VULKAN_ENABLE_VALIDATION true		// Debug validation layers toggle (affects performance a lot)
 
 #define NUM_OBJECTS 10 // 64 * 4 * 4 * 2
 
@@ -208,35 +208,6 @@ namespace VulkanLib
 			writeDescriptorSet[1].dstBinding = 1;				// Binds the image sampler to binding point 1
 
 			vkUpdateDescriptorSets(mDevice, writeDescriptorSet.size(), writeDescriptorSet.data(), 0, NULL);
-
-			// Add objects to each thread data
-			int objectsPerThread = mNumObjects / mNumThreads;
-
-			for (int x = 0; x < sqrt(objectsPerThread); x++)
-			{
-				for (int z = 0; z < sqrt(objectsPerThread); z++)
-				{
-					Object* object = new Object(glm::vec3(x * 150, 250 - t * 150, z * 150));
-
-					if(t == 0)
-						object->SetColor(glm::vec3(1.0f, 1.0f, 1.0f));
-					else if(t == 1)
-						object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
-					else if (t == 2)
-						object->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
-					else if (t == 3)
-						object->SetColor(glm::vec3(0.0f, 0.0f, 1.0f));
-
-				/*	object->SetId(OBJECT_ID_PROP);
-					//object->SetModel(mModelLoader.LoadModel(this, "data/models/teapot.3ds"));
-					object->SetModel(mModelLoader.LoadModel(this, "data/models/Crate.obj"));
-					object->SetScale(vec3(15, 15, 15));
-					object->SetRotation(glm::vec3(180, 0, 0));
-					object->SetPipeline(mPipelines.textured);
-
-					mThreadData[t].threadObjects.push_back(object);*/
-				}
-			}
 		}
 	}
 
@@ -900,11 +871,11 @@ namespace VulkanLib
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &mPrimaryCommandBuffer;		// Draw commands for the current command buffer
+		submitInfo.pCommandBuffers = &mPrimaryCommandBuffer;					// Draw commands for the current command buffer
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = &mPresentComplete;							// Waits for swapChain.acquireNextImage to complete
-		submitInfo.pSignalSemaphores = &mRenderComplete;							// swapChain.queuePresent will wait for this submit to complete
+		submitInfo.pSignalSemaphores = &mRenderComplete;						// swapChain.queuePresent will wait for this submit to complete
 		VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		submitInfo.pWaitDstStageMask = &stageFlags;
 
