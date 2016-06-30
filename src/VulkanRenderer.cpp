@@ -20,12 +20,13 @@ namespace VulkanLib
 	{
 		mVulkanApp = new VulkanApp();
 
+		mVulkanApp->EnableInstancing(useInstancing);	// [NOTE] The order is important, must be before Prepare()
 		mVulkanApp->InitSwapchain(window);
 		mVulkanApp->Prepare();
 		
 		mVulkanApp->mTestModel = mModelLoader.LoadModel(mVulkanApp, "data/models/Crate.obj");
 
-		mVulkanApp->EnableInstancing(useInstancing);
+
 
 		mVulkanApp->SetupMultithreading(numThreads);
 	}

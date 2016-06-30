@@ -46,7 +46,8 @@ namespace VulkanLib
 
 		struct {
 			float numLights;
-			vec3 garbage;
+			bool useInstancing;
+			vec2 garbage;
 		} constants;
 		
 

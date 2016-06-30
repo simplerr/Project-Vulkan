@@ -9,10 +9,8 @@ layout (location = 2) in vec3 InNormalL;		// Normal in local coordinate system
 layout (location = 3) in vec2 InTex;
 layout (location = 4) in vec4 InTangent;
 
-struct Instance
-{
-	mat4 world;
-};
+// Instanced
+layout (location = 5) in vec3 InInstancePosW;
 
 //! Corresponds to the C++ class Material. Stores the ambient, diffuse and specular colors for a material.
 struct Material
@@ -53,10 +51,8 @@ layout (std140, binding = 0) uniform UBO
 	
 	Light light[1];
 	float numLights;
-	vec3 garbage;
-
-	//vec4 test;
-	//Light lights;//[10];	// Max 10 lights
+	bool useInstancing;
+	vec2 garbage;
 } per_frame;
 
 layout(push_constant) uniform PushConsts {
@@ -76,28 +72,22 @@ layout (location = 4) out vec3 OutLightDirW;
 void main() 
 {
 	OutColor = pushConsts.color; //InColor;
+
+	vec3 pos = InPosL;
+
+	if(per_frame.useInstancing) {
+		OutColor = vec3(1, 0, 0);
+		pos += InInstancePosW;
+	}
+	else
+		OutColor = vec3(0, 1, 0);
+
 	OutTex = InTex;
 
-	//mat4 world = pushConsts.world;
-	//mat4 world = ubo.instance[gl_InstanceIndex].world;
-	gl_Position = per_frame.projection * per_frame.view * pushConsts.world * vec4(InPosL.xyz, 1.0);
+	gl_Position = per_frame.projection * per_frame.view * pushConsts.world * vec4(pos.xyz, 1.0);
 	
-    vec4 PosW = pushConsts.world  * vec4(InPosL, 1.0);
+    vec4 PosW = pushConsts.world  * vec4(pos, 1.0);
     OutNormalW = mat3(pushConsts.world ) * InNormalL;
 	OutLightDirW = per_frame.light[0].dir; //per_frame.lightDir.xyz;
     OutEyeDirW = per_frame.eyePos - PosW.xyz;	
 }
-//
-// w/o Instancing
-//
-//void main() 
-//{
-//	OutColor = pushConsts.color; //InColor;
-//	OutTex = InTex;
-//	gl_Position = ubo.projection * ubo.view * pushConsts.world * vec4(InPosL.xyz, 1.0);
-	
-//    vec4 PosW = pushConsts.world  * vec4(InPosL, 1.0);
-//    OutNormalW = mat3(pushConsts.world ) * InNormalL;
-//    OutLightDirW = ubo.lightDir.xyz;
-//    OutEyeDirW = ubo.eyePos - PosW.xyz;		
-//}

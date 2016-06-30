@@ -128,14 +128,17 @@ namespace VulkanLib
 
 	void VulkanApp::AddModel(VulkanModel model)
 	{
-		//mModels.push_back(model);
+		if(mUseInstancing)
+			mModels.push_back(model);
+		else
+		{
+			mThreadData[mNextThreadId].threadObjects.push_back(model);
 
-		mThreadData[mNextThreadId].threadObjects.push_back(model);
+			mNextThreadId++;
 
-		mNextThreadId++;
-
-		if (mNextThreadId >= mNumThreads)
-			mNextThreadId = 0;
+			if (mNextThreadId >= mNumThreads)
+				mNextThreadId = 0;
+		}
 	}
 
 	void VulkanApp::LoadModels()
@@ -243,8 +246,8 @@ namespace VulkanLib
 		size_t bufferSize = instanceData.size() * sizeof(InstanceData);
 
 		CreateBuffer(
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 			bufferSize,
 			instanceData.data(),
 			&mInstanceBuffer.buffer,
@@ -575,6 +578,8 @@ namespace VulkanLib
 			vkUnmapMemory(mDevice, mUniformBuffer.memory);
 		}
 
+		mUniformData.constants.useInstancing = mUseInstancing;
+
 		// Map and update the light data
 		uint8_t *pData;
 		uint32_t dataOffset = sizeof(mUniformData.camera);
@@ -607,16 +612,19 @@ namespace VulkanLib
 
 		if (mUseInstancing)
 		{
-			mVertexDescriptions.bindingDescriptions[0].binding = INSTANCE_BUFFER_BIND_ID;		// Bind to ID 1, this information will be used by the shader
-			mVertexDescriptions.bindingDescriptions[0].stride = sizeof(InstanceData);			// Size of each instance data
-			mVertexDescriptions.bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+			mVertexDescriptions.bindingDescriptions[1].binding = INSTANCE_BUFFER_BIND_ID;		// Bind to ID 1, this information will be used by the shader
+			mVertexDescriptions.bindingDescriptions[1].stride = sizeof(InstanceData);			// Size of each instance data
+			mVertexDescriptions.bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 		}
 
 		// We need to tell Vulkan about the memory layout for each attribute
 		// 5 attributes: position, normal, texture coordinates, tangent and color
 		// See Vertex struct
-		mVertexDescriptions.attributeDescriptions.resize(5);
-
+		if (mUseInstancing)
+			mVertexDescriptions.attributeDescriptions.resize(6);
+		else
+			mVertexDescriptions.attributeDescriptions.resize(5);
+		
 		// Location 0 : Position
 		mVertexDescriptions.attributeDescriptions[0].binding = VERTEX_BUFFER_BIND_ID;
 		mVertexDescriptions.attributeDescriptions[0].location = 0;								// Location 0 (will be used in the shader)
@@ -656,11 +664,11 @@ namespace VulkanLib
 		// Location 5 : Instance position
 		if (mUseInstancing)
 		{
-			mVertexDescriptions.attributeDescriptions[0].binding = INSTANCE_BUFFER_BIND_ID;
-			mVertexDescriptions.attributeDescriptions[0].location = 5;								// Location 0 (will be used in the shader)
-			mVertexDescriptions.attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-			mVertexDescriptions.attributeDescriptions[0].offset = 0;								// First attribute can start at offset 0
-			mVertexDescriptions.attributeDescriptions[0].binding = 0;
+			mVertexDescriptions.attributeDescriptions[5].binding = INSTANCE_BUFFER_BIND_ID;
+			mVertexDescriptions.attributeDescriptions[5].location = 5;								// Location 0 (will be used in the shader)
+			mVertexDescriptions.attributeDescriptions[5].format = VK_FORMAT_R32G32B32_SFLOAT;
+			mVertexDescriptions.attributeDescriptions[5].offset = 0;								// First attribute can start at offset 0
+			mVertexDescriptions.attributeDescriptions[5].binding = 0;
 		}
 
 		// Neither the bindingDescriptions or the attributeDescriptions is used directly
@@ -714,13 +722,13 @@ namespace VulkanLib
 		vkCmdSetScissor(mPrimaryCommandBuffer, 0, 1, &scissor);
 
 		// Bind the rendering pipeline (including the shaders)
-		vkCmdBindPipeline(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelines.textured);
+		vkCmdBindPipeline(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelines.colored);
 
 		// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
 		vkCmdBindDescriptorSets(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet, 0, NULL);
 
 		// Push the world matrix constant
-		//mPushConstants.world = glm::mat4();// ->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+		mPushConstants.world = glm::scale(glm::mat4(), glm::vec3(40));// ->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
 		mPushConstants.color = vec3(1, 0, 1);
 		vkCmdPushConstants(mPrimaryCommandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &mPushConstants);
 
@@ -940,7 +948,10 @@ namespace VulkanLib
 
 		// NOTE: Testing
 		//BuildInstancingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
-		RecordRenderingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
+		if(!mUseInstancing)
+			RecordRenderingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
+		else 
+			BuildInstancingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
 
 		//
 		// Do rendering
