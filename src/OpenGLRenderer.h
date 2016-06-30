@@ -25,6 +25,7 @@ namespace VulkanLib
 		virtual void SetupMultithreading(int numThreads);
 		virtual void Render();
 		virtual void Update();
+		virtual void Init();
 
 		virtual void AddModel(StaticModel* model);
 
@@ -64,5 +65,7 @@ namespace VulkanLib
 
 		int mNumVertices = 0;
 		int mNumTriangles = 0;
+
+		bool mUseInstancing;
 	};
 }

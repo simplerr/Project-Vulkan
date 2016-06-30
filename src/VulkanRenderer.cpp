@@ -28,6 +28,11 @@ namespace VulkanLib
 		mVulkanApp->SetupMultithreading(numThreads);
 	}
 
+	void VulkanRenderer::Init()
+	{
+
+	}
+
 	void VulkanRenderer::Cleanup()
 	{
 		// The model loader is responsible for cleaning up the model data

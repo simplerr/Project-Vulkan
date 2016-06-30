@@ -34,9 +34,41 @@ namespace VulkanLib
 		glEnable(GL_CULL_FACE);
 
 		program = LoadShaders("data/shaders/opengl/color.vert", "data/shaders/opengl/color.frag");
-														// VBO for vertex data
 		
 		LoadTGATextureSimple("data/textures/crate_2.tga", &mTestTexture);
+
+		mUseInstancing = true;
+	}
+
+	void OpenGLRenderer::Init()
+	{
+		// Create a mat4 array with every objects world matrix
+		std::vector<glm::mat4> modelMatrices;
+		for (int i = 0; i < mModels.size(); i++)
+			modelMatrices.push_back(mModels[i].object->GetWorldMatrix());
+
+		glBindVertexArray(mModels[0].mesh->vao);	// Select VAO [NOTE] Assumes all models in mModels are the same!
+
+		GLuint buffer;
+		glGenBuffers(1, &buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, buffer);
+		glBufferData(GL_ARRAY_BUFFER, modelMatrices.size() * sizeof(glm::mat4), modelMatrices.data(), GL_STATIC_DRAW);
+		// Set attribute pointers for matrix (4 times vec4)
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)0);
+		glEnableVertexAttribArray(5);
+		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(sizeof(glm::vec4)));
+		glEnableVertexAttribArray(6);
+		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(2 * sizeof(glm::vec4)));
+		glEnableVertexAttribArray(7);
+		glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (GLvoid*)(3 * sizeof(glm::vec4)));
+
+		glVertexAttribDivisor(4, 1);
+		glVertexAttribDivisor(5, 1);
+		glVertexAttribDivisor(6, 1);
+		glVertexAttribDivisor(7, 1);
+
+		glBindVertexArray(0);
 	}
 
 	void OpenGLRenderer::Cleanup()
@@ -67,15 +99,23 @@ namespace VulkanLib
 		glUniformMatrix4fv(glGetUniformLocation(program, "gProjection"), 1, GL_FALSE, glm::value_ptr(mCamera->GetProjection()));	// Projection
 		glUniform3fv(glGetUniformLocation(program, "gEyePos"), 1, glm::value_ptr(mCamera->GetPosition())); 							// Eye pos
 		glUniform3fv(glGetUniformLocation(program, "gLightDir"), 1, glm::value_ptr(glm::vec3(1, -1, 0)));							// Light dir
+		glUniform1i(glGetUniformLocation(program, "gUseInstancing"), mUseInstancing);												// Instancing
 
 		glBindTexture(GL_TEXTURE_2D, mTestTexture);
 
-		for (int i = 0; i < mModels.size(); i++)
+		if (!mUseInstancing)
 		{
-			glBindVertexArray(mModels[i].mesh->vao);	// Select VAO
-
-			glUniformMatrix4fv(glGetUniformLocation(program, "gWorld"), 1, GL_FALSE, glm::value_ptr((mModels[i].object->GetWorldMatrix())));						
-			glDrawElements(GL_TRIANGLES, mModels[i].mesh->numIndices, GL_UNSIGNED_INT, 0L);
+			for (int i = 0; i < mModels.size(); i++)
+			{
+				glBindVertexArray(mModels[i].mesh->vao);	// Select VAO
+				glUniformMatrix4fv(glGetUniformLocation(program, "gWorld"), 1, GL_FALSE, glm::value_ptr((mModels[i].object->GetWorldMatrix())));
+				glDrawElements(GL_TRIANGLES, mModels[i].mesh->numIndices, GL_UNSIGNED_INT, 0L);
+			}
+		}		
+		else
+		{
+			glBindVertexArray(mModels[0].mesh->vao);	// Select VAO
+			glDrawElementsInstanced(GL_TRIANGLES, mModels[0].mesh->numIndices, GL_UNSIGNED_INT, 0, mModels.size()); // [NOTE][HACK] Again assumes that mModels[0] works for all!!
 		}
 
 		SwapBuffers(hdc);

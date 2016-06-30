@@ -17,6 +17,7 @@ namespace VulkanLib
 		virtual void SetupMultithreading(int numThreads);
 		virtual void Render();
 		virtual void Update();
+		virtual void Init();
 
 		virtual void AddModel(StaticModel* model);
 

@@ -19,6 +19,7 @@ namespace VulkanLib
 		virtual void SetupMultithreading(int numThreads) = 0;
 		virtual void Render() = 0;
 		virtual void Update() = 0;
+		virtual void Init() = 0;
 		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
 
 		virtual void AddModel(StaticModel* model) = 0;

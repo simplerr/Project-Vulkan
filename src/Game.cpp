@@ -83,6 +83,9 @@ namespace VulkanLib
 				}
 			}
 		}
+
+		// Creates the instancing array from all the objects
+		mRenderer->Init();
 	}
 
 #if defined(_WIN32)
