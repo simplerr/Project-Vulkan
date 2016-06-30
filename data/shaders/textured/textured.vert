@@ -11,6 +11,8 @@ layout (location = 4) in vec4 InTangent;
 
 // Instanced
 layout (location = 5) in vec3 InInstancePosW;
+layout (location = 6) in vec3 InInstanceScale;
+layout (location = 7) in vec3 InInstanceColor;
 
 //! Corresponds to the C++ class Material. Stores the ambient, diffuse and specular colors for a material.
 struct Material
@@ -76,8 +78,8 @@ void main()
 	vec3 pos = InPosL;
 
 	if(per_frame.useInstancing) {
-		OutColor = vec3(1, 0, 0);
-		pos += InInstancePosW;
+		pos = pos * InInstanceScale + InInstancePosW;
+		OutColor = InInstanceColor;
 	}
 	else
 		OutColor = vec3(0, 1, 0);

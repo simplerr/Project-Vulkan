@@ -240,8 +240,11 @@ namespace VulkanLib
 		std::vector<InstanceData> instanceData;
 		instanceData.resize(mModels.size());
 
-		for (int i = 0; i < mModels.size(); i++)
+		for (int i = 0; i < mModels.size(); i++) {
 			instanceData[i].position = mModels[i].object->GetPosition();
+			instanceData[i].scale = mModels[i].object->GetScale();
+			instanceData[i].color = mModels[i].object->GetColor();
+		}
 
 		size_t bufferSize = instanceData.size() * sizeof(InstanceData);
 
@@ -621,7 +624,7 @@ namespace VulkanLib
 		// 5 attributes: position, normal, texture coordinates, tangent and color
 		// See Vertex struct
 		if (mUseInstancing)
-			mVertexDescriptions.attributeDescriptions.resize(6);
+			mVertexDescriptions.attributeDescriptions.resize(8);
 		else
 			mVertexDescriptions.attributeDescriptions.resize(5);
 		
@@ -630,35 +633,30 @@ namespace VulkanLib
 		mVertexDescriptions.attributeDescriptions[0].location = 0;								// Location 0 (will be used in the shader)
 		mVertexDescriptions.attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		mVertexDescriptions.attributeDescriptions[0].offset = 0;									// First attribute can start at offset 0
-		mVertexDescriptions.attributeDescriptions[0].binding = 0;
 
 		// Location 1 : Color
 		mVertexDescriptions.attributeDescriptions[1].binding = VERTEX_BUFFER_BIND_ID;
 		mVertexDescriptions.attributeDescriptions[1].location = 1;								// Location 1 (will be used in the shader)
 		mVertexDescriptions.attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		mVertexDescriptions.attributeDescriptions[1].offset = sizeof(float) * 3;					// Second attribute needs to start with offset = sizeof(attribute 1)
-		mVertexDescriptions.attributeDescriptions[1].binding = 0;
 
 		// Location 2 : Normal
 		mVertexDescriptions.attributeDescriptions[2].binding = VERTEX_BUFFER_BIND_ID;
 		mVertexDescriptions.attributeDescriptions[2].location = 2;
 		mVertexDescriptions.attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
 		mVertexDescriptions.attributeDescriptions[2].offset = sizeof(float) * 6;
-		mVertexDescriptions.attributeDescriptions[2].binding = 0;
 
 		// Location 3 : Texture
 		mVertexDescriptions.attributeDescriptions[3].binding = VERTEX_BUFFER_BIND_ID;
 		mVertexDescriptions.attributeDescriptions[3].location = 3;
 		mVertexDescriptions.attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
 		mVertexDescriptions.attributeDescriptions[3].offset = sizeof(float) * 9;
-		mVertexDescriptions.attributeDescriptions[3].binding = 0;
 
 		// Location 4 : Tangent
 		mVertexDescriptions.attributeDescriptions[4].binding = VERTEX_BUFFER_BIND_ID;
 		mVertexDescriptions.attributeDescriptions[4].location = 4;
 		mVertexDescriptions.attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		mVertexDescriptions.attributeDescriptions[4].offset = sizeof(float) * 11;
-		mVertexDescriptions.attributeDescriptions[4].binding = 0;
 
 		// Instanced attributes
 		// Location 5 : Instance position
@@ -668,7 +666,16 @@ namespace VulkanLib
 			mVertexDescriptions.attributeDescriptions[5].location = 5;								// Location 0 (will be used in the shader)
 			mVertexDescriptions.attributeDescriptions[5].format = VK_FORMAT_R32G32B32_SFLOAT;
 			mVertexDescriptions.attributeDescriptions[5].offset = 0;								// First attribute can start at offset 0
-			mVertexDescriptions.attributeDescriptions[5].binding = 0;
+
+			mVertexDescriptions.attributeDescriptions[6].binding = INSTANCE_BUFFER_BIND_ID;
+			mVertexDescriptions.attributeDescriptions[6].location = 6;								
+			mVertexDescriptions.attributeDescriptions[6].format = VK_FORMAT_R32G32B32_SFLOAT;
+			mVertexDescriptions.attributeDescriptions[6].offset = sizeof(float) * 3;		
+
+			mVertexDescriptions.attributeDescriptions[7].binding = INSTANCE_BUFFER_BIND_ID;
+			mVertexDescriptions.attributeDescriptions[7].location = 7;
+			mVertexDescriptions.attributeDescriptions[7].format = VK_FORMAT_R32G32B32_SFLOAT;
+			mVertexDescriptions.attributeDescriptions[7].offset = sizeof(float) * 6;
 		}
 
 		// Neither the bindingDescriptions or the attributeDescriptions is used directly
@@ -728,8 +735,8 @@ namespace VulkanLib
 		vkCmdBindDescriptorSets(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet, 0, NULL);
 
 		// Push the world matrix constant
-		mPushConstants.world = glm::scale(glm::mat4(), glm::vec3(40));// ->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
-		mPushConstants.color = vec3(1, 0, 1);
+		mPushConstants.world = glm::mat4();// ->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+		mPushConstants.color = vec3(1, 1, 1);
 		vkCmdPushConstants(mPrimaryCommandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &mPushConstants);
 
 		// Bind triangle vertices
