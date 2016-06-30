@@ -158,6 +158,14 @@ namespace VulkanLib
 				mRenderer = new VulkanLib::OpenGLRenderer(mWindow);
 				InitScene();
 			}	
+			else if (GetAsyncKeyState('6')) {
+				mRenderer = new VulkanLib::VulkanRenderer(mWindow, 1, true);
+				InitScene();
+			}
+			else if (GetAsyncKeyState('7')) {
+				mRenderer = new VulkanLib::OpenGLRenderer(mWindow, true);
+				InitScene();
+			}
 		}
 	}
 #endif

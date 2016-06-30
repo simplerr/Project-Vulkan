@@ -10,8 +10,8 @@ namespace VulkanLib
 	class VulkanRenderer : public Renderer
 	{
 	public:
-		VulkanRenderer(Window* window);
-		VulkanRenderer(Window* window, int numThreads);
+		VulkanRenderer(Window* window, bool useIntancing = false);
+		VulkanRenderer(Window* window, int numThreads, bool useIntancing = false);
 
 		virtual void Cleanup();
 		virtual void SetupMultithreading(int numThreads);

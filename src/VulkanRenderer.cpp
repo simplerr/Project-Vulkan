@@ -6,7 +6,7 @@
 namespace VulkanLib
 {
 
-	VulkanRenderer::VulkanRenderer(Window* window)
+	VulkanRenderer::VulkanRenderer(Window* window, bool useInstancing)
 	{
 		mVulkanApp = new VulkanApp();
 
@@ -16,7 +16,7 @@ namespace VulkanLib
 		//mVulkanApp.RenderLoop();
 	}
 
-	VulkanRenderer::VulkanRenderer(Window* window, int numThreads)
+	VulkanRenderer::VulkanRenderer(Window* window, int numThreads, bool useInstancing)
 	{
 		mVulkanApp = new VulkanApp();
 
@@ -25,12 +25,14 @@ namespace VulkanLib
 		
 		mVulkanApp->mTestModel = mModelLoader.LoadModel(mVulkanApp, "data/models/Crate.obj");
 
+		mVulkanApp->EnableInstancing(useInstancing);
+
 		mVulkanApp->SetupMultithreading(numThreads);
 	}
 
 	void VulkanRenderer::Init()
 	{
-
+		mVulkanApp->PrepareInstancing();
 	}
 
 	void VulkanRenderer::Cleanup()

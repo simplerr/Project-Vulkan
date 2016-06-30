@@ -56,10 +56,15 @@ namespace VulkanLib
 		//mat4* instanceWorld;
 	};	// Stored in uniformBuffer.memory in device memory
 
+	struct InstanceData {
+		vec3 position;
+	};
+
 	struct Pipelines {
 		VkPipeline textured;
 		VkPipeline colored;
 		VkPipeline starsphere;
+		VkPipeline instanced;
 	};
 
 	struct PushConstantBlock {
@@ -104,6 +109,8 @@ namespace VulkanLib
 		void SetupVertexDescriptions();
 
 		void SetupMultithreading(int numThreads);			// Custom
+		void EnableInstancing(bool useInstancing);
+		void PrepareInstancing();
 
 		void BuildInstancingCommandBuffer(VkFramebuffer frameBuffer);
 		void RecordRenderingCommandBuffer(VkFramebuffer frameBuffer);
@@ -155,6 +162,9 @@ namespace VulkanLib
 		vkTools::VulkanTexture			mTerrainTexture;	// Testing for the terrain
 		
 		bool							mPrepared = false;
+
+		UniformBuffer					mInstanceBuffer;
+		bool							mUseInstancing;
 
 		Camera*							mCamera;
 		//ModelLoader					mModelLoader;

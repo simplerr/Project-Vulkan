@@ -528,6 +528,31 @@ namespace VulkanLib
 		//VulkanDebug::ErrorCheck(vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE));
 	}
 
+	VkBool32 VulkanBase::CreateBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory)
+	{
+		VkMemoryRequirements memReqs;
+		VkMemoryAllocateInfo memAlloc = vkTools::initializers::memoryAllocateInfo();
+		VkBufferCreateInfo bufferCreateInfo = vkTools::initializers::bufferCreateInfo(usageFlags, size);
+
+		VulkanDebug::ErrorCheck(vkCreateBuffer(mDevice, &bufferCreateInfo, nullptr, buffer));
+
+		vkGetBufferMemoryRequirements(mDevice, *buffer, &memReqs);
+		memAlloc.allocationSize = memReqs.size;
+		uint32_t tmp;
+		memAlloc.memoryTypeIndex = GetMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags, &tmp);
+		VulkanDebug::ErrorCheck(vkAllocateMemory(mDevice, &memAlloc, nullptr, memory));
+		if (data != nullptr)
+		{
+			void *mapped;
+			VulkanDebug::ErrorCheck(vkMapMemory(mDevice, *memory, 0, size, 0, &mapped));
+			memcpy(mapped, data, size);
+			vkUnmapMemory(mDevice, *memory);
+		}
+		VulkanDebug::ErrorCheck(vkBindBufferMemory(mDevice, *buffer, *memory, 0));
+
+		return true;
+	}
+
 	void VulkanBase::BuildPresentCommandBuffers()
 	{
 		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();

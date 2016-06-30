@@ -20,7 +20,7 @@ namespace VulkanLib
 	class OpenGLRenderer : public Renderer
 	{
 	public:
-		OpenGLRenderer(Window* window);
+		OpenGLRenderer(Window* window, bool useInstancing = false);
 		virtual void Cleanup();
 		virtual void SetupMultithreading(int numThreads);
 		virtual void Render();

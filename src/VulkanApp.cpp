@@ -13,6 +13,7 @@
 #include "Light.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
+#define INSTANCE_BUFFER_BIND_ID 1
 #define VULKAN_ENABLE_VALIDATION false		// Debug validation layers toggle (affects performance a lot)
 
 #define NUM_OBJECTS 10 // 64 * 4 * 4 * 2
@@ -34,6 +35,9 @@ namespace VulkanLib
 		// Cleanup descriptor set layout and pipeline layout
 		vkDestroyDescriptorSetLayout(mDevice, mDescriptorSetLayout, nullptr);
 		vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
+
+		vkDestroyBuffer(mDevice, mInstanceBuffer.buffer, nullptr);
+		vkFreeMemory(mDevice, mInstanceBuffer.memory, nullptr);
 
 		vkDestroyPipeline(mDevice, mPipelines.textured, nullptr);
 		vkDestroyPipeline(mDevice, mPipelines.colored, nullptr);
@@ -220,6 +224,35 @@ namespace VulkanLib
 		}
 
 		ExecuteSetupCommandBuffer();
+	}
+
+	void VulkanApp::EnableInstancing(bool useInstancing)
+	{
+		mUseInstancing = useInstancing;
+	}
+
+	// Loads a buffer with instancing data (must be called after all objects are added to the scene)
+	void VulkanApp::PrepareInstancing()
+	{
+		std::vector<InstanceData> instanceData;
+		instanceData.resize(mModels.size());
+
+		for (int i = 0; i < mModels.size(); i++)
+			instanceData[i].position = mModels[i].object->GetPosition();
+
+		size_t bufferSize = instanceData.size() * sizeof(InstanceData);
+
+		CreateBuffer(
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			bufferSize,
+			instanceData.data(),
+			&mInstanceBuffer.buffer,
+			&mInstanceBuffer.memory);
+
+		mInstanceBuffer.descriptor.range = bufferSize;
+		mInstanceBuffer.descriptor.buffer = mInstanceBuffer.buffer;
+		mInstanceBuffer.descriptor.offset = 0;
 	}
 
 	void VulkanApp::PrepareUniformBuffers()
@@ -563,10 +596,21 @@ namespace VulkanLib
 	void VulkanApp::SetupVertexDescriptions()
 	{
 		// First tell Vulkan about how large each vertex is, the binding ID and the inputRate
-		mVertexDescriptions.bindingDescriptions.resize(1);
+		if(mUseInstancing)
+			mVertexDescriptions.bindingDescriptions.resize(2);
+		else
+			mVertexDescriptions.bindingDescriptions.resize(1);
+
 		mVertexDescriptions.bindingDescriptions[0].binding = VERTEX_BUFFER_BIND_ID;				// Bind to ID 0, this information will be used by the shader
 		mVertexDescriptions.bindingDescriptions[0].stride = sizeof(Vertex);						// Size of each vertex
 		mVertexDescriptions.bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		if (mUseInstancing)
+		{
+			mVertexDescriptions.bindingDescriptions[0].binding = INSTANCE_BUFFER_BIND_ID;		// Bind to ID 1, this information will be used by the shader
+			mVertexDescriptions.bindingDescriptions[0].stride = sizeof(InstanceData);			// Size of each instance data
+			mVertexDescriptions.bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+		}
 
 		// We need to tell Vulkan about the memory layout for each attribute
 		// 5 attributes: position, normal, texture coordinates, tangent and color
@@ -607,6 +651,17 @@ namespace VulkanLib
 		mVertexDescriptions.attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		mVertexDescriptions.attributeDescriptions[4].offset = sizeof(float) * 11;
 		mVertexDescriptions.attributeDescriptions[4].binding = 0;
+
+		// Instanced attributes
+		// Location 5 : Instance position
+		if (mUseInstancing)
+		{
+			mVertexDescriptions.attributeDescriptions[0].binding = INSTANCE_BUFFER_BIND_ID;
+			mVertexDescriptions.attributeDescriptions[0].location = 5;								// Location 0 (will be used in the shader)
+			mVertexDescriptions.attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+			mVertexDescriptions.attributeDescriptions[0].offset = 0;								// First attribute can start at offset 0
+			mVertexDescriptions.attributeDescriptions[0].binding = 0;
+		}
 
 		// Neither the bindingDescriptions or the attributeDescriptions is used directly
 		// When creating a graphics pipeline a VkPipelineVertexInputStateCreateInfo structure is sent as an argument and this structure
@@ -671,12 +726,16 @@ namespace VulkanLib
 
 		// Bind triangle vertices
 		VkDeviceSize offsets[1] = { 0 };
-		vkCmdBindVertexBuffers(mPrimaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &mModels[0].mesh->vertices.buffer, offsets);		// [NOTE][TODO] mObjects[0] extremely bad!!
-		vkCmdBindIndexBuffer(mPrimaryCommandBuffer, mModels[0].mesh->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindVertexBuffers(mPrimaryCommandBuffer, VERTEX_BUFFER_BIND_ID, 1, &mTestModel->vertices.buffer, offsets);		// [NOTE][HACK] Note the use of mTestModel!!
+
+		// Binding point 1 : Instance data buffer
+		vkCmdBindVertexBuffers(mPrimaryCommandBuffer, INSTANCE_BUFFER_BIND_ID, 1, &mInstanceBuffer.buffer, offsets);
+
+		vkCmdBindIndexBuffer(mPrimaryCommandBuffer, mTestModel->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 		// Draw indexed triangle	
 		vkCmdSetLineWidth(mPrimaryCommandBuffer, 1.0f);
-		vkCmdDrawIndexed(mPrimaryCommandBuffer, mModels[0].mesh->GetNumIndices(), NUM_OBJECTS, 0, 0, 0);
+		vkCmdDrawIndexed(mPrimaryCommandBuffer, mTestModel->GetNumIndices(), mModels.size(), 0, 0, 0);
 
 		// End command buffer recording & the render pass
 		vkCmdEndRenderPass(mPrimaryCommandBuffer);

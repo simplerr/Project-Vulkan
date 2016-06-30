@@ -17,7 +17,7 @@
 
 namespace VulkanLib
 {
-	OpenGLRenderer::OpenGLRenderer(Window* window)
+	OpenGLRenderer::OpenGLRenderer(Window* window, bool useInstancing)
 	{
 		mWindow = window;
 		mCamera = nullptr;
@@ -37,7 +37,7 @@ namespace VulkanLib
 		
 		LoadTGATextureSimple("data/textures/crate_2.tga", &mTestTexture);
 
-		mUseInstancing = true;
+		mUseInstancing = useInstancing;
 	}
 
 	void OpenGLRenderer::Init()
