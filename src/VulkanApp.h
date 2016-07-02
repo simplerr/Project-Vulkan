@@ -5,6 +5,7 @@
 #include "StaticModel.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "VertexDescription.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -136,10 +137,6 @@ namespace VulkanLib
 		void AddModel(VulkanModel model);
 
 
-		// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
-		// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
-		// inputState is the pVertexInputState when creating the graphics pipeline
-		VertexDescriptions				mVertexDescriptions;
 		UniformBuffer					mUniformBuffer;
 		UniformData						mUniformData;		// Stored in mUniformBuffer.memory in device memory
 		Pipelines						mPipelines;
@@ -182,6 +179,11 @@ namespace VulkanLib
 		std::vector<VulkanModel>		mModels;
 
 		int								mNextThreadId = 0;	// The thread to add new objects to
+
+		// We are assuming that the same Vertex structure is used everywhere since there only is 1 pipeline right now
+		// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
+		// inputState is the pVertexInputState when creating the graphics pipeline
+		VertexDescription				mVertexDescription;
 
 	public:
 		StaticModel*					mTestModel;

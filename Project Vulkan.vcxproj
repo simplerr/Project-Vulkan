@@ -196,6 +196,7 @@
     <ClInclude Include="src\TestCase.h" />
     <ClInclude Include="src\ThreadPool.h" />
     <ClInclude Include="src\Timer.h" />
+    <ClInclude Include="src\VertexDescription.h" />
     <ClInclude Include="src\VulkanApp.h" />
     <ClInclude Include="src\VulkanBase.h" />
     <ClInclude Include="src\VulkanDebug.h" />

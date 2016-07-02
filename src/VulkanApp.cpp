@@ -534,7 +534,7 @@ namespace VulkanLib
 		pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineCreateInfo.layout = mPipelineLayout;
 		pipelineCreateInfo.renderPass = mRenderPass;
-		pipelineCreateInfo.pVertexInputState = &mVertexDescriptions.inputState;		// From base - &vertices.inputState;
+		pipelineCreateInfo.pVertexInputState = &mVertexDescription.GetInputState();		// From base - &vertices.inputState;
 		pipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
 		pipelineCreateInfo.pRasterizationState = &rasterizationState;
 		pipelineCreateInfo.pColorBlendState = &colorBlendState;
@@ -604,90 +604,26 @@ namespace VulkanLib
 	void VulkanApp::SetupVertexDescriptions()
 	{
 		// First tell Vulkan about how large each vertex is, the binding ID and the inputRate
-		if(mUseInstancing)
-			mVertexDescriptions.bindingDescriptions.resize(2);
-		else
-			mVertexDescriptions.bindingDescriptions.resize(1);
-
-		mVertexDescriptions.bindingDescriptions[0].binding = VERTEX_BUFFER_BIND_ID;				// Bind to ID 0, this information will be used by the shader
-		mVertexDescriptions.bindingDescriptions[0].stride = sizeof(Vertex);						// Size of each vertex
-		mVertexDescriptions.bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		mVertexDescription.AddBinding(VERTEX_BUFFER_BIND_ID, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX);			// Per vertex
 
 		if (mUseInstancing)
-		{
-			mVertexDescriptions.bindingDescriptions[1].binding = INSTANCE_BUFFER_BIND_ID;		// Bind to ID 1, this information will be used by the shader
-			mVertexDescriptions.bindingDescriptions[1].stride = sizeof(InstanceData);			// Size of each instance data
-			mVertexDescriptions.bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
-		}
+			mVertexDescription.AddBinding(INSTANCE_BUFFER_BIND_ID, sizeof(Vertex), VK_VERTEX_INPUT_RATE_INSTANCE);		// Per instance
 
 		// We need to tell Vulkan about the memory layout for each attribute
 		// 5 attributes: position, normal, texture coordinates, tangent and color
 		// See Vertex struct
-		if (mUseInstancing)
-			mVertexDescriptions.attributeDescriptions.resize(8);
-		else
-			mVertexDescriptions.attributeDescriptions.resize(5);
-		
-		// Location 0 : Position
-		mVertexDescriptions.attributeDescriptions[0].binding = VERTEX_BUFFER_BIND_ID;
-		mVertexDescriptions.attributeDescriptions[0].location = 0;								// Location 0 (will be used in the shader)
-		mVertexDescriptions.attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		mVertexDescriptions.attributeDescriptions[0].offset = 0;									// First attribute can start at offset 0
+		mVertexDescription.AddAttribute(VERTEX_BUFFER_BIND_ID, Vec3Attribute());	// Location 0 : Position
+		mVertexDescription.AddAttribute(VERTEX_BUFFER_BIND_ID, Vec3Attribute());	// Location 1 : Color
+		mVertexDescription.AddAttribute(VERTEX_BUFFER_BIND_ID, Vec3Attribute());	// Location 2 : Normal
+		mVertexDescription.AddAttribute(VERTEX_BUFFER_BIND_ID, Vec2Attribute());	// Location 3 : Texture
+		mVertexDescription.AddAttribute(VERTEX_BUFFER_BIND_ID, Vec4Attribute());	// Location 4 : Tangent
 
-		// Location 1 : Color
-		mVertexDescriptions.attributeDescriptions[1].binding = VERTEX_BUFFER_BIND_ID;
-		mVertexDescriptions.attributeDescriptions[1].location = 1;								// Location 1 (will be used in the shader)
-		mVertexDescriptions.attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		mVertexDescriptions.attributeDescriptions[1].offset = sizeof(float) * 3;					// Second attribute needs to start with offset = sizeof(attribute 1)
-
-		// Location 2 : Normal
-		mVertexDescriptions.attributeDescriptions[2].binding = VERTEX_BUFFER_BIND_ID;
-		mVertexDescriptions.attributeDescriptions[2].location = 2;
-		mVertexDescriptions.attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-		mVertexDescriptions.attributeDescriptions[2].offset = sizeof(float) * 6;
-
-		// Location 3 : Texture
-		mVertexDescriptions.attributeDescriptions[3].binding = VERTEX_BUFFER_BIND_ID;
-		mVertexDescriptions.attributeDescriptions[3].location = 3;
-		mVertexDescriptions.attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
-		mVertexDescriptions.attributeDescriptions[3].offset = sizeof(float) * 9;
-
-		// Location 4 : Tangent
-		mVertexDescriptions.attributeDescriptions[4].binding = VERTEX_BUFFER_BIND_ID;
-		mVertexDescriptions.attributeDescriptions[4].location = 4;
-		mVertexDescriptions.attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		mVertexDescriptions.attributeDescriptions[4].offset = sizeof(float) * 11;
-
-		// Instanced attributes
-		// Location 5 : Instance position
 		if (mUseInstancing)
 		{
-			mVertexDescriptions.attributeDescriptions[5].binding = INSTANCE_BUFFER_BIND_ID;
-			mVertexDescriptions.attributeDescriptions[5].location = 5;								// Location 0 (will be used in the shader)
-			mVertexDescriptions.attributeDescriptions[5].format = VK_FORMAT_R32G32B32_SFLOAT;
-			mVertexDescriptions.attributeDescriptions[5].offset = 0;								// First attribute can start at offset 0
-
-			mVertexDescriptions.attributeDescriptions[6].binding = INSTANCE_BUFFER_BIND_ID;
-			mVertexDescriptions.attributeDescriptions[6].location = 6;								
-			mVertexDescriptions.attributeDescriptions[6].format = VK_FORMAT_R32G32B32_SFLOAT;
-			mVertexDescriptions.attributeDescriptions[6].offset = sizeof(float) * 3;		
-
-			mVertexDescriptions.attributeDescriptions[7].binding = INSTANCE_BUFFER_BIND_ID;
-			mVertexDescriptions.attributeDescriptions[7].location = 7;
-			mVertexDescriptions.attributeDescriptions[7].format = VK_FORMAT_R32G32B32_SFLOAT;
-			mVertexDescriptions.attributeDescriptions[7].offset = sizeof(float) * 6;
+			mVertexDescription.AddAttribute(INSTANCE_BUFFER_BIND_ID, Vec3Attribute());	// Location 5 : Instance position
+			mVertexDescription.AddAttribute(INSTANCE_BUFFER_BIND_ID, Vec3Attribute());	// Location 6 : Instance scale
+			mVertexDescription.AddAttribute(INSTANCE_BUFFER_BIND_ID, Vec3Attribute());	// Location 7 : Instance color
 		}
-
-		// Neither the bindingDescriptions or the attributeDescriptions is used directly
-		// When creating a graphics pipeline a VkPipelineVertexInputStateCreateInfo structure is sent as an argument and this structure
-		// contains the VkVertexInputBindingDescription and VkVertexInputAttributeDescription
-		// The last thing to do is to assign the binding and attribute descriptions
-		mVertexDescriptions.inputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		mVertexDescriptions.inputState.pNext = NULL;
-		mVertexDescriptions.inputState.vertexBindingDescriptionCount = mVertexDescriptions.bindingDescriptions.size();
-		mVertexDescriptions.inputState.pVertexBindingDescriptions = mVertexDescriptions.bindingDescriptions.data();
-		mVertexDescriptions.inputState.vertexAttributeDescriptionCount = mVertexDescriptions.attributeDescriptions.size();
-		mVertexDescriptions.inputState.pVertexAttributeDescriptions = mVertexDescriptions.attributeDescriptions.data();
 	}
 
 	void VulkanApp::BuildInstancingCommandBuffer(VkFramebuffer frameBuffer)

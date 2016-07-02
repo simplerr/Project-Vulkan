@@ -26,8 +26,6 @@ namespace VulkanLib
 		
 		mVulkanApp->mTestModel = mModelLoader.LoadModel(mVulkanApp, "data/models/Crate.obj");
 
-
-
 		mVulkanApp->SetupMultithreading(numThreads);
 	}
 
