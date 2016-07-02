@@ -96,6 +96,9 @@
     <ClCompile Include="src\opengl\loadobj.c">
       <Filter>Source Files\opengl</Filter>
     </ClCompile>
+    <ClCompile Include="src\BigUniformBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VulkanApp.h">
@@ -171,6 +174,12 @@
       <Filter>Header Files\opengl</Filter>
     </ClInclude>
     <ClInclude Include="src\VertexDescription.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\UniformBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BigUniformBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

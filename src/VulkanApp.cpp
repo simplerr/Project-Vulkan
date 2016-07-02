@@ -28,9 +28,7 @@ namespace VulkanLib
 
 	VulkanApp::~VulkanApp()
 	{
-		// Cleanup uniform buffer
-		vkDestroyBuffer(mDevice, mUniformBuffer.buffer, nullptr);
-		vkFreeMemory(mDevice, mUniformBuffer.memory, nullptr);
+		mUniformBuffer.Cleanup(GetDevice());
 
 		// Cleanup descriptor set layout and pipeline layout
 		vkDestroyDescriptorSetLayout(mDevice, mDescriptorSetLayout, nullptr);
@@ -205,7 +203,7 @@ namespace VulkanLib
 			writeDescriptorSet[0].dstSet = mThreadData[t].descriptorSet;
 			writeDescriptorSet[0].descriptorCount = 1;
 			writeDescriptorSet[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			writeDescriptorSet[0].pBufferInfo = &mUniformBuffer.descriptor;
+			writeDescriptorSet[0].pBufferInfo = &mUniformBuffer.GetDescriptor();
 			writeDescriptorSet[0].dstBinding = 0;				// Binds this uniform buffer to binding point 0
 
 			//  Binding 1: Image sampler
@@ -269,7 +267,7 @@ namespace VulkanLib
 		light.SetDirection(1, -1, 0);
 		light.SetAtt(1, 1, 0);
 		light.SetIntensity(0, 0, 1);
-		mUniformData.lights.push_back(light);
+		mUniformBuffer.lights.push_back(light);
 
 		// Light
 		Light light2;
@@ -280,38 +278,28 @@ namespace VulkanLib
 	/*	mUniformData.lights.push_back(light2);
 		mUniformData.lights.push_back(light2);*/
 
-		mUniformData.constants.numLights = mUniformData.lights.size();	// [NOTE]
+		mUniformBuffer.constants.numLights = mUniformBuffer.lights.size();
 
-		// Create the uniform buffer
-		// It's the same process as creating any buffer, except that the VkBufferCreateInfo.usage bit is different (VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-		VkBufferCreateInfo createInfo = {};
-		VkMemoryAllocateInfo allocInfo = {};
-		VkMemoryRequirements memoryRequirments = {};
+		// Creates a VkBuffer and maps it to a VkMemory (VulkanBase::CreateBuffer())
+		mUniformBuffer.CreateBuffer(this);
 
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = 0;								// Gets assigned with vkGetBufferMemoryRequirements
-		allocInfo.memoryTypeIndex = 0;
-
-		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		int size = sizeof(mUniformData.camera) + mUniformData.lights.size() * sizeof(Light) + sizeof(mUniformData.constants);
-		createInfo.size = size;					// 3x glm::mat4 NOTE: Not any more!!
-		createInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-
-		VulkanDebug::ErrorCheck(vkCreateBuffer(mDevice, &createInfo, nullptr, &mUniformBuffer.buffer));
-		vkGetBufferMemoryRequirements(mDevice, mUniformBuffer.buffer, &memoryRequirments);
-		allocInfo.allocationSize = memoryRequirments.size;
-		GetMemoryType(memoryRequirments.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocInfo.memoryTypeIndex);
-		VulkanDebug::ErrorCheck(vkAllocateMemory(mDevice, &allocInfo, nullptr, &mUniformBuffer.memory));
-		VulkanDebug::ErrorCheck(vkBindBufferMemory(mDevice, mUniformBuffer.buffer, mUniformBuffer.memory, 0));
-
-		// uniformBuffer.buffer will not be used by itself, it's the VkWriteDescriptorSet.pBufferInfo that points to our uniformBuffer.descriptor
-		// so here we need to point uniformBuffer.descriptor.buffer to uniformBuffer.buffer
-		mUniformBuffer.descriptor.buffer = mUniformBuffer.buffer;
-		mUniformBuffer.descriptor.offset = 0;
-		mUniformBuffer.descriptor.range = size;
-
-		// This is where the data gets transfered to device memory w/ vkMapMemory/vkUnmapMemory and memcpy
 		UpdateUniformBuffers();
+	}
+
+	// Call this every time any uniform buffer should be updated (view changes etc.)
+	void VulkanApp::UpdateUniformBuffers()
+	{
+		if (mCamera != nullptr)
+		{
+			mUniformBuffer.camera.projectionMatrix = mCamera->GetProjection(); 
+			mUniformBuffer.camera.viewMatrix = mCamera->GetView();
+			mUniformBuffer.camera.projectionMatrix = mCamera->GetProjection();
+			mUniformBuffer.camera.eyePos = mCamera->GetPosition();
+		}
+
+		mUniformBuffer.constants.useInstancing = mUseInstancing;
+
+		mUniformBuffer.UpdateMemory(GetDevice());
 	}
 
 	void VulkanApp::SetupDescriptorSetLayout()
@@ -399,7 +387,7 @@ namespace VulkanLib
 		writeDescriptorSet[0].dstSet = mDescriptorSet;
 		writeDescriptorSet[0].descriptorCount = 1;
 		writeDescriptorSet[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSet[0].pBufferInfo = &mUniformBuffer.descriptor;
+		writeDescriptorSet[0].pBufferInfo = &mUniformBuffer.GetDescriptor();
 		writeDescriptorSet[0].dstBinding = 0;				// Binds this uniform buffer to binding point 0
 
 		//  Binding 1: Image sampler
@@ -411,17 +399,6 @@ namespace VulkanLib
 		writeDescriptorSet[1].dstBinding = 1;				// Binds the image sampler to binding point 1
 
 		vkUpdateDescriptorSets(mDevice, writeDescriptorSet.size(), writeDescriptorSet.data(), 0, NULL);
-
-		//
-		// Terrain descriptor set
-		// 
-		/*texDescriptor.sampler = terrainTexture.sampler;				// NOTE: TODO: This feels really bad, not scalable with more objects at all, fix!!! LoadModel() must run before this!!
-		texDescriptor.imageView = terrainTexture.view;
-		texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-		writeDescriptorSet[0].dstSet = descriptorSet[1];
-		writeDescriptorSet[1].dstSet = descriptorSet[1];
-
-		vkUpdateDescriptorSets(device, writeDescriptorSet.size(), writeDescriptorSet.data(), 0, NULL);*/
 	}
 
 	void VulkanApp::SetupTerrainDescriptorSet()
@@ -445,7 +422,7 @@ namespace VulkanLib
 		writeDescriptorSet[0].dstSet = mTerrainDescriptorSet;
 		writeDescriptorSet[0].descriptorCount = 1;
 		writeDescriptorSet[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSet[0].pBufferInfo = &mUniformBuffer.descriptor;
+		writeDescriptorSet[0].pBufferInfo = &mUniformBuffer.GetDescriptor();
 		writeDescriptorSet[0].dstBinding = 0;				// Binds this uniform buffer to binding point 0
 
 		//  Binding 1: Image sampler
@@ -558,47 +535,6 @@ namespace VulkanLib
 		shaderStages[0] = LoadShader("data/shaders/starsphere/starsphere.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		shaderStages[1] = LoadShader("data/shaders/starsphere/starsphere.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 		vkTools::checkResult(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &mPipelines.starsphere));
-	}
-
-	// Call this every time any uniform buffer should be updated (view changes etc.)
-	void VulkanApp::UpdateUniformBuffers()
-	{
-		if (mCamera != nullptr)
-		{
-			mUniformData.camera.projectionMatrix = mCamera->GetProjection(); // glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 256.0f);
-
-			float zoom = -8;
-			glm::mat4 viewMatrix = mCamera->GetView(); //camera->GetViewMatrix();// glm::mat4();
-
-			mUniformData.camera.viewMatrix = mCamera->GetView();
-			mUniformData.camera.projectionMatrix = mCamera->GetProjection();
-			mUniformData.camera.eyePos = mCamera->GetPosition();
-
-			// Map uniform buffer and update it
-			uint8_t *data;
-			VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, 0, sizeof(mUniformData.camera), 0, (void **)&data));
-			memcpy(data, &mUniformData.camera, sizeof(mUniformData.camera));
-			vkUnmapMemory(mDevice, mUniformBuffer.memory);
-		}
-
-		mUniformData.constants.useInstancing = mUseInstancing;
-
-		// Map and update the light data
-		uint8_t *pData;
-		uint32_t dataOffset = sizeof(mUniformData.camera);
-		uint32_t dataSize = mUniformData.lights.size() * sizeof(Light);
-		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&pData));
-		memcpy(pData, mUniformData.lights.data(), dataSize);
-		vkUnmapMemory(mDevice, mUniformBuffer.memory);
-
-		// Map and update number of lights
-		dataOffset += dataSize; // sizeof(mUniformData.camera) + 
-		dataSize = sizeof(mUniformData.constants);
-		uint8_t *data;
-		VulkanDebug::ErrorCheck(vkMapMemory(mDevice, mUniformBuffer.memory, dataOffset, dataSize, 0, (void **)&data));
-		memcpy(data, &mUniformData.constants.numLights, dataSize);
-		vkUnmapMemory(mDevice, mUniformBuffer.memory);
-
 	}
 
 	void VulkanApp::SetupVertexDescriptions()

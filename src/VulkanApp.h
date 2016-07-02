@@ -6,6 +6,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "VertexDescription.h"
+#include "UniformBuffer.h"
+#include "BigUniformBuffer.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -26,7 +28,7 @@ namespace VulkanLib
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	};
 
-	struct UniformBuffer {
+	struct Buffer {
 		VkBuffer buffer;
 		VkDeviceMemory memory;
 		VkDescriptorBufferInfo descriptor;
@@ -137,8 +139,8 @@ namespace VulkanLib
 		void AddModel(VulkanModel model);
 
 
-		UniformBuffer					mUniformBuffer;
-		UniformData						mUniformData;		// Stored in mUniformBuffer.memory in device memory
+		//UniformBuffer					mUniformBuffer;
+		//UniformData						mUniformData;		// Stored in mUniformBuffer.memory in device memory
 		Pipelines						mPipelines;
 
 		VkDescriptorSetLayout			mDescriptorSetLayout;
@@ -163,7 +165,7 @@ namespace VulkanLib
 		
 		bool							mPrepared = false;
 
-		UniformBuffer					mInstanceBuffer;
+		Buffer							mInstanceBuffer;
 		bool							mUseInstancing;
 
 		Camera*							mCamera;
@@ -184,6 +186,8 @@ namespace VulkanLib
 		// inputState will have pointers to the binding and attribute descriptions after PrepareVertices()
 		// inputState is the pVertexInputState when creating the graphics pipeline
 		VertexDescription				mVertexDescription;
+
+		BigUniformBuffer				mUniformBuffer;
 
 	public:
 		StaticModel*					mTestModel;

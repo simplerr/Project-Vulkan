@@ -530,6 +530,16 @@ namespace VulkanLib
 
 	VkBool32 VulkanBase::CreateBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory)
 	{
+		//VkBufferCreateInfo createInfo = {};
+		//VkMemoryAllocateInfo allocInfo = {};
+		//VkMemoryRequirements memoryRequirments = {};
+
+		//allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		//allocInfo.allocationSize = 0;								// Gets assigned with vkGetBufferMemoryRequirements
+		//allocInfo.memoryTypeIndex = 0;
+
+		//createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+
 		VkMemoryRequirements memReqs;
 		VkMemoryAllocateInfo memAlloc = vkTools::initializers::memoryAllocateInfo();
 		VkBufferCreateInfo bufferCreateInfo = vkTools::initializers::bufferCreateInfo(usageFlags, size);
