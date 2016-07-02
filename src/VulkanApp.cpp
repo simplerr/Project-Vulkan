@@ -278,10 +278,11 @@ namespace VulkanLib
 	/*	mUniformData.lights.push_back(light2);
 		mUniformData.lights.push_back(light2);*/
 
+		// Important to call this before CreateBuffer() since # lights affects the total size
 		mUniformBuffer.constants.numLights = mUniformBuffer.lights.size();
 
 		// Creates a VkBuffer and maps it to a VkMemory (VulkanBase::CreateBuffer())
-		mUniformBuffer.CreateBuffer(this);
+		mUniformBuffer.CreateBuffer(this, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
 		UpdateUniformBuffers();
 	}

@@ -14,11 +14,11 @@ namespace VulkanLib
 			vkFreeMemory(device, mMemory, nullptr);
 		}
 
-		void CreateBuffer(VulkanBase* vulkanBase)
+		void CreateBuffer(VulkanBase* vulkanBase, VkMemoryPropertyFlagBits propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
 		{
 			vulkanBase->CreateBuffer(
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 
+				propertyFlags,
 				GetSize(),	// Virtual function
 				nullptr, 
 				&mBuffer, 
