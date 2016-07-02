@@ -72,7 +72,7 @@ namespace VulkanLib
 			attributeDescription.binding = binding;
 			attributeDescription.location = attributeDescriptions.size();	
 			attributeDescription.format = attribute.GetFormat();
-			attributeDescription.offset = offset;
+			attributeDescription.offset = offsets[binding];
 
 			attributeDescriptions.push_back(attributeDescription);
 
@@ -80,7 +80,7 @@ namespace VulkanLib
 			inputState.vertexAttributeDescriptionCount = attributeDescriptions.size();
 			inputState.pVertexAttributeDescriptions = attributeDescriptions.data();
 
-			offset += attribute.GetSize();
+			offsets[binding] += attribute.GetSize();
 		}
 
 		VkPipelineVertexInputStateCreateInfo GetInputState()
@@ -93,6 +93,6 @@ namespace VulkanLib
 		std::vector<VkVertexInputBindingDescription> bindingDescriptions;
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
-		int offset = 0;		// Start with 0 offset
+		std::map<int, int> offsets;		// Each binding have their own offset
 	};
 }

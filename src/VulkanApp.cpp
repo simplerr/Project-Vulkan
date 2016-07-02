@@ -607,7 +607,7 @@ namespace VulkanLib
 		mVertexDescription.AddBinding(VERTEX_BUFFER_BIND_ID, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX);			// Per vertex
 
 		if (mUseInstancing)
-			mVertexDescription.AddBinding(INSTANCE_BUFFER_BIND_ID, sizeof(Vertex), VK_VERTEX_INPUT_RATE_INSTANCE);		// Per instance
+			mVertexDescription.AddBinding(INSTANCE_BUFFER_BIND_ID, sizeof(InstanceData), VK_VERTEX_INPUT_RATE_INSTANCE);		// Per instance
 
 		// We need to tell Vulkan about the memory layout for each attribute
 		// 5 attributes: position, normal, texture coordinates, tangent and color
