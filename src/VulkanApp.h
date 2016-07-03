@@ -59,9 +59,9 @@ namespace VulkanLib
 		PushConstantBlock pushConstants;
 		VkCommandBuffer commandBuffer;
 		VkCommandPool commandPool;
-		VkDescriptorPool descriptorPool;
 		std::vector<VulkanModel> threadObjects;
 
+		DescriptorPool descriptorPool1;
 		DescriptorSet descriptorSet;
 
 		StaticModel model;
@@ -153,6 +153,7 @@ namespace VulkanLib
 
 		BigUniformBuffer				mUniformBuffer;
 
+		DescriptorPool					mDescriptorPool;
 		DescriptorSet					mDescriptorSet;
 
 	public:

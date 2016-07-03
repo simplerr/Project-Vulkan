@@ -29,6 +29,7 @@ namespace VulkanLib
 	VulkanApp::~VulkanApp()
 	{
 		mUniformBuffer.Cleanup(GetDevice());
+		mDescriptorPool.Cleanup(GetDevice());
 		mDescriptorSet.Cleanup(GetDevice());
 
 		// Cleanup pipeline layout
@@ -57,7 +58,7 @@ namespace VulkanLib
 		{
 			vkFreeCommandBuffers(mDevice, mThreadData[t].commandPool, 1, &mThreadData[t].commandBuffer);
 			vkDestroyCommandPool(mDevice, mThreadData[t].commandPool, nullptr);
-			vkDestroyDescriptorPool(mDevice, mThreadData[t].descriptorPool, nullptr);
+			mThreadData[t].descriptorPool1.Cleanup(GetDevice());
 
 			for (int i = 0; i < mThreadData[t].threadObjects.size(); i++)
 			{
@@ -77,22 +78,13 @@ namespace VulkanLib
 		vkCreateFence(mDevice, &fenceCreateInfo, NULL, &mRenderFence);
 
 		SetupVertexDescriptions();			// Custom
-		SetupDescriptorSetLayout();
+		SetupDescriptorSetLayout();			// Must run before PreparePipelines() (VkPipelineLayout)
 		PreparePipelines();
-		LoadModels();						// Custom
-		PrepareUniformBuffers();
+		LoadModels();						// Must run before SetupDescriptorSet() (Loads textures)
+		PrepareUniformBuffers();			// Must run before SetupDescriptorSet() (Creates the uniform buffer)
 		SetupDescriptorPool();
-		
-		//SetupMultithreading();			// Custom
-
-
-		SetupDescriptorSet();
+		SetupDescriptorSet();				
 		PrepareCommandBuffers();
-		//SetupTerrainDescriptorSet();		// Custom
-
-		// This records all the rendering commands to a command buffer
-		// The command buffer will be sent to VkQueueSubmit in Draw() but this code only runs once
-		//RecordRenderingCommandBuffer();
 
 		mPrepared = true;
 	}
@@ -156,6 +148,7 @@ namespace VulkanLib
 
 		mNumObjects = 2048; // [NOTE][TODO] * 2 more crashes the computer!!
 
+		// Needed? No VkCmdXXX?
 		CreateSetupCommandBuffer();
 
 		// Prepare each thread data
@@ -170,33 +163,18 @@ namespace VulkanLib
 			allocateInfo = CreateInfo::CommandBuffer(mThreadData[t].commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY, 1);
 			VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mThreadData[t].commandBuffer));
 
-			// We need to tell the API the number of max. requested descriptors per type
-			// Only one descriptor type (uniform buffer) used
-			// More needed if images are used etc.
-			VkDescriptorPoolSize typeCounts[2];
-			typeCounts[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;				// Uniform buffers
-			typeCounts[0].descriptorCount = 1;
-
-			typeCounts[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;		// Image sampler
-			typeCounts[1].descriptorCount = 1;
-
-			VkDescriptorPoolCreateInfo createInfo2 = {};
-			createInfo2 = CreateInfo::DescriptorPool(2, typeCounts, 2);		
-			VulkanDebug::ErrorCheck(vkCreateDescriptorPool(mDevice, &createInfo2, nullptr, &mThreadData[t].descriptorPool));
-
-			mThreadData[t].descriptorSet.AddLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);				// Uniform buffer binding: 0
+			mThreadData[t].descriptorSet.AddLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);					// Uniform buffer binding: 0
 			mThreadData[t].descriptorSet.AddLayoutBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);		// Combined image sampler binding: 1
 			mThreadData[t].descriptorSet.CreateLayout(mDevice);
 
-			mThreadData[t].descriptorSet.AllocateDescriptorSets(mDevice, mThreadData[t].descriptorPool);
+			mThreadData[t].descriptorPool1.CreatePoolFromLayout(mDevice, mDescriptorSet.GetLayoutBindings());
+
+			mThreadData[t].descriptorSet.AllocateDescriptorSets(mDevice, mThreadData[t].descriptorPool1.GetVkDescriptorPool());
 			mThreadData[t].descriptorSet.BindUniformBuffer(0, &mUniformBuffer.GetDescriptor());
 			mThreadData[t].descriptorSet.BindCombinedImage(1, &GetTextureDescriptorInfo(mTestTexture)); // NOTE: TODO: This feels really bad, only one texture can be used right now! LoadModel() must run before this!!
 			mThreadData[t].descriptorSet.UpdateDescriptorSets(mDevice);
 			
-			//
-			// Let every thread have unique vertex and index buffers
-			//
-
+			// Let every thread have unique vertex and index buffer
 			mThreadData[t].model.mMeshes = mTestModel->mMeshes;
 			mThreadData[t].model.BuildBuffers(this);	
 		}
@@ -246,15 +224,6 @@ namespace VulkanLib
 		light.SetIntensity(0, 0, 1);
 		mUniformBuffer.lights.push_back(light);
 
-		// Light
-		Light light2;
-		light2.SetPosition(150, -150, 150);
-		light2.SetDirection(1, 0, 0);
-		light2.SetAtt(1, 1, 0);
-		light2.SetIntensity(0, 0, 1);
-	/*	mUniformData.lights.push_back(light2);
-		mUniformData.lights.push_back(light2);*/
-
 		// Important to call this before CreateBuffer() since # lights affects the total size
 		mUniformBuffer.constants.numLights = mUniformBuffer.lights.size();
 
@@ -302,29 +271,13 @@ namespace VulkanLib
 
 	void VulkanApp::SetupDescriptorPool()
 	{
-		// We need to tell the API the number of max. requested descriptors per type
-		// Only one descriptor type (uniform buffer) used
-		// More needed if images are used etc.
-		VkDescriptorPoolSize typeCounts[2];
-		typeCounts[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;				// Uniform buffers
-		typeCounts[0].descriptorCount = 1;
-
-		typeCounts[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;		// Image sampler
-		typeCounts[1].descriptorCount = 1;
-
-		VkDescriptorPoolCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		createInfo.poolSizeCount = 2;
-		createInfo.pPoolSizes = typeCounts;
-		createInfo.maxSets = 2;
-
-		VulkanDebug::ErrorCheck(vkCreateDescriptorPool(mDevice, &createInfo, nullptr, &mDescriptorPool));
+		mDescriptorPool.CreatePoolFromLayout(mDevice, mDescriptorSet.GetLayoutBindings());
 	}
 
 	// [TODO] Let each thread have a seperate descriptor set!!
 	void VulkanApp::SetupDescriptorSet()
 	{
-		mDescriptorSet.AllocateDescriptorSets(mDevice, mDescriptorPool);
+		mDescriptorSet.AllocateDescriptorSets(mDevice, mDescriptorPool.GetVkDescriptorPool());
 		mDescriptorSet.BindUniformBuffer(0, &mUniformBuffer.GetDescriptor());
 		mDescriptorSet.BindCombinedImage(1, &GetTextureDescriptorInfo(mTestTexture)); // NOTE: TODO: This feels really bad, only one texture can be used right now! LoadModel() must run before this!!
 		mDescriptorSet.UpdateDescriptorSets(mDevice);
@@ -434,10 +387,10 @@ namespace VulkanLib
 	void VulkanApp::SetupVertexDescriptions()
 	{
 		// First tell Vulkan about how large each vertex is, the binding ID and the inputRate
-		mVertexDescription.AddBinding(VERTEX_BUFFER_BIND_ID, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX);			// Per vertex
+		mVertexDescription.AddBinding(VERTEX_BUFFER_BIND_ID, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX);					// Per vertex
 
 		if (mUseInstancing)
-			mVertexDescription.AddBinding(INSTANCE_BUFFER_BIND_ID, sizeof(InstanceData), VK_VERTEX_INPUT_RATE_INSTANCE);		// Per instance
+			mVertexDescription.AddBinding(INSTANCE_BUFFER_BIND_ID, sizeof(InstanceData), VK_VERTEX_INPUT_RATE_INSTANCE);	// Per instance
 
 		// We need to tell Vulkan about the memory layout for each attribute
 		// 5 attributes: position, normal, texture coordinates, tangent and color

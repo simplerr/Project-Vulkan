@@ -50,8 +50,6 @@ namespace VulkanLib
 		vkDestroySemaphore(mDevice, mPresentComplete, nullptr);
 		vkDestroySemaphore(mDevice, mRenderComplete, nullptr);
 
-		vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
-
 		delete mTextureLoader;
 
 		vkDestroyCommandPool(mDevice, mCommandPool, nullptr);

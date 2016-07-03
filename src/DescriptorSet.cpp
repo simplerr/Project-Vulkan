@@ -63,6 +63,11 @@ namespace VulkanLib
 		mWriteDescriptorSets.push_back(writeDescriptorSet);
 	}
 
+	std::vector<VkDescriptorSetLayoutBinding> DescriptorSet::GetLayoutBindings()
+	{
+		return mLayoutBindings;
+	}
+
 	void DescriptorSet::UpdateDescriptorSets(VkDevice device)
 	{
 		vkUpdateDescriptorSets(device, mWriteDescriptorSets.size(), mWriteDescriptorSets.data(), 0, NULL);

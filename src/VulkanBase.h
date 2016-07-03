@@ -133,9 +133,6 @@ namespace VulkanLib
 		// Color buffer format
 		VkFormat						mColorFormat				= VK_FORMAT_B8G8R8A8_UNORM;
 
-		// Descriptor set pool
-		VkDescriptorPool				mDescriptorPool				= VK_NULL_HANDLE;
-
 		// List of shader modules created and that needs cleanup
 		std::vector<VkShaderModule>		mShaderModules;
 
