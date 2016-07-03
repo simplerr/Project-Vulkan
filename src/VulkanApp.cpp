@@ -184,35 +184,14 @@ namespace VulkanLib
 			createInfo2 = CreateInfo::DescriptorPool(2, typeCounts, 2);		
 			VulkanDebug::ErrorCheck(vkCreateDescriptorPool(mDevice, &createInfo2, nullptr, &mThreadData[t].descriptorPool));
 
-			// Setup thread descriptor set
-			VkDescriptorSetAllocateInfo allocInfo = {};
-			allocInfo = CreateInfo::DescriptorSet(mThreadData[t].descriptorPool, 1, &mDescriptorSet.setLayout);
+			mThreadData[t].descriptorSet.AddLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);				// Uniform buffer binding: 0
+			mThreadData[t].descriptorSet.AddLayoutBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);		// Combined image sampler binding: 1
+			mThreadData[t].descriptorSet.CreateLayout(mDevice);
 
-			VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(mDevice, &allocInfo, &mThreadData[t].descriptorSet));
-
-			VkDescriptorImageInfo texDescriptor = {};
-			texDescriptor.sampler = mTestTexture.sampler;				// NOTE: TODO: This feels really bad, not scalable with more objects at all, fix!!! LoadModel() must run before this!!
-			texDescriptor.imageView = mTestTexture.view;
-			texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-			// Binding 0 : Uniform buffer
-			std::vector<VkWriteDescriptorSet> writeDescriptorSet(2);
-			writeDescriptorSet[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptorSet[0].dstSet = mThreadData[t].descriptorSet;
-			writeDescriptorSet[0].descriptorCount = 1;
-			writeDescriptorSet[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			writeDescriptorSet[0].pBufferInfo = &mUniformBuffer.GetDescriptor();
-			writeDescriptorSet[0].dstBinding = 0;				// Binds this uniform buffer to binding point 0
-
-			//  Binding 1: Image sampler
-			writeDescriptorSet[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptorSet[1].dstSet = mThreadData[t].descriptorSet;
-			writeDescriptorSet[1].descriptorCount = 1;
-			writeDescriptorSet[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writeDescriptorSet[1].pImageInfo = &texDescriptor;
-			writeDescriptorSet[1].dstBinding = 1;				// Binds the image sampler to binding point 1
-
-			vkUpdateDescriptorSets(mDevice, writeDescriptorSet.size(), writeDescriptorSet.data(), 0, NULL);
+			mThreadData[t].descriptorSet.AllocateDescriptorSets(mDevice, mThreadData[t].descriptorPool);
+			mThreadData[t].descriptorSet.BindUniformBuffer(0, &mUniformBuffer.GetDescriptor());
+			mThreadData[t].descriptorSet.BindCombinedImage(1, &GetTextureDescriptorInfo(mTestTexture)); // NOTE: TODO: This feels really bad, only one texture can be used right now! LoadModel() must run before this!!
+			mThreadData[t].descriptorSet.UpdateDescriptorSets(mDevice);
 			
 			//
 			// Let every thread have unique vertex and index buffers
@@ -690,7 +669,7 @@ namespace VulkanLib
 			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object.pipeline);
 
 			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &thread->descriptorSet, 0, NULL);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &thread->descriptorSet.descriptorSet, 0, NULL);
 
 			// Push the world matrix constant
 			thread->pushConstants.world = object.object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 

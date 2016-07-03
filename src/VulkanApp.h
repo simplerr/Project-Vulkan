@@ -59,9 +59,10 @@ namespace VulkanLib
 		PushConstantBlock pushConstants;
 		VkCommandBuffer commandBuffer;
 		VkCommandPool commandPool;
-		VkDescriptorSet descriptorSet;			// Testing
 		VkDescriptorPool descriptorPool;
 		std::vector<VulkanModel> threadObjects;
+
+		DescriptorSet descriptorSet;
 
 		StaticModel model;
 	};
