@@ -6,6 +6,9 @@
 
 namespace VulkanLib
 {
+	/*
+		Wraps VkDescriptorSetLayout and VkDescriptorSet to make them easier to work with
+	*/
 	class DescriptorSet
 	{
 	public:
@@ -20,17 +23,24 @@ namespace VulkanLib
 		void BindUniformBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
 		void BindCombinedImage(uint32_t binding, VkDescriptorImageInfo* imageInfo);
 
+		void UpdateUniformBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
+		void UpdateCombinedImage(uint32_t binding, VkDescriptorImageInfo* imageInfo);	// Will be used for changing the texture
+
 		std::vector<VkDescriptorSetLayoutBinding> GetLayoutBindings();
 		// Add more binding function when needed...	
 			
 		// Public for ease of use
-		VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;;
-		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;;
+		VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
+		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 	private:
 		std::vector<VkDescriptorSetLayoutBinding> mLayoutBindings;
 		std::vector<VkWriteDescriptorSet> mWriteDescriptorSets;
 	};
 
+	/*
+		Wraps VkDescriptorPool to make it easier to work with
+		Can be created directly from a descriptor layout vector
+	*/
 	class DescriptorPool
 	{
 	public:

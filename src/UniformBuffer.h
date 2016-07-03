@@ -4,6 +4,10 @@
 
 namespace VulkanLib
 {
+	/*
+		Base class that handles uniform buffer creation
+		Derive your own uniform buffers from it and implement the memory mapping function
+	*/
 	class UniformBuffer
 	{
 	public:
@@ -39,10 +43,8 @@ namespace VulkanLib
 		VkDescriptorBufferInfo GetDescriptor() { return mDescriptor; }
 
 	protected:
-		VkBuffer mBuffer;
-		VkDeviceMemory mMemory;
+		VkBuffer mBuffer = VK_NULL_HANDLE;
+		VkDeviceMemory mMemory = VK_NULL_HANDLE;
 		VkDescriptorBufferInfo mDescriptor;
-	};
-
-	
+	};	
 }

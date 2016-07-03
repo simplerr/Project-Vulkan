@@ -152,7 +152,6 @@ namespace VulkanLib
 		VertexDescription				mVertexDescription;
 
 		BigUniformBuffer				mUniformBuffer;
-
 		DescriptorPool					mDescriptorPool;
 		DescriptorSet					mDescriptorSet;
 

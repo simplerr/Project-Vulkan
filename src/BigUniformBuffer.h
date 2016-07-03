@@ -3,6 +3,9 @@
 #include "Light.h"
 #include <glm/glm.hpp>
 
+/*
+	The big uniform buffer that contains everything
+*/
 class BigUniformBuffer : public VulkanLib::UniformBuffer
 {
 public:

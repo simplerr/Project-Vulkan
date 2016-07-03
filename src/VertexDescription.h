@@ -5,6 +5,10 @@
 
 namespace VulkanLib
 {
+	/*
+		Interface for all the different vertex attribute
+		Extend it with new vertex attributes whenever needed
+	*/
 	class VertexAttribute
 	{
 	public:
@@ -33,6 +37,11 @@ namespace VulkanLib
 		virtual uint32_t GetSize() { return sizeof(glm::vec4); }
 	};
 
+	/*
+		Contains the binding information used to bind the vertex data in C++ to GLSL
+		Make sure you add attributes with a format that corresponds to  your vertex format
+		VertexDescription format = C++ vertex format = GLSL vertex format, otherwise undefined behaviour!
+	*/
 	class VertexDescription
 	{
 	public:

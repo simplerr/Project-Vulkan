@@ -279,7 +279,7 @@ namespace VulkanLib
 	{
 		mDescriptorSet.AllocateDescriptorSets(mDevice, mDescriptorPool.GetVkDescriptorPool());
 		mDescriptorSet.BindUniformBuffer(0, &mUniformBuffer.GetDescriptor());
-		mDescriptorSet.BindCombinedImage(1, &GetTextureDescriptorInfo(mTestTexture)); // NOTE: TODO: This feels really bad, only one texture can be used right now! LoadModel() must run before this!!
+		mDescriptorSet.BindCombinedImage(1, &GetTextureDescriptorInfo(mTestTexture));
 		mDescriptorSet.UpdateDescriptorSets(mDevice);
 	}
 

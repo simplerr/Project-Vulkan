@@ -63,6 +63,16 @@ namespace VulkanLib
 		mWriteDescriptorSets.push_back(writeDescriptorSet);
 	}
 
+	void DescriptorSet::UpdateUniformBuffer(uint32_t binding, VkDescriptorBufferInfo * bufferInfo)
+	{
+		// [TODO]
+	}
+
+	void DescriptorSet::UpdateCombinedImage(uint32_t binding, VkDescriptorImageInfo * imageInfo)
+	{
+		// [TODO]
+	}
+
 	std::vector<VkDescriptorSetLayoutBinding> DescriptorSet::GetLayoutBindings()
 	{
 		return mLayoutBindings;
