@@ -8,6 +8,7 @@
 #include "VertexDescription.h"
 #include "UniformBuffer.h"
 #include "BigUniformBuffer.h"
+#include "DescriptorSet.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -143,7 +144,7 @@ namespace VulkanLib
 		//UniformData						mUniformData;		// Stored in mUniformBuffer.memory in device memory
 		Pipelines						mPipelines;
 
-		VkDescriptorSetLayout			mDescriptorSetLayout;
+		//VkDescriptorSetLayout			mDescriptorSetLayout;
 		VkDescriptorSet					mDescriptorSet;
 		VkPipelineLayout				mPipelineLayout;
 
@@ -188,6 +189,8 @@ namespace VulkanLib
 		VertexDescription				mVertexDescription;
 
 		BigUniformBuffer				mUniformBuffer;
+
+		DescriptorSet					mDescriptorSet1;
 
 	public:
 		StaticModel*					mTestModel;

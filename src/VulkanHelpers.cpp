@@ -1,5 +1,4 @@
 #include "VulkanHelpers.h"
-#include "VulkanHelpers.h"
 
 namespace VulkanLib
 {
@@ -70,4 +69,16 @@ namespace VulkanLib
 			return createInfo;
 		}
 	}
+
+	// Used when adding descriptor set bindings
+	VkDescriptorImageInfo GetTextureDescriptorInfo(vkTools::VulkanTexture texture)
+	{
+		VkDescriptorImageInfo texDescriptor = {};
+		texDescriptor.sampler = texture.sampler;
+		texDescriptor.imageView = texture.view;
+		texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+		return texDescriptor;
+	}
+
 }

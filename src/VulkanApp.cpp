@@ -29,9 +29,9 @@ namespace VulkanLib
 	VulkanApp::~VulkanApp()
 	{
 		mUniformBuffer.Cleanup(GetDevice());
+		mDescriptorSet1.Cleanup(GetDevice());
 
-		// Cleanup descriptor set layout and pipeline layout
-		vkDestroyDescriptorSetLayout(mDevice, mDescriptorSetLayout, nullptr);
+		// Cleanup pipeline layout
 		vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
 
 		vkDestroyBuffer(mDevice, mInstanceBuffer.buffer, nullptr);
@@ -95,8 +95,6 @@ namespace VulkanLib
 		//RecordRenderingCommandBuffer();
 
 		mPrepared = true;
-
-		// Stuff unclear: swapchain, framebuffer, renderpass
 	}
 
 	void VulkanApp::PrepareCommandBuffers()
@@ -188,7 +186,7 @@ namespace VulkanLib
 
 			// Setup thread descriptor set
 			VkDescriptorSetAllocateInfo allocInfo = {};
-			allocInfo = CreateInfo::DescriptorSet(mThreadData[t].descriptorPool, 1, &mDescriptorSetLayout);
+			allocInfo = CreateInfo::DescriptorSet(mThreadData[t].descriptorPool, 1, &mDescriptorSet1.setLayout);
 
 			VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(mDevice, &allocInfo, &mThreadData[t].descriptorSet));
 
@@ -305,33 +303,11 @@ namespace VulkanLib
 
 	void VulkanApp::SetupDescriptorSetLayout()
 	{
-		// Only one binding used for the uniform buffer containing the matrices (Binding: 0)
-		std::vector<VkDescriptorSetLayoutBinding> layoutBinding = {
-			// Binding 0: Uniform buffer
-			{
-				0,
-				VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-				1,
-				VK_SHADER_STAGE_VERTEX_BIT,				// Will be used by the vertex shader
-				NULL
-			},
-			//  Binding 1: Image sampler
-			{
-				1,
-				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-				1,
-				VK_SHADER_STAGE_FRAGMENT_BIT,			// Will be used by the vertex shader
-				NULL
-			}
-		};
+		mDescriptorSet1.AddLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);				// Uniform buffer binding: 0
+		mDescriptorSet1.AddLayoutBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);	// Combined image sampler binding: 1
+		mDescriptorSet1.CreateLayout(mDevice);
 
-		// One more binding would be used for a texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER and VK_SHADER_STAGE_FRAGMENT_BIT)
-		VkDescriptorSetLayoutCreateInfo createInfo = CreateInfo::DescriptorSetLayout(layoutBinding.size(), layoutBinding.data());
-		VulkanDebug::ErrorCheck(vkCreateDescriptorSetLayout(mDevice, &createInfo, nullptr, &mDescriptorSetLayout));
-
-		// Create the pipeline layout that will use the descriptor set layout
-		// The pipeline layout is used later when creating the pipeline
-		VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = CreateInfo::PipelineLayout(1, &mDescriptorSetLayout);
+		VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = CreateInfo::PipelineLayout(1, &mDescriptorSet1.setLayout);
 
 		// Add push constants for the MVP matrix
 		VkPushConstantRange pushConstantRanges = {};
@@ -369,37 +345,10 @@ namespace VulkanLib
 	// [TODO] Let each thread have a seperate descriptor set!!
 	void VulkanApp::SetupDescriptorSet()
 	{
-		VkDescriptorSetAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = mDescriptorPool;
-		allocInfo.descriptorSetCount = 1;					// 2 - 1 for the terrain texture
-		allocInfo.pSetLayouts = &mDescriptorSetLayout;
-
-		VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(mDevice, &allocInfo, &mDescriptorSet));
-
-		VkDescriptorImageInfo texDescriptor = {};
-		texDescriptor.sampler = mTestTexture.sampler;				// NOTE: TODO: This feels really bad, not scalable with more objects at all, fix!!! LoadModel() must run before this!!
-		texDescriptor.imageView = mTestTexture.view;
-		texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-		// Binding 0 : Uniform buffer
-		std::vector<VkWriteDescriptorSet> writeDescriptorSet(2);
-		writeDescriptorSet[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSet[0].dstSet = mDescriptorSet;
-		writeDescriptorSet[0].descriptorCount = 1;
-		writeDescriptorSet[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSet[0].pBufferInfo = &mUniformBuffer.GetDescriptor();
-		writeDescriptorSet[0].dstBinding = 0;				// Binds this uniform buffer to binding point 0
-
-		//  Binding 1: Image sampler
-		writeDescriptorSet[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSet[1].dstSet = mDescriptorSet;
-		writeDescriptorSet[1].descriptorCount = 1;
-		writeDescriptorSet[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeDescriptorSet[1].pImageInfo = &texDescriptor;
-		writeDescriptorSet[1].dstBinding = 1;				// Binds the image sampler to binding point 1
-
-		vkUpdateDescriptorSets(mDevice, writeDescriptorSet.size(), writeDescriptorSet.data(), 0, NULL);
+		mDescriptorSet1.AllocateDescriptorSets(mDevice, mDescriptorPool);
+		mDescriptorSet1.BindUniformBuffer(0, &mUniformBuffer.GetDescriptor());
+		mDescriptorSet1.BindCombinedImage(1, &GetTextureDescriptorInfo(mTestTexture)); // NOTE: TODO: This feels really bad, only one texture can be used right now! LoadModel() must run before this!!
+		mDescriptorSet1.UpdateDescriptorSets(mDevice);
 	}
 
 	void VulkanApp::SetupTerrainDescriptorSet()
@@ -408,7 +357,7 @@ namespace VulkanLib
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = mDescriptorPool;
 		allocInfo.descriptorSetCount = 1;
-		allocInfo.pSetLayouts = &mDescriptorSetLayout;
+		allocInfo.pSetLayouts = &mDescriptorSet1.setLayout;
 
 		VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(mDevice, &allocInfo, &mTerrainDescriptorSet));
 
@@ -605,7 +554,7 @@ namespace VulkanLib
 		vkCmdBindPipeline(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelines.colored);
 
 		// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
-		vkCmdBindDescriptorSets(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet, 0, NULL);
+		vkCmdBindDescriptorSets(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet1.descriptorSet, 0, NULL);
 
 		// Push the world matrix constant
 		mPushConstants.world = glm::mat4();// ->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
@@ -693,7 +642,7 @@ namespace VulkanLib
 			vkCmdBindPipeline(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object.pipeline);
 
 			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
-			vkCmdBindDescriptorSets(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet, 0, NULL);
+			vkCmdBindDescriptorSets(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet1.descriptorSet, 0, NULL);
 
 			// Push the world matrix constant
 			mPushConstants.world = object.object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 

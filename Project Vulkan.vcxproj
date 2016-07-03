@@ -159,6 +159,7 @@
     <ClCompile Include="src\base\vulkantools.cpp" />
     <ClCompile Include="src\BigUniformBuffer.cpp" />
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\DescriptorSet.cpp" />
     <ClCompile Include="src\Game.cpp" />
     <ClCompile Include="src\Light.cpp" />
     <ClCompile Include="src\LoadTGA.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="src\base\vulkantools.h" />
     <ClInclude Include="src\BigUniformBuffer.h" />
     <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\DescriptorSet.h" />
     <ClInclude Include="src\Light.h" />
     <ClInclude Include="src\LoadTGA.h" />
     <ClInclude Include="src\ModelLoader.h" />
