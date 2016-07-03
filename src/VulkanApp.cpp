@@ -29,7 +29,7 @@ namespace VulkanLib
 	VulkanApp::~VulkanApp()
 	{
 		mUniformBuffer.Cleanup(GetDevice());
-		mDescriptorSet1.Cleanup(GetDevice());
+		mDescriptorSet.Cleanup(GetDevice());
 
 		// Cleanup pipeline layout
 		vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
@@ -186,7 +186,7 @@ namespace VulkanLib
 
 			// Setup thread descriptor set
 			VkDescriptorSetAllocateInfo allocInfo = {};
-			allocInfo = CreateInfo::DescriptorSet(mThreadData[t].descriptorPool, 1, &mDescriptorSet1.setLayout);
+			allocInfo = CreateInfo::DescriptorSet(mThreadData[t].descriptorPool, 1, &mDescriptorSet.setLayout);
 
 			VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(mDevice, &allocInfo, &mThreadData[t].descriptorSet));
 
@@ -303,11 +303,11 @@ namespace VulkanLib
 
 	void VulkanApp::SetupDescriptorSetLayout()
 	{
-		mDescriptorSet1.AddLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);				// Uniform buffer binding: 0
-		mDescriptorSet1.AddLayoutBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);	// Combined image sampler binding: 1
-		mDescriptorSet1.CreateLayout(mDevice);
+		mDescriptorSet.AddLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);				// Uniform buffer binding: 0
+		mDescriptorSet.AddLayoutBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);		// Combined image sampler binding: 1
+		mDescriptorSet.CreateLayout(mDevice);
 
-		VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = CreateInfo::PipelineLayout(1, &mDescriptorSet1.setLayout);
+		VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = CreateInfo::PipelineLayout(1, &mDescriptorSet.setLayout);
 
 		// Add push constants for the MVP matrix
 		VkPushConstantRange pushConstantRanges = {};
@@ -345,45 +345,10 @@ namespace VulkanLib
 	// [TODO] Let each thread have a seperate descriptor set!!
 	void VulkanApp::SetupDescriptorSet()
 	{
-		mDescriptorSet1.AllocateDescriptorSets(mDevice, mDescriptorPool);
-		mDescriptorSet1.BindUniformBuffer(0, &mUniformBuffer.GetDescriptor());
-		mDescriptorSet1.BindCombinedImage(1, &GetTextureDescriptorInfo(mTestTexture)); // NOTE: TODO: This feels really bad, only one texture can be used right now! LoadModel() must run before this!!
-		mDescriptorSet1.UpdateDescriptorSets(mDevice);
-	}
-
-	void VulkanApp::SetupTerrainDescriptorSet()
-	{
-		VkDescriptorSetAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = mDescriptorPool;
-		allocInfo.descriptorSetCount = 1;
-		allocInfo.pSetLayouts = &mDescriptorSet1.setLayout;
-
-		VulkanDebug::ErrorCheck(vkAllocateDescriptorSets(mDevice, &allocInfo, &mTerrainDescriptorSet));
-
-		VkDescriptorImageInfo texDescriptor = {};
-		texDescriptor.sampler = mTerrainTexture.sampler;				// NOTE: TODO: This feels really bad, not scalable with more objects at all, fix!!! LoadModel() must run before this!!
-		texDescriptor.imageView = mTerrainTexture.view;
-		texDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-		// Binding 0 : Uniform buffer
-		std::vector<VkWriteDescriptorSet> writeDescriptorSet(2);
-		writeDescriptorSet[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSet[0].dstSet = mTerrainDescriptorSet;
-		writeDescriptorSet[0].descriptorCount = 1;
-		writeDescriptorSet[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSet[0].pBufferInfo = &mUniformBuffer.GetDescriptor();
-		writeDescriptorSet[0].dstBinding = 0;				// Binds this uniform buffer to binding point 0
-
-		//  Binding 1: Image sampler
-		writeDescriptorSet[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSet[1].dstSet = mTerrainDescriptorSet;
-		writeDescriptorSet[1].descriptorCount = 1;
-		writeDescriptorSet[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeDescriptorSet[1].pImageInfo = &texDescriptor;
-		writeDescriptorSet[1].dstBinding = 1;				// Binds the image sampler to binding point 1
-
-		vkUpdateDescriptorSets(mDevice, writeDescriptorSet.size(), writeDescriptorSet.data(), 0, NULL);
+		mDescriptorSet.AllocateDescriptorSets(mDevice, mDescriptorPool);
+		mDescriptorSet.BindUniformBuffer(0, &mUniformBuffer.GetDescriptor());
+		mDescriptorSet.BindCombinedImage(1, &GetTextureDescriptorInfo(mTestTexture)); // NOTE: TODO: This feels really bad, only one texture can be used right now! LoadModel() must run before this!!
+		mDescriptorSet.UpdateDescriptorSets(mDevice);
 	}
 
 	void VulkanApp::PreparePipelines()
@@ -554,7 +519,7 @@ namespace VulkanLib
 		vkCmdBindPipeline(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelines.colored);
 
 		// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
-		vkCmdBindDescriptorSets(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet1.descriptorSet, 0, NULL);
+		vkCmdBindDescriptorSets(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet.descriptorSet, 0, NULL);
 
 		// Push the world matrix constant
 		mPushConstants.world = glm::mat4();// ->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
@@ -642,7 +607,7 @@ namespace VulkanLib
 			vkCmdBindPipeline(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object.pipeline);
 
 			// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
-			vkCmdBindDescriptorSets(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet1.descriptorSet, 0, NULL);
+			vkCmdBindDescriptorSets(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet.descriptorSet, 0, NULL);
 
 			// Push the world matrix constant
 			mPushConstants.world = object.object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
@@ -732,16 +697,6 @@ namespace VulkanLib
 			thread->pushConstants.color = object.object->GetColor();
 			vkCmdPushConstants(commandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &thread->pushConstants);
 
-			// Bind triangle vertices
-			//VkDeviceSize offsets[1] = { 0 };
-			//VkBuffer buffer = object.mesh->vertices.buffer;
-			//vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &buffer, offsets);		// [TODO] The renderer should group the same object models together
-			//vkCmdBindIndexBuffer(commandBuffer, object.mesh->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-			//// Draw indexed triangle	
-			////vkCmdSetLineWidth(commandBuffer, 1.0f);
-			//vkCmdDrawIndexed(commandBuffer, object.mesh->GetNumIndices(), 1, 0, 0, 0);
-
 			VkDeviceSize offsets[1] = { 0 };
 			VkBuffer buffer = mThreadData[threadId].model.vertices.buffer;
 			vkCmdBindVertexBuffers(commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &buffer, offsets);		// [TODO] The renderer should group the same object models together
@@ -758,6 +713,10 @@ namespace VulkanLib
 
 	void VulkanApp::Draw()
 	{
+		//
+		// Transition image format to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+		//
+
 		VulkanBase::PrepareFrame();
 
 		// When presenting (vkQueuePresentKHR) the swapchain image has to be in the VK_IMAGE_LAYOUT_PRESENT_SRC_KHR format
@@ -765,18 +724,6 @@ namespace VulkanLib
 		// The transition between these to formats is performed by using image memory barriers (VkImageMemoryBarrier)
 		// VkImageMemoryBarrier have oldLayout and newLayout fields that are used 
 
-		// Acquire the next image in the swap chain
-		//VulkanDebug::ErrorCheck(mSwapChain.acquireNextImage(mPresentComplete, &mCurrentBuffer));
-
-
-		//
-		// Transition image format to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-		//
-
-		//SubmitPostPresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
-
-		// NOTE: Testing
-		//BuildInstancingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
 		if(!mUseInstancing)
 			RecordRenderingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
 		else 
@@ -814,13 +761,6 @@ namespace VulkanLib
 		//
 		// Transition image format to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		//
-		//SubmitPrePresentMemoryBarrier(mSwapChain.buffers[mCurrentBuffer].image);
-
-		// Present the image
-		//VulkanDebug::ErrorCheck(mSwapChain.queuePresent(mQueue, mCurrentBuffer, mRenderComplete));
-
-
-		//vkTools::checkResult(vkQueueWaitIdle(mQueue));
 
 		VulkanBase::SubmitFrame();
 	}

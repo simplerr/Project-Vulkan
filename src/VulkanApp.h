@@ -23,43 +23,11 @@ namespace VulkanLib
 	class TextureData;
 	class Light;
 
-	struct VertexDescriptions {
-		VkPipelineVertexInputStateCreateInfo inputState;
-		std::vector<VkVertexInputBindingDescription> bindingDescriptions;
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-	};
-
 	struct Buffer {
 		VkBuffer buffer;
 		VkDeviceMemory memory;
 		VkDescriptorBufferInfo descriptor;
 	};
-
-	struct UniformData {
-		struct {
-			mat4 projectionMatrix;
-			mat4 viewMatrix;
-			vec4 lightDir = vec4(1.0f, -1.0f, 1.0f, 1.0f);
-			vec3 eyePos;	
-			float t;
-
-			
-		} camera;
-
-		std::vector<Light> lights;
-
-		struct {
-			float numLights;
-			bool useInstancing;
-			vec2 garbage;
-		} constants;
-		
-
-		//std::vector<Light*> lights;
-
-		// Array of world matrixes for the instances
-		//mat4* instanceWorld;
-	};	// Stored in uniformBuffer.memory in device memory
 
 	struct InstanceData {
 		vec3 position;
@@ -133,19 +101,13 @@ namespace VulkanLib
 		//	High level code
 		//
 		void LoadModels();
-		void SetupTerrainDescriptorSet();
 		void CompileShaders();
 		void SetCamera(Camera* camera);
 
 		void AddModel(VulkanModel model);
 
-
-		//UniformBuffer					mUniformBuffer;
-		//UniformData						mUniformData;		// Stored in mUniformBuffer.memory in device memory
 		Pipelines						mPipelines;
 
-		//VkDescriptorSetLayout			mDescriptorSetLayout;
-		VkDescriptorSet					mDescriptorSet;
 		VkPipelineLayout				mPipelineLayout;
 
 		// This gets regenerated each frame so there is no need for command buffer per frame buffer
@@ -190,7 +152,7 @@ namespace VulkanLib
 
 		BigUniformBuffer				mUniformBuffer;
 
-		DescriptorSet					mDescriptorSet1;
+		DescriptorSet					mDescriptorSet;
 
 	public:
 		StaticModel*					mTestModel;
