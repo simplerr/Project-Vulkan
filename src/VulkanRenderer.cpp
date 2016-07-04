@@ -16,22 +16,24 @@ namespace VulkanLib
 		//mVulkanApp.RenderLoop();
 	}
 
-	VulkanRenderer::VulkanRenderer(Window* window, int numThreads, bool useInstancing)
+	VulkanRenderer::VulkanRenderer(Window* window, int numThreads, bool useInstancing, bool useStaticCommandBuffers)
 	{
 		mVulkanApp = new VulkanApp();
 
+		mVulkanApp->mTestModel = mModelLoader.LoadModel(mVulkanApp, "data/models/Crate.obj");
+
 		mVulkanApp->EnableInstancing(useInstancing);	// [NOTE] The order is important, must be before Prepare()
+		mVulkanApp->EnableStaticCommandBuffers(useStaticCommandBuffers);
 		mVulkanApp->InitSwapchain(window);
 		mVulkanApp->Prepare();
 		
-		mVulkanApp->mTestModel = mModelLoader.LoadModel(mVulkanApp, "data/models/Crate.obj");
-
 		mVulkanApp->SetupMultithreading(numThreads);
 	}
 
 	void VulkanRenderer::Init()
 	{
 		mVulkanApp->PrepareInstancing();
+		mVulkanApp->RecordStaticCommandBuffers();	// [NOTE] Has to be called after all the objects are added!
 	}
 
 	void VulkanRenderer::Cleanup()

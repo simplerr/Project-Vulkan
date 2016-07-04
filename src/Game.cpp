@@ -166,6 +166,10 @@ namespace VulkanLib
 				mRenderer = new VulkanLib::OpenGLRenderer(mWindow, true);
 				InitScene();
 			}
+			else if (GetAsyncKeyState('8')) {
+				mRenderer = new VulkanLib::VulkanRenderer(mWindow, 1, false, true);
+				InitScene();
+			}
 		}
 	}
 #endif

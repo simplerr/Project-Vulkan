@@ -67,6 +67,8 @@ namespace VulkanLib
 		}
 
 		vkDestroyFence(mDevice, mRenderFence, nullptr);
+
+		vkFreeCommandBuffers(mDevice, mCommandPool, mStaticCommandBuffers.size(), mStaticCommandBuffers.data());
 	}
 
 	void VulkanApp::Prepare()
@@ -99,6 +101,12 @@ namespace VulkanLib
 		// Create the secondary command buffer
 		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, &mSecondaryCommandBuffer));
+
+		// Create the command buffers used in the static test case (1 for each frame buffer)
+		mStaticCommandBuffers.resize(mSwapChain.imageCount);
+		allocateInfo.commandBufferCount = mStaticCommandBuffers.size();
+		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		VulkanDebug::ErrorCheck(vkAllocateCommandBuffers(mDevice, &allocateInfo, mStaticCommandBuffers.data()));
 	}
 
 	void VulkanApp::CompileShaders()
@@ -116,7 +124,7 @@ namespace VulkanLib
 
 	void VulkanApp::AddModel(VulkanModel model)
 	{
-		if(mUseInstancing)
+		if(mUseInstancing || mUseStaticCommandBuffer)
 			mModels.push_back(model);
 		else
 		{
@@ -185,6 +193,11 @@ namespace VulkanLib
 	void VulkanApp::EnableInstancing(bool useInstancing)
 	{
 		mUseInstancing = useInstancing;
+	}
+
+	void VulkanApp::EnableStaticCommandBuffers(bool useStaticCommandBuffers)
+	{
+		mUseStaticCommandBuffer = useStaticCommandBuffers;
 	}
 
 	// Loads a buffer with instancing data (must be called after all objects are added to the scene)
@@ -409,6 +422,70 @@ namespace VulkanLib
 		}
 	}
 
+	void VulkanApp::RecordStaticCommandBuffers()
+	{
+		if (!mUseStaticCommandBuffer)
+			return;
+
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		VkClearValue clearValues[2];
+		clearValues[0].color = { 0.2f, 0.5f, 0.2f, 0.0f };
+		clearValues[1].depthStencil = { 1.0f, 0 };
+
+		VkRenderPassBeginInfo renderPassBeginInfo = {};
+		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassBeginInfo.renderPass = mRenderPass;
+		renderPassBeginInfo.renderArea.extent.width = GetWindowWidth();
+		renderPassBeginInfo.renderArea.extent.height = GetWindowHeight();
+		renderPassBeginInfo.clearValueCount = 2;
+		renderPassBeginInfo.pClearValues = clearValues;
+
+		for (int i = 0; i < mStaticCommandBuffers.size(); i++)
+		{
+			renderPassBeginInfo.framebuffer = mFrameBuffers[i];
+
+			VulkanDebug::ErrorCheck(vkBeginCommandBuffer(mStaticCommandBuffers[i], &beginInfo));
+
+			vkCmdBeginRenderPass(mStaticCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			VkViewport viewport = vkTools::initializers::viewport((float)GetWindowWidth(), (float)GetWindowHeight(), 0.0f, 1.0f);
+			vkCmdSetViewport(mStaticCommandBuffers[i], 0, 1, &viewport);
+
+			VkRect2D scissor = vkTools::initializers::rect2D(GetWindowWidth(), GetWindowHeight(), 0, 0);
+			vkCmdSetScissor(mStaticCommandBuffers[i], 0, 1, &scissor);
+
+			// RENDER
+			for (auto& object : mModels)
+			{
+				// Bind the rendering pipeline (including the shaders)
+				vkCmdBindPipeline(mStaticCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, object.pipeline);
+
+				// Bind descriptor sets describing shader binding points (must be called after vkCmdBindPipeline!)
+				vkCmdBindDescriptorSets(mStaticCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet.descriptorSet, 0, NULL);
+
+				// Push the world matrix constant
+				mPushConstants.world = object.object->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+				mPushConstants.color = object.object->GetColor();
+				vkCmdPushConstants(mStaticCommandBuffers[i], mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &mPushConstants);
+
+				// Bind triangle vertices
+				VkDeviceSize offsets[1] = { 0 };
+				vkCmdBindVertexBuffers(mStaticCommandBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &object.mesh->vertices.buffer, offsets);		// [TODO] The renderer should group the same object models together
+				vkCmdBindIndexBuffer(mStaticCommandBuffers[i], object.mesh->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+				// Draw indexed triangle	
+				vkCmdSetLineWidth(mStaticCommandBuffers[i], 1.0f);
+				vkCmdDrawIndexed(mStaticCommandBuffers[i], object.mesh->GetNumIndices(), 1, 0, 0, 0);
+			}
+
+			vkCmdEndRenderPass(mStaticCommandBuffers[i]);
+
+			VulkanDebug::ErrorCheck(vkEndCommandBuffer(mStaticCommandBuffers[i]));
+		}
+	}
+
 	void VulkanApp::BuildInstancingCommandBuffer(VkFramebuffer frameBuffer)
 	{
 		VkCommandBufferBeginInfo beginInfo = {};
@@ -454,7 +531,7 @@ namespace VulkanLib
 		vkCmdBindDescriptorSets(mPrimaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet.descriptorSet, 0, NULL);
 
 		// Push the world matrix constant
-		mPushConstants.world = glm::mat4();// ->GetWorldMatrix(); // camera->GetProjection() * camera->GetView() * 
+		mPushConstants.world = glm::mat4();
 		mPushConstants.color = vec3(1, 1, 1);
 		vkCmdPushConstants(mPrimaryCommandBuffer, mPipelineLayout, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, sizeof(PushConstantBlock), &mPushConstants);
 
@@ -656,9 +733,9 @@ namespace VulkanLib
 		// The transition between these to formats is performed by using image memory barriers (VkImageMemoryBarrier)
 		// VkImageMemoryBarrier have oldLayout and newLayout fields that are used 
 
-		if(!mUseInstancing)
+		if(!mUseStaticCommandBuffer && !mUseInstancing)
 			RecordRenderingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
-		else 
+		else if(!mUseStaticCommandBuffer)
 			BuildInstancingCommandBuffer(mFrameBuffers[mCurrentBuffer]);
 
 		//
@@ -667,9 +744,14 @@ namespace VulkanLib
 
 		// Submit the recorded draw command buffer to the queue
 		VkSubmitInfo submitInfo = {};
+
+		if (!mUseStaticCommandBuffer)
+			submitInfo.pCommandBuffers = &mPrimaryCommandBuffer;					// Draw commands for the current command buffer
+		else
+			submitInfo.pCommandBuffers = &mStaticCommandBuffers[mCurrentBuffer];
+
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &mPrimaryCommandBuffer;					// Draw commands for the current command buffer
+		submitInfo.commandBufferCount = 1;	
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = &mPresentComplete;							// Waits for swapChain.acquireNextImage to complete

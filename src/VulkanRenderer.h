@@ -11,7 +11,7 @@ namespace VulkanLib
 	{
 	public:
 		VulkanRenderer(Window* window, bool useIntancing = false);
-		VulkanRenderer(Window* window, int numThreads, bool useIntancing = false);
+		VulkanRenderer(Window* window, int numThreads, bool useIntancing = false, bool useStaticCommandBuffers = false);
 
 		virtual void Cleanup();
 		virtual void SetupMultithreading(int numThreads);
