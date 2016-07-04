@@ -37,9 +37,10 @@ namespace VulkanLib
 		fout.open("benchmark.txt", std::fstream::out | std::ofstream::app);
 
 		// Print scene information
-		fout << mRenderer->GetName() << "\n[" << mRenderer->GetNumVertices() << " vertices] [" << mRenderer->GetNumTriangles() << " triangles] [" << mRenderer->GetNumObjects() << " objects]" << std::endl;
+		mRenderer->OutputLog(fout);
+		/*fout << mRenderer->GetName() << "\n[" << mRenderer->GetNumVertices() << " vertices] [" << mRenderer->GetNumTriangles() << " triangles] [" << mRenderer->GetNumObjects() << " objects]" << std::endl;
 		fout << "Threads: " << mRenderer->GetNumThreads() << std::endl;
-		fout << "Pipeline: " << GetPipelineStr() << std::endl;
+		fout << "Pipeline: " << GetPipelineStr() << std::endl;*/
 
 		// Print benchmark to file
 		mTimer.PrintLog(fout);
@@ -193,7 +194,7 @@ namespace VulkanLib
 	//
 	bool Game::QueryRenderInitKeys()
 	{
-		return GetAsyncKeyState('1') || GetAsyncKeyState('2') || GetAsyncKeyState('3') || GetAsyncKeyState('4') || GetAsyncKeyState('5');
+		return GetAsyncKeyState('1') || GetAsyncKeyState('2') || GetAsyncKeyState('3') || GetAsyncKeyState('4') || GetAsyncKeyState('5') || GetAsyncKeyState('6') || GetAsyncKeyState('7') || GetAsyncKeyState('8');
 	}
 
 	std::string Game::GetPipelineStr()

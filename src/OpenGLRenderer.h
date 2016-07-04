@@ -30,6 +30,7 @@ namespace VulkanLib
 		virtual void AddModel(StaticModel* model);
 
 		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); 
+		virtual void OutputLog(std::ostream& fout);
 
 		virtual void SetCamera(Camera* camera);
 

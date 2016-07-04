@@ -1,6 +1,7 @@
 # Project-Vulkan
 
 ### Todo
+- Make a Renderer::GetLogText() function
 - Fix camera rotation in OpenGL
 - Make it run on Linux
 - Fix bug where more than 64*4*4*2 objects can't be rendered

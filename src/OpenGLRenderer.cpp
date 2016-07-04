@@ -146,6 +146,18 @@ namespace VulkanLib
 		mCamera->HandleMessages(hWnd, uMsg, wParam, lParam);
 	}
 
+	void OpenGLRenderer::OutputLog(std::ostream & fout)
+	{
+		// Print scene information
+		fout << GetName() << "\n[" << GetNumVertices() << " vertices] [" << GetNumTriangles() << " triangles] [" << GetNumObjects() << " objects]" << std::endl;
+		fout << "Threads: " << GetNumThreads() << std::endl;
+
+		if(mUseInstancing)
+			fout << "Pipeline: " << "Instancing" << std::endl;
+		else 
+			fout << "Pipeline: " << "Basic" << std::endl;
+	}
+
 	void OpenGLRenderer::SetCamera(Camera * camera)
 	{
 		mCamera = camera;

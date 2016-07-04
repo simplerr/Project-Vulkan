@@ -130,7 +130,7 @@ namespace VulkanLib
 		bool							mPrepared = false;
 
 		Buffer							mInstanceBuffer;
-		bool							mUseInstancing;
+		bool							mUseInstancing = false;
 		bool							mUseStaticCommandBuffer = false;	
 
 		Camera*							mCamera;

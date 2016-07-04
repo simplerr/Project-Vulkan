@@ -28,6 +28,9 @@ namespace VulkanLib
 		mVulkanApp->Prepare();
 		
 		mVulkanApp->SetupMultithreading(numThreads);
+
+		mUseInstancing = useInstancing;
+		mUseStaticCommandBuffer = useStaticCommandBuffers;
 	}
 
 	void VulkanRenderer::Init()
@@ -65,6 +68,18 @@ namespace VulkanLib
 	void VulkanRenderer::HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		mVulkanApp->HandleMessages(hWnd, uMsg, wParam, lParam);
+	}
+	void VulkanRenderer::OutputLog(std::ostream & fout)
+	{
+		fout << GetName() << "\n[" << GetNumVertices() << " vertices] [" << GetNumTriangles() << " triangles] [" << GetNumObjects() << " objects]" << std::endl;
+		fout << "Threads: " << GetNumThreads() << std::endl;
+
+		if(mUseInstancing)
+			fout << "Pipeline: " << "Instancing" << std::endl;
+		else if (mUseStaticCommandBuffer)
+			fout << "Pipeline: " << "Static command buffers" << std::endl;
+		else
+			fout << "Pipeline: " << "Basic" << std::endl;
 	}
 	void VulkanRenderer::SetCamera(Camera * camera)
 	{

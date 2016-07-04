@@ -22,6 +22,7 @@ namespace VulkanLib
 		virtual void AddModel(StaticModel* model);
 
 		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		virtual void OutputLog(std::ostream& fout);
 
 		virtual void SetCamera(Camera* camera);
 
@@ -39,6 +40,9 @@ namespace VulkanLib
 		VulkanApp* mVulkanApp;
 		Camera* mCamera;
 		ModelLoader	mModelLoader;
+
+		bool mUseInstancing = false;
+		bool mUseStaticCommandBuffer = false;
 
 		int mNumVertices = 0;
 		int mNumTriangles = 0;
