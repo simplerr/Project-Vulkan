@@ -220,5 +220,11 @@
     <None Include="data\shaders\opengl\color.vert">
       <Filter>Header Files\opengl</Filter>
     </None>
+    <None Include="data\shaders\opengl\color2.frag">
+      <Filter>Header Files\opengl</Filter>
+    </None>
+    <None Include="data\shaders\opengl\color2.vert">
+      <Filter>Header Files\opengl</Filter>
+    </None>
   </ItemGroup>
 </Project>

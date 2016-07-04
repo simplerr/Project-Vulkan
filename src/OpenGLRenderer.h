@@ -56,6 +56,7 @@ namespace VulkanLib
 		HGLRC hglrc;
 
 		GLuint program;
+		GLuint programBlue;
 
 		float speedx = 0.02f, speedy = 0.02f;
 

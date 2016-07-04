@@ -33,8 +33,9 @@ namespace VulkanLib
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 
+		programBlue = LoadShaders("data/shaders/opengl/color2.vert", "data/shaders/opengl/color2.frag");
 		program = LoadShaders("data/shaders/opengl/color.vert", "data/shaders/opengl/color.frag");
-		
+			
 		LoadTGATextureSimple("data/textures/crate_2.tga", &mTestTexture);
 
 		mUseInstancing = useInstancing;
@@ -107,6 +108,23 @@ namespace VulkanLib
 		{
 			for (int i = 0; i < mModels.size(); i++)
 			{
+				// Test chaning pipeline states
+				// Make sure to change exactly the same states as in the Vulkan implementation
+				if (mModels[i].object->GetPipeline() == PipelineEnum::TEXTURED) 
+				{
+					//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 	
+					glUseProgram(program);
+					glFrontFace(GL_CW);	
+					glCullFace(GL_FRONT);
+				}
+				else
+				{
+					//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); 
+					glUseProgram(programBlue);
+					glFrontFace(GL_CCW);
+					glCullFace(GL_BACK);
+				}
+
 				glBindVertexArray(mModels[i].mesh->vao);	// Select VAO
 				glUniformMatrix4fv(glGetUniformLocation(program, "gWorld"), 1, GL_FALSE, glm::value_ptr((mModels[i].object->GetWorldMatrix())));
 				glDrawElements(GL_TRIANGLES, mModels[i].mesh->numIndices, GL_UNSIGNED_INT, 0L);
@@ -161,7 +179,6 @@ namespace VulkanLib
 	void OpenGLRenderer::SetCamera(Camera * camera)
 	{
 		mCamera = camera;
-		//mCamera->mPosition.y *= -1;
 		mCamera->hack = -1;
 	}
 
@@ -195,7 +212,7 @@ namespace VulkanLib
 		glShaderSource(ps, 1, &shaderSource2, NULL);
 		glCompileShader(ps);
 
-		program = glCreateProgram();
+		GLuint program = glCreateProgram();
 		glAttachShader(program, vs);
 		glAttachShader(program, ps);
 		glLinkProgram(program);

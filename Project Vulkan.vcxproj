@@ -215,6 +215,8 @@
     <None Include="data\shaders\colored\colored.frag" />
     <None Include="data\shaders\opengl\color.frag" />
     <None Include="data\shaders\opengl\color.vert" />
+    <None Include="data\shaders\opengl\color2.frag" />
+    <None Include="data\shaders\opengl\color2.vert" />
     <None Include="data\shaders\starsphere\starsphere.frag" />
     <None Include="data\shaders\starsphere\starsphere.vert" />
     <None Include="data\shaders\textured\textured.frag" />

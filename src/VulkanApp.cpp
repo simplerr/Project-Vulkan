@@ -363,7 +363,8 @@ namespace VulkanLib
 		// Load shader
 		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 		shaderStages[0] = LoadShader("data/shaders/textured/textured.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		shaderStages[1] = LoadShader("data/shaders/textured/textured.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		shaderStages[1] = LoadShader("data/shaders/colored/colored.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		
 
 		// Assign all the states to the pipeline
 		// The states will be static and can't be changed after the pipeline is created
@@ -382,12 +383,18 @@ namespace VulkanLib
 		pipelineCreateInfo.stageCount = shaderStages.size();
 		pipelineCreateInfo.pStages = shaderStages.data();
 
-		// Create the solid pipeline
-		VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &mPipelines.textured));
-
-		// Create the wireframe pipeline
-		shaderStages[1] = LoadShader("data/shaders/colored/colored.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		// Create the colored pipeline	
+		//rasterizationState.polygonMode = VK_POLYGON_MODE_LINE;
 		VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &mPipelines.colored));
+
+		// Create the textured pipeline
+		shaderStages[1] = LoadShader("data/shaders/textured/textured.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+		// Add some extra state changes for the benchmarking comparison with OpenGL
+		rasterizationState.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		rasterizationState.cullMode = VK_CULL_MODE_FRONT_BIT;
+
+		VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &mPipelines.textured));
 
 		// Create the starsphere pipeline
 		rasterizationState.cullMode = VK_CULL_MODE_FRONT_BIT;
@@ -712,7 +719,7 @@ namespace VulkanLib
 			vkCmdBindIndexBuffer(commandBuffer, mThreadData[threadId].model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 			// Draw indexed triangle	
-			//vkCmdSetLineWidth(commandBuffer, 1.0f);
+			vkCmdSetLineWidth(commandBuffer, 1.0f);
 			vkCmdDrawIndexed(commandBuffer, mThreadData[threadId].model.GetNumIndices(), 1, 0, 0, 0);
 		}
 
@@ -799,14 +806,16 @@ namespace VulkanLib
 
 	void VulkanApp::Update()
 	{
+		return;
+
 		// Rotate the objects
-// 		for (auto& object : mModels)
-// 		{
-// 			// [NOTE] Just for testing
-// 			float speed = 5.0f;
-// 			if(object.object->GetId() == OBJECT_ID_PROP)
-// 				object.object->AddRotation(glm::radians(speed), glm::radians(speed), glm::radians(speed));
-// 		}
+ 		for (auto& object : mModels)
+ 		{
+ 			// [NOTE] Just for testing
+ 			float speed = 5.0f;
+ 			if(object.object->GetId() == OBJECT_ID_PROP)
+ 				object.object->AddRotation(glm::radians(speed), glm::radians(speed), glm::radians(speed));
+ 		}
 	}
 
 	void VulkanApp::HandleMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)

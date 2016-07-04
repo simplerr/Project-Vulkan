@@ -20,7 +20,7 @@ namespace VulkanLib
 		mCamera = new VulkanLib::Camera(glm::vec3(500, 4700, 500), 60.0f, (float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 0.1f, 25600.0f);
 		mCamera->LookAt(glm::vec3(0, 0, 0));
 
-		mPipeline = PipelineEnum::COLORED;
+		mPipeline = PipelineEnum::TEXTURED;
 	}
 
 	Game::~Game()
@@ -38,9 +38,6 @@ namespace VulkanLib
 
 		// Print scene information
 		mRenderer->OutputLog(fout);
-		/*fout << mRenderer->GetName() << "\n[" << mRenderer->GetNumVertices() << " vertices] [" << mRenderer->GetNumTriangles() << " triangles] [" << mRenderer->GetNumObjects() << " objects]" << std::endl;
-		fout << "Threads: " << mRenderer->GetNumThreads() << std::endl;
-		fout << "Pipeline: " << GetPipelineStr() << std::endl;*/
 
 		// Print benchmark to file
 		mTimer.PrintLog(fout);
@@ -66,6 +63,7 @@ namespace VulkanLib
 
 		// Add objects
 		int size = 10;
+		int i = 0;
 		for (int x = 0; x < size; x++)
 		{
 			for (int y = 0; y < size; y++)
@@ -76,11 +74,19 @@ namespace VulkanLib
 					object->SetModel("data/models/Crate.obj");
 					object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
 					object->SetId(OBJECT_ID_PROP);
-					object->SetRotation(glm::vec3(180, 0, 0));
-					object->SetPipeline(mPipeline);
+					object->SetRotation(glm::vec3(180, 0, 0));					
 					object->SetScale(glm::vec3(40.0f));
 
+					// By alternating between different pipelines the efficiency of swapping pipelines can be tested
+					// Move this to a seperate TestCase class? [TODO]
+					if(i % 2 == 0)
+						object->SetPipeline(PipelineEnum::TEXTURED);
+					else
+						object->SetPipeline(PipelineEnum::COLORED);
+
 					mRenderer->AddObject(object);
+
+					i++;
 				}
 			}
 		}
