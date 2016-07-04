@@ -20,6 +20,9 @@ namespace VulkanLib
 		Game(Window* window);
 		~Game();
 		
+		void InitLowDetailTestCase();
+		void InitPipelineTestCase();
+
 		void RenderLoop();
 
 		virtual void HandleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -38,5 +41,7 @@ namespace VulkanLib
 		Timer mTimer;
 
 		PipelineEnum mPipeline;
+
+		std::string mTestCaseName;
 	};
 }

@@ -36,6 +36,8 @@ namespace VulkanLib
 		std::ofstream fout;
 		fout.open("benchmark.txt", std::fstream::out | std::ofstream::app);
 
+		fout << "Test case: " << mTestCaseName << std::endl;
+
 		// Print scene information
 		mRenderer->OutputLog(fout);
 
@@ -61,6 +63,18 @@ namespace VulkanLib
 
 		mRenderer->AddObject(object);
 
+		// Change depending on test case
+		//InitLowDetailTestCase();	// [TODO] OpenGL still gets affected by pipeline state changes here
+		InitPipelineTestCase();
+
+		// Creates the instancing array from all the objects
+		mRenderer->Init();
+	}
+
+	void Game::InitLowDetailTestCase()
+	{
+		mTestCaseName = "Low detail";
+
 		// Add objects
 		int size = 10;
 		int i = 0;
@@ -74,12 +88,41 @@ namespace VulkanLib
 					object->SetModel("data/models/Crate.obj");
 					object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
 					object->SetId(OBJECT_ID_PROP);
-					object->SetRotation(glm::vec3(180, 0, 0));					
+					object->SetRotation(glm::vec3(180, 0, 0));
+					object->SetScale(glm::vec3(40.0f));
+					object->SetPipeline(PipelineEnum::COLORED);
+
+					mRenderer->AddObject(object);
+
+					i++;
+				}
+			}
+		}
+	}
+
+	void Game::InitPipelineTestCase()
+	{
+		mTestCaseName = "Pipeline swapping";
+
+		// Add objects
+		int size = 10;
+		int i = 0;
+		for (int x = 0; x < size; x++)
+		{
+			for (int y = 0; y < size; y++)
+			{
+				for (int z = 0; z < size; z++)
+				{
+					Object* object = new Object(glm::vec3(x * 150, -100 - y * 150, z * 150));
+					object->SetModel("data/models/Crate.obj");
+					object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
+					object->SetId(OBJECT_ID_PROP);
+					object->SetRotation(glm::vec3(180, 0, 0));
 					object->SetScale(glm::vec3(40.0f));
 
 					// By alternating between different pipelines the efficiency of swapping pipelines can be tested
 					// Move this to a seperate TestCase class? [TODO]
-					if(i % 2 == 0)
+					if (i % 2 == 0)
 						object->SetPipeline(PipelineEnum::TEXTURED);
 					else
 						object->SetPipeline(PipelineEnum::COLORED);
@@ -90,9 +133,6 @@ namespace VulkanLib
 				}
 			}
 		}
-
-		// Creates the instancing array from all the objects
-		mRenderer->Init();
 	}
 
 #if defined(_WIN32)
