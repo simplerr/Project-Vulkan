@@ -43,6 +43,4 @@ void main()
     OutNormalW = mat3(world) * InNormalL;
     OutLightDirW = gLightDir.xyz;
     OutEyeDirW = gEyePos - PosW.xyz;
-
-	
 }

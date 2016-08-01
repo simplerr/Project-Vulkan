@@ -53,7 +53,7 @@ namespace VulkanLib
 	{
 		mRenderer->SetCamera(mCamera);
 
-		Object* object = new Object(glm::vec3(0, 0, 0));
+		/*Object* object = new Object(glm::vec3(0, 0, 0));
 		object->SetModel("data/models/Crate.obj");
 		object->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
 		object->SetId(OBJECT_ID_PROP);
@@ -61,7 +61,7 @@ namespace VulkanLib
 		object->SetPipeline(mPipeline);
 		object->SetScale(glm::vec3(100.0f));
 
-		mRenderer->AddObject(object);
+		mRenderer->AddObject(object);*/
 
 		// Change depending on test case
 		//InitLowDetailTestCase();	// [TODO] OpenGL still gets affected by pipeline state changes here
@@ -85,11 +85,12 @@ namespace VulkanLib
 				for (int z = 0; z < size; z++)
 				{
 					Object* object = new Object(glm::vec3(x * 150, -100 - y * 150, z * 150));
+					//object->SetModel("data/models/teapot.3ds");
 					object->SetModel("data/models/Crate.obj");
 					object->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
 					object->SetId(OBJECT_ID_PROP);
 					object->SetRotation(glm::vec3(180, 0, 0));
-					object->SetScale(glm::vec3(40.0f));
+					object->SetScale(glm::vec3(3.0f));
 					object->SetPipeline(PipelineEnum::COLORED);
 
 					mRenderer->AddObject(object);
@@ -202,8 +203,13 @@ namespace VulkanLib
 				InitScene();
 			}
 			else if (GetAsyncKeyState('5')) {
+				// Test the OpenGL implementation
 				mRenderer = new VulkanLib::OpenGLRenderer(mWindow);
 				InitScene();
+
+				// Test the Vulkan implementation
+				/*mRenderer = new VulkanLib::VulkanRenderer(mWindow);
+				InitScene();*/
 			}	
 			else if (GetAsyncKeyState('6')) {
 				mRenderer = new VulkanLib::VulkanRenderer(mWindow, 1, true);

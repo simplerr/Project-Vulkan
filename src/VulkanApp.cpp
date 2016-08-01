@@ -388,7 +388,7 @@ namespace VulkanLib
 		VulkanDebug::ErrorCheck(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &mPipelines.colored));
 
 		// Create the textured pipeline
-		shaderStages[1] = LoadShader("data/shaders/textured/textured.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		//shaderStages[1] = LoadShader("data/shaders/textured/textured.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		// Add some extra state changes for the benchmarking comparison with OpenGL
 		rasterizationState.frontFace = VK_FRONT_FACE_CLOCKWISE;
@@ -566,7 +566,7 @@ namespace VulkanLib
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
 		VkClearValue clearValues[2];
-		clearValues[0].color = { 0.2f, 0.5f, 0.2f, 0.0f };
+		clearValues[0].color = { 0.2f, 0.2f, 0.2f, 0.0f };
 		clearValues[1].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassBeginInfo = {};

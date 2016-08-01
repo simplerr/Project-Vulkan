@@ -20,6 +20,7 @@ namespace VulkanLib
 	{
 		mVulkanApp = new VulkanApp();
 
+		//mVulkanApp->mTestModel = mModelLoader.LoadModel(mVulkanApp, "data/models/teapot.3ds");
 		mVulkanApp->mTestModel = mModelLoader.LoadModel(mVulkanApp, "data/models/Crate.obj");
 
 		mVulkanApp->EnableInstancing(useInstancing);	// [NOTE] The order is important, must be before Prepare()

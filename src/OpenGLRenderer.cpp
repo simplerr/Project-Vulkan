@@ -113,14 +113,14 @@ namespace VulkanLib
 				if (mModels[i].object->GetPipeline() == PipelineEnum::TEXTURED) 
 				{
 					//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 	
-					glUseProgram(program);
+					//glUseProgram(program);
 					glFrontFace(GL_CW);	
 					glCullFace(GL_FRONT);
 				}
 				else
 				{
 					//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); 
-					glUseProgram(programBlue);
+					//glUseProgram(programBlue);
 					glFrontFace(GL_CCW);
 					glCullFace(GL_BACK);
 				}

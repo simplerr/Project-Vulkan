@@ -82,7 +82,7 @@ void main()
 		OutColor = InInstanceColor;
 	}
 	else
-		OutColor = vec3(0, 1, 0);
+		OutColor = vec3(1, 1, 0);
 
 	OutTex = InTex;
 
