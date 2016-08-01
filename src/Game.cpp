@@ -64,8 +64,8 @@ namespace VulkanLib
 		mRenderer->AddObject(object);*/
 
 		// Change depending on test case
-		//InitLowDetailTestCase();	// [TODO] OpenGL still gets affected by pipeline state changes here
-		InitPipelineTestCase();
+		InitLowDetailTestCase();	// [TODO] OpenGL still gets affected by pipeline state changes here
+		//InitPipelineTestCase();
 
 		// Creates the instancing array from all the objects
 		mRenderer->Init();
